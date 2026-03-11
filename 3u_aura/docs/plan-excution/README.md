@@ -16,7 +16,7 @@
 - `docs/plan-excution/Phase3-Referral-Tree-Core/`
   - 推荐树绑定、closure、placement、规则冻结
 - `docs/plan-excution/Phase4-Volume-Propagation-Rewards/`
-  - 上卷体量、直推/间推奖励、小区指标
+  - 上卷体量、直推/间推奖励、小区指标、NFT 资格与签名服务边界
 - `docs/plan-excution/Phase5-Weekly-Epoch-Ticketing/`
   - 周期、门票、滚存、资格判断
 - `docs/plan-excution/Phase6-Lottery-Ranking-Merkle/`
@@ -28,9 +28,9 @@
 - `docs/plan-excution/Phase9-Dapp-Promotion-MVP/`
   - 推广阶段 DApp 页面与交互
 - `docs/plan-excution/Phase10-Token-Launch-Transition/`
-  - 发行总 claim、停用推广逻辑、切换流程
+  - 发行总 claim、上线切换、停用推广逻辑、claim 接口冻结
 - `docs/plan-excution/Phase11-Token-Tax-Dividend-Burn/`
-  - DEX 交易税、分红、烧池
+  - 上线后 DEX 交易税、分红、回购/销毁、烧池
 - `docs/plan-excution/Phase12-Ops-QA-Security-Release/`
   - 联调、审计清单、发布门禁
 
@@ -40,8 +40,8 @@
 2. 审批并执行 `Phase2` → `Phase6`
 3. 审批并执行 `Phase7` → `Phase8`
 4. 审批并执行 `Phase9`
-5. 审批并执行 `Phase10`
-6. 视发行准备度再推进 `Phase11`
+5. 联合审批 `Phase10` + `Phase11`
+6. 先冻结 launch-ready token / claim interface，再执行 `Phase10` 切换与 `Phase11` 上线后税逻辑验证
 7. 最后进行 `Phase12`
 
 ## 为什么这么拆

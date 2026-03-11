@@ -3,6 +3,7 @@ import {
     TeamPosition,
     CheckinStatus,
     PaymentStatus,
+    PaymentPurpose,
     LedgerAssetType,
     LedgerSourceType,
     LedgerStatus,
@@ -14,7 +15,9 @@ import {
     ClaimStatus,
     NftType,
     NftStatus,
-    NftEligibilityStatus
+    NftEligibilityStatus,
+    SignatureScenarios,
+    DEVICES
 } from '../enums';
 
 export interface ClientUser {
@@ -40,18 +43,17 @@ export interface ClientUserProfile {
     currentStreakDays: number;
     maxStreakDays: number;
     totalCheckinCount: number;
-    totalCheckinUsdt: string; // Decimal as string
-    totalAuraFromCheckin: string;
-    totalAuraFromDirect: string;
-    totalAuraFromIndirect: string;
-    totalAuraFromConsolation: string;
-    leftTeamVolume: string;
-    rightTeamVolume: string;
-    smallLegVolume: string;
+    totalCheckinUsdt: string; // atomic units as string
+    totalAuraFromCheckin: string; // atomic units as string
+    totalAuraFromDirect: string; // atomic units as string
+    totalAuraFromIndirect: string; // atomic units as string
+    totalAuraFromConsolation: string; // atomic units as string
+    leftTeamVolume: string; // atomic units as string
+    rightTeamVolume: string; // atomic units as string
+    smallLegVolume: string; // atomic units as string
     hasPurchasedNft: boolean;
     hasReferralNft: boolean;
     lastCheckinDate?: Date;
-    tokenLaunchClaimed: boolean;
 }
 
 export interface ClientCheckin {
@@ -59,8 +61,8 @@ export interface ClientCheckin {
     userId: string;
     dateKey: string;
     checkinCountToday: number;
-    payAmountUsdt: string;
-    rewardAuraAmount: string;
+    payAmountUsdt: string; // atomic units as string
+    rewardAuraAmount: string; // atomic units as string
     chainId: number;
     txHash?: string;
     txHashKey?: string;
@@ -72,9 +74,9 @@ export interface ClientCheckin {
 export interface ClientPaymentReceipt {
     id: string;
     userId: string;
-    purpose: string;
+    purpose: PaymentPurpose;
     tokenSymbol: string;
-    amount: string;
+    amount: string; // atomic units as string
     payerAddress: string;
     chainId: number;
     txHash?: string;
@@ -88,7 +90,7 @@ export interface ClientAuraLedger {
     userId: string;
     assetType: LedgerAssetType;
     sourceType: LedgerSourceType;
-    amount: string;
+    amount: string; // atomic units as string
     status: LedgerStatus;
     createdAt: Date;
 }
@@ -110,6 +112,14 @@ export interface ClientWeeklyReward {
     rewardType: RewardType;
     status: RewardStatus;
     distributionKey: string;
-    amountUsdt: string;
-    amountAura: string;
+    amountUsdt: string; // atomic units as string
+    amountAura: string; // atomic units as string
+}
+
+export interface AuthSignatureSigninInput {
+    address: string;
+    signature: string;
+    device: DEVICES | string;
+    name?: string;
+    chain?: number;
 }

@@ -16,7 +16,7 @@ import { UserSearchDto, UpdateUserStatusDto } from '../dto/user-search.dto';
 @Controller('admin/users')
 @UseGuards(JwtAuthGuard)
 export class AdminUserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Get('/')
   async search(@Query() { skip, take, search, status }: UserSearchDto) {
@@ -24,9 +24,8 @@ export class AdminUserController {
 
     if (search) {
       where.OR = [
-        { name: { contains: search } },
-        { username: { contains: search } },
-        { address: { contains: search } },
+        { walletAddress: { contains: search, mode: 'insensitive' } },
+        { inviteCode: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -59,7 +58,7 @@ export class AdminUserController {
   @Get(':id')
   async getById(@Param('id') id: string) {
     const user = await this.userService.findOne({
-      where: { id: parseInt(id) },
+      where: { id },
     });
     return this.userService.toClient(user);
   }
@@ -70,7 +69,7 @@ export class AdminUserController {
     @Body() { status }: UpdateUserStatusDto,
   ) {
     const user = await this.userService.update({
-      where: { id: parseInt(id) },
+      where: { id },
       data: { status },
     });
     return this.userService.toClient(user);

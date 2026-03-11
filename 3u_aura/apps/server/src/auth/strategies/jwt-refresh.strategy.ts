@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import { RefreshTokenService } from '../services/refresh-token.service';
-import { UserStatuses } from '3u-aura-common';
+import { UserStatus } from '3u-aura-common';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(
@@ -40,7 +40,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
     if (!token.user) return null;
 
     // 检查用户状态：只有启用状态（status = 'active'）的用户才能刷新 token
-    if (token.user.status !== UserStatuses.ACTIVE) {
+    if (token.user.status !== UserStatus.ACTIVE) {
       return null;
     }
 

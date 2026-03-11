@@ -25,6 +25,12 @@ export enum PaymentStatus {
     REFUNDED = 'REFUNDED',
 }
 
+export enum PaymentPurpose {
+    CHECKIN = 'CHECKIN',
+    NFT_PURCHASE = 'NFT_PURCHASE',
+    MANUAL = 'MANUAL',
+}
+
 export enum LedgerSourceType {
     CHECKIN = 'CHECKIN',
     DIRECT_REFERRAL = 'DIRECT_REFERRAL',
@@ -82,7 +88,6 @@ export enum RewardStatus {
 export enum ClaimType {
     MERKLE_LOTTERY = 'MERKLE_LOTTERY',
     MERKLE_RANKING = 'MERKLE_RANKING',
-    MERKLE_AURA = 'MERKLE_AURA',
     NFT_SUBSIDY = 'NFT_SUBSIDY',
     TOKEN_DIVIDEND = 'TOKEN_DIVIDEND',
     TOKEN_GENESIS = 'TOKEN_GENESIS',
@@ -114,4 +119,17 @@ export enum NftEligibilityStatus {
     MINTED = 'MINTED',
     EXPIRED = 'EXPIRED',
     REVOKED = 'REVOKED',
+}
+
+export enum SignatureScenarios {
+    SIGNIN = 'SIGNIN',
+    BIND_INVITER = 'BIND_INVITER',
+    MINT_NFT = 'MINT_NFT',
+    CLAIM_REWARD = 'CLAIM_REWARD',
+}
+
+export enum DEVICES {
+    BROWSER = 'BROWSER',
+    MOBILE = 'MOBILE',
+    OTHER = 'OTHER',
 }

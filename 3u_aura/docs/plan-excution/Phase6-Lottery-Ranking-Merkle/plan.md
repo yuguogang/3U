@@ -8,7 +8,7 @@
 - 奖项结构：一/二/三等奖 + 幸运奖
 - 未中奖用户 100 AURA 安慰奖
 - 小区增量 >= 300U 的 weekly ranking
-- 排名分配：1/2/3/4-10
+- 排名分配：top 10 固定名次比例
 - WeeklyReward / MerkleLeaf / ClaimRecord 草稿生成
 - root dry-run / publish 前置流程
 
@@ -73,24 +73,27 @@
 
 ### Milestone 2 — Ranking payout engine
 **Goal**
-- 完成 weekly small-leg 增量门槛 300U 与 1/2/3/4-10 分配
+- 完成 weekly small-leg 增量门槛 300U 与 top 10 固定名次比例分配
 
 **Affected files/modules**
 - `apps/server/src/modules/ranking/*`
 - `apps/server/src/modules/rewards/*`
 
 **Implementation notes**
+- 固定比例为 `25 / 15 / 12 / 10 / 9 / 8 / 7 / 6 / 4 / 4`
 - 明确 tie-breaker 与不足 10 人时的分配策略
+- 未被占用名次的奖金必须滚入下一周 ranking pool，不得向前平摊导致后位单人奖金反超前位
 - distributionKey 保持稳定
 
 **Risks**
 - 并列排名口径不明确
+- underfilled ranking week 的滚存口径实现错误
 
 **Verification**
 - commands:
   - `pnpm --filter server test -- ranking`
 - expected result:
-  - 奖池比例与门槛判断可复算
+  - 奖池比例、underfilled 周滚存与门槛判断可复算
 
 **Approval checkpoint**
 - yes
@@ -132,6 +135,7 @@
 - [ ] participants < 12 时不开奖并滚存
 - [ ] 未中奖用户获得 100 AURA 安慰奖
 - [ ] weekly ranking 门槛与奖池比例正确
+- [ ] ranking 不足 10 名时未占用名次奖金正确滚存
 - [ ] Merkle 草稿与 reward / claim 数据一致
 
 ## 12. Approval Request

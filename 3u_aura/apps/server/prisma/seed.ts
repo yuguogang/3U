@@ -3,7 +3,6 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 import { userSeed } from './seeds/user.seed';
-import { userSeed } from './seeds/user.seed';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -12,7 +11,6 @@ const prisma = new PrismaClient({ adapter });
 const main = async () => {
   console.log('Seeding database...');
 
-  await userSeed(prisma);
   await userSeed(prisma);
 
   console.log('Seeding complete 🌱');

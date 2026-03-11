@@ -1,5 +1,5 @@
 import { UserService } from '@/user';
-import { UserStatuses } from '3u-aura-common';
+import { UserStatus } from '3u-aura-common';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
@@ -27,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (!user) return null;
 
     // 检查用户状态：只有启用状态（status = 1）的用户才能通过验证
-    if (user.status !== UserStatuses.ACTIVE) {
+    if (user.status !== UserStatus.ACTIVE) {
       return null;
     }
 

@@ -9,6 +9,7 @@
 - direct / indirect referral reward ledger
 - UserDailyStat / UserProfile 累计更新
 - NFT 资格指标：累计签到、small-leg volume
+- 推广型 NFT 资格查询接口与 EIP712 signer payload 边界
 - 周排名所需周增量口径准备
 
 ## 3. Out of Scope
@@ -31,11 +32,14 @@
 ## 6. Target State
 - 每次签到完成后，上级链路的左右区、小区、直推/间推奖励同步更新
 - 周结算可以直接消费这些统计结果
+- 合约与 DApp 可以消费稳定的 NFT 资格查询与签名服务契约
 
 ## 7. Architecture Impact
 - `apps/server/src/modules/volume/*`
 - `apps/server/src/modules/rewards/*`
 - `apps/server/src/modules/stats/*`
+- `apps/server/src/modules/nft-eligibility/*`
+- `apps/server/src/modules/signing/*`
 - `packages/common/src/*`
 
 ## 8. Risks
@@ -43,6 +47,7 @@
 - 上卷算法与树路径不一致
 - small-leg 口径错误影响 NFT 与排名
 - 日统计与累计统计不一致
+- signer payload 与合约验签口径漂移
 
 ## 9. Milestones
 
@@ -93,25 +98,32 @@
 **Approval checkpoint**
 - yes
 
-### Milestone 3 — Qualification snapshots
+### Milestone 3 — Qualification snapshots and signer service contract
 **Goal**
-- 输出 NFT 资格和 weekly ranking 所需累计/增量指标
+- 输出 NFT 资格和 weekly ranking 所需累计/增量指标，并冻结推广型 NFT 的签名服务契约
 
 **Affected files/modules**
 - `apps/server/src/modules/stats/*`
 - `apps/server/src/modules/nft-eligibility/*`
+- `apps/server/src/modules/signing/*`
+- `packages/common/src/*`
 
 **Implementation notes**
-- 先做数据库快照与查询接口，不急于签名服务
+- signer service 只对已满足资格的地址签发 payload
+- 提前冻结 `user / nonce / chainId / expiry` 等 payload 字段
+- 资格查询与签名 payload 必须保留 dry-run / explain 能力
 
 **Risks**
 - 周增量快照口径不明导致后续 ranking 返工
+- 资格口径与 signer service 脱节导致链上 mint 失败
 
 **Verification**
 - commands:
   - `pnpm --filter server test -- qualification`
+  - `pnpm --filter server test -- nft-signature`
 - expected result:
   - 30 次签到 / 6000U / weekly small-leg 增量指标可稳定查询
+  - signer payload 稳定、重放保护边界明确
 
 **Approval checkpoint**
 - yes
@@ -125,6 +137,7 @@
 - [ ] 直推 10%、间推 5% 记账正确
 - [ ] 重算 / 重试不会重复记账
 - [ ] NFT 资格指标与排名指标可直接查询
+- [ ] NFT 签名 payload 与资格服务边界已冻结
 - [ ] 统计结果与样例用例一致
 
 ## 12. Approval Request

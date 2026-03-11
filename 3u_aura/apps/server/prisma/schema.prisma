@@ -42,6 +42,13 @@ enum PaymentStatus {
   REFUNDED
 }
 
+/// 支付用途：区分签到、NFT 购买或人工处理等资金路径
+enum PaymentPurpose {
+  CHECKIN
+  NFT_PURCHASE
+  MANUAL
+}
+
 /// 内部账本来源：发行前 AURA 奖励先记账，发行后再统一处理
 enum LedgerSourceType {
   CHECKIN
@@ -107,7 +114,6 @@ enum RewardStatus {
 enum ClaimType {
   MERKLE_LOTTERY
   MERKLE_RANKING
-  MERKLE_AURA
   NFT_SUBSIDY
   TOKEN_DIVIDEND
   TOKEN_GENESIS
@@ -184,13 +190,14 @@ model User {
   rewards            WeeklyReward[]
   claims             ClaimRecord[]
   nftHoldings        NftHolding[]
-  nftEligibilities   NftReferralEligibility[]
+  nftEligibility     NftReferralEligibility?
   merkleLeaves       MerkleLeaf[]
   paymentReceipts    PaymentReceipt[]
-  teamAncestors      TeamClosure[]            @relation("ClosureDescendant")
-  teamDescendants    TeamClosure[]            @relation("ClosureAncestor")
+  teamAncestors      TeamClosure[]           @relation("ClosureDescendant")
+  teamDescendants    TeamClosure[]           @relation("ClosureAncestor")
   nftSubsidyClaims   NftSubsidyClaim[]
   tokenGenesisLeaves TokenGenesisLeaf[]
+  refreshTokens      RefreshToken[]
 
   @@index([inviterId])
   @@index([parentId])
@@ -210,21 +217,21 @@ model UserProfile {
   maxStreakDays     Int @default(0)
 
   totalCheckinCount        Int     @default(0)
-  totalCheckinUsdt         Decimal @default(0) @db.Decimal(30, 8)
-  totalAuraFromCheckin     Decimal @default(0) @db.Decimal(30, 8)
-  totalAuraFromDirect      Decimal @default(0) @db.Decimal(30, 8)
-  totalAuraFromIndirect    Decimal @default(0) @db.Decimal(30, 8)
-  totalAuraFromConsolation Decimal @default(0) @db.Decimal(30, 8)
+  /// 所有金额统一存原子单位整数，避免链上 18 位精度对齐时丢精度
+  totalCheckinUsdt         Decimal @default(0) @db.Decimal(78, 0)
+  totalAuraFromCheckin     Decimal @default(0) @db.Decimal(78, 0)
+  totalAuraFromDirect      Decimal @default(0) @db.Decimal(78, 0)
+  totalAuraFromIndirect    Decimal @default(0) @db.Decimal(78, 0)
+  totalAuraFromConsolation Decimal @default(0) @db.Decimal(78, 0)
 
-  leftTeamVolume  Decimal @default(0) @db.Decimal(30, 8)
-  rightTeamVolume Decimal @default(0) @db.Decimal(30, 8)
-  smallLegVolume  Decimal @default(0) @db.Decimal(30, 8)
+  leftTeamVolume  Decimal @default(0) @db.Decimal(78, 0)
+  rightTeamVolume Decimal @default(0) @db.Decimal(78, 0)
+  smallLegVolume  Decimal @default(0) @db.Decimal(78, 0)
 
   hasPurchasedNft Boolean @default(false)
   hasReferralNft  Boolean @default(false)
 
-  lastCheckinDate    DateTime?
-  tokenLaunchClaimed Boolean   @default(false)
+  lastCheckinDate DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -268,8 +275,8 @@ model Checkin {
   isCountedForStreak Boolean @default(true)
 
   payToken         String  @default("USDT") @db.VarChar(16)
-  payAmountUsdt    Decimal @db.Decimal(30, 8)
-  rewardAuraAmount Decimal @db.Decimal(30, 8)
+  payAmountUsdt    Decimal @db.Decimal(78, 0)
+  rewardAuraAmount Decimal @db.Decimal(78, 0)
 
   /// 链上字段统一要求带 chainId，避免未来测试网/多链混库冲突
   chainId     Int
@@ -303,9 +310,9 @@ model PaymentReceipt {
   checkinId String?  @unique
   checkin   Checkin? @relation(fields: [checkinId], references: [id], onDelete: SetNull)
 
-  purpose     String  @db.VarChar(32) // CHECKIN / NFT_PURCHASE / MANUAL
-  tokenSymbol String  @db.VarChar(16)
-  amount      Decimal @db.Decimal(30, 8)
+  purpose     PaymentPurpose
+  tokenSymbol String         @db.VarChar(16)
+  amount      Decimal        @db.Decimal(78, 0)
 
   payerAddress    String  @db.VarChar(64)
   receiverAddress String? @db.VarChar(64)
@@ -340,15 +347,15 @@ model UserDailyStat {
   /// 同一天最多计 1 个有效签到日
   countedCheckinDays Int @default(0)
 
-  selfVolumeUsdt     Decimal @default(0) @db.Decimal(30, 8)
-  selfAuraReward     Decimal @default(0) @db.Decimal(30, 8)
-  leftVolumeUsdt     Decimal @default(0) @db.Decimal(30, 8)
-  rightVolumeUsdt    Decimal @default(0) @db.Decimal(30, 8)
-  smallLegVolumeUsdt Decimal @default(0) @db.Decimal(30, 8)
+  selfVolumeUsdt     Decimal @default(0) @db.Decimal(78, 0)
+  selfAuraReward     Decimal @default(0) @db.Decimal(78, 0)
+  leftVolumeUsdt     Decimal @default(0) @db.Decimal(78, 0)
+  rightVolumeUsdt    Decimal @default(0) @db.Decimal(78, 0)
+  smallLegVolumeUsdt Decimal @default(0) @db.Decimal(78, 0)
 
-  directReferralAura   Decimal @default(0) @db.Decimal(30, 8)
-  indirectReferralAura Decimal @default(0) @db.Decimal(30, 8)
-  consolationAura      Decimal @default(0) @db.Decimal(30, 8)
+  directReferralAura   Decimal @default(0) @db.Decimal(78, 0)
+  indirectReferralAura Decimal @default(0) @db.Decimal(78, 0)
+  consolationAura      Decimal @default(0) @db.Decimal(78, 0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -366,7 +373,7 @@ model AuraLedger {
 
   assetType  LedgerAssetType  @default(AURA)
   sourceType LedgerSourceType
-  amount     Decimal          @db.Decimal(30, 8)
+  amount     Decimal          @db.Decimal(78, 0)
 
   /// 记录账本来源，例如某次 checkin、某次排名结算、某个补单操作
   sourceRefId   String?
@@ -407,12 +414,12 @@ model WeeklyEpoch {
   participantCount     Int @default(0)
   qualifiedTicketCount Int @default(0)
 
-  lotteryPoolUsdt     Decimal @default(0) @db.Decimal(30, 8)
-  rankingPoolUsdt     Decimal @default(0) @db.Decimal(30, 8)
-  consolationPoolAura Decimal @default(0) @db.Decimal(30, 8)
-  nftSubsidyPoolUsdt  Decimal @default(0) @db.Decimal(30, 8)
-  dividendPoolUsdt    Decimal @default(0) @db.Decimal(30, 8)
-  rolloverUsdt        Decimal @default(0) @db.Decimal(30, 8)
+  lotteryPoolUsdt     Decimal @default(0) @db.Decimal(78, 0)
+  rankingPoolUsdt     Decimal @default(0) @db.Decimal(78, 0)
+  consolationPoolAura Decimal @default(0) @db.Decimal(78, 0)
+  nftSubsidyPoolUsdt  Decimal @default(0) @db.Decimal(78, 0)
+  dividendPoolUsdt    Decimal @default(0) @db.Decimal(78, 0)
+  rolloverUsdt        Decimal @default(0) @db.Decimal(78, 0)
 
   merkleRoot    String? @db.VarChar(128)
   merkleTreeUri String?
@@ -480,8 +487,8 @@ model WeeklyReward {
   distributionKey String @default("DEFAULT") @db.VarChar(64)
 
   rank       Int?
-  amountUsdt Decimal @default(0) @db.Decimal(30, 8)
-  amountAura Decimal @default(0) @db.Decimal(30, 8)
+  amountUsdt Decimal @default(0) @db.Decimal(78, 0)
+  amountAura Decimal @default(0) @db.Decimal(78, 0)
 
   merkleIndex    Int?
   merkleLeafHash String? @db.VarChar(128)
@@ -493,6 +500,7 @@ model WeeklyReward {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  merkleLeaf   MerkleLeaf?
   claimRecords ClaimRecord[]
 
   @@unique([epochId, userId, rewardType, distributionKey])
@@ -518,7 +526,7 @@ model ClaimRecord {
   status    ClaimStatus @default(PENDING)
 
   tokenSymbol String  @db.VarChar(16)
-  amount      Decimal @db.Decimal(30, 8)
+  amount      Decimal @db.Decimal(78, 0)
 
   merkleIndex     Int?
   merkleProofJson Json?
@@ -559,7 +567,7 @@ model NftHolding {
   mintTxHash    String? @db.VarChar(128)
   mintTxHashKey String? @unique @db.VarChar(160)
 
-  purchasedPriceUsdt Decimal?  @db.Decimal(30, 8)
+  purchasedPriceUsdt Decimal?  @db.Decimal(78, 0)
   mintedAt           DateTime
   burnedAt           DateTime?
   createdAt          DateTime  @default(now())
@@ -572,21 +580,22 @@ model NftHolding {
   @@index([status])
 }
 
-/// 推广型 NFT 资格表
-/// 作用：记录用户是否满足“签到天数 + 小区业绩”条件，以及签名、过期、mint 状态
+/// 推广型 NFT 当前资格表
+/// 作用：记录用户当前是否满足“累计签到次数 + 小区累计业绩”条件，以及签名、过期、mint 状态
 model NftReferralEligibility {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  /// 改为必填，避免 nullable 复合 unique 带来的约束失效
-  epochId String
-  epoch   WeeklyEpoch @relation(fields: [epochId], references: [id], onDelete: Cascade)
+  /// 当前资格最近一次由哪个周期快照/评估结果刷新，可为空
+  snapshotEpochId String?
+  snapshotEpoch   WeeklyEpoch? @relation(fields: [snapshotEpochId], references: [id], onDelete: SetNull)
 
-  personalCheckinDays  Int     @default(0)
-  smallLegVolumeUsdt   Decimal @default(0) @db.Decimal(30, 8)
-  requiredCheckinDays  Int     @default(7)
-  requiredSmallLegUsdt Decimal @default(3000) @db.Decimal(30, 8)
+  personalCheckinCount Int     @default(0)
+  smallLegVolumeUsdt   Decimal @default(0) @db.Decimal(78, 0)
+  requiredCheckinCount Int     @default(30)
+  /// 6000 USDT，按 6 位原子单位存储
+  requiredSmallLegUsdt Decimal @default(6000000000) @db.Decimal(78, 0)
 
   status NftEligibilityStatus @default(INELIGIBLE)
 
@@ -605,9 +614,9 @@ model NftReferralEligibility {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, epochId])
+  @@unique([userId])
   @@index([userId, status])
-  @@index([epochId])
+  @@index([snapshotEpochId])
 }
 
 /// Merkle 叶子表
@@ -620,9 +629,12 @@ model MerkleLeaf {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  rewardId String       @unique
+  reward   WeeklyReward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+
   rewardType  RewardType
   tokenSymbol String     @db.VarChar(16)
-  amount      Decimal    @db.Decimal(30, 8)
+  amount      Decimal    @db.Decimal(78, 0)
 
   leafIndex   Int
   leafHash    String @db.VarChar(128)
@@ -649,7 +661,8 @@ model NftSubsidyClaim {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  amountUsdt Decimal     @default(30) @db.Decimal(30, 8)
+  /// 30 USDT，按 6 位原子单位存储
+  amountUsdt Decimal     @default(30000000) @db.Decimal(78, 0)
   status     ClaimStatus @default(PENDING)
 
   contractAddress String? @db.VarChar(64)
@@ -677,7 +690,7 @@ model TokenGenesisRoot {
 
   root            String  @unique @db.VarChar(128)
   totalUsers      Int     @default(0)
-  totalAuraAmount Decimal @default(0) @db.Decimal(30, 8)
+  totalAuraAmount Decimal @default(0) @db.Decimal(78, 0)
 
   snapshotAt    DateTime
   publishedAt   DateTime?
@@ -702,7 +715,7 @@ model TokenGenesisLeaf {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  totalAuraAmount Decimal @db.Decimal(30, 8)
+  totalAuraAmount Decimal @db.Decimal(78, 0)
   leafIndex       Int
   leafHash        String  @db.VarChar(128)
   proofJson       Json?
@@ -739,4 +752,18 @@ model AdminAuditLog {
 
   @@index([action])
   @@index([createdAt])
+}
+
+/// 刷新令牌表
+/// 作用：保存 JWT 刷新令牌，支持多设备登录与远程登出
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  device    String
+  expiredAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

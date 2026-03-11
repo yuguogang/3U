@@ -53,13 +53,15 @@
 - 树结构与体量口径不稳定时进入周结算，后续返工巨大
 - 过早进入 Token 交易税逻辑，扩散风险面
 - server 与 contract 的 leaf 编码、signature payload 漂移
+- 推广型 NFT 签名服务若未提前归属，会卡住 contracts / dapp 联调
 - 发行切换流程若未单独规划，容易出现奖励继续发放或无法 claim
+- launch transition 与 token contract 基线若未联合冻结，会导致 Phase 10 / 11 依赖错位
 
 ## 9. Milestones
 
 ### Milestone 1 — Promotion backend foundation
 **Goal**
-- 完成签到、树结构、上卷体量、周结算数据管道
+- 完成签到、树结构、上卷体量、周结算数据管道，以及 NFT 资格 / 签名服务边界
 
 **Affected files/modules**
 - `apps/server`
@@ -67,9 +69,11 @@
 
 **Implementation notes**
 - 先事实来源，再链上入口，再 UI
+- 资格查询与 EIP712 signer payload 先于 contract / dapp 冻结
 
 **Risks**
 - server 口径若不稳，会连带影响 contracts / dapp
+- 签名 payload 漂移会直接导致 mint 失败
 
 **Verification**
 - commands:
@@ -140,9 +144,11 @@
 
 **Implementation notes**
 - 必须等推广阶段稳定后再推进
+- `Phase10` 与 `Phase11` 需联合评审；最终切换前必须冻结 launch-ready token / claim interface
 
 **Risks**
 - 状态切换错误直接影响资金与资格
+- token / claim 接口未冻结会导致切换不可验证
 
 **Verification**
 - commands:

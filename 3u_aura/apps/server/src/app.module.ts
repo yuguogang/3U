@@ -19,7 +19,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 import { AuthModule } from './auth';
 import { UserModule } from './user';
-import { AssetModule } from './asset/asset.module';
 
 @Module({
   imports: [
@@ -67,7 +66,6 @@ import { AssetModule } from './asset/asset.module';
     // 业务模块
     AuthModule,
     UserModule,
-    AssetModule,
   ],
   controllers: [AppController],
   providers: [

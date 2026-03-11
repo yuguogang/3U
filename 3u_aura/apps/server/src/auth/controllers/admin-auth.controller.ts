@@ -3,7 +3,7 @@ import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { DEVICES } from '3u-aura-common';
 import { AuthService } from '../services/auth.service';
-import { AdminLoginDto } from '../dto/admin-login.dto';
+import { SignatureSigninDto } from '../dto/signature-signin.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { UserService } from '@/user';
@@ -16,21 +16,23 @@ export class AdminAuthController {
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
     private readonly userService: UserService,
-  ) {}
+  ) { }
 
   @Post('login')
   async login(
-    @Body() { username, password }: AdminLoginDto,
+    @Body() payload: SignatureSigninDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const user = await this.authService.signinByPassword(username, password);
+    const user = await this.authService.signinBySignature(payload);
+
+    // TODO: 实际项目中应检查该地址是否有管理员权限
 
     const {
       accessToken,
       accessTokenExpired,
       refreshAccessToken,
       refreshAccessTokenExpired,
-    } = await this.authService.createTokensForUser(user, DEVICES.BROWSER);
+    } = await this.authService.createTokensForUser(user, payload.device || DEVICES.BROWSER);
 
     this.setRefreshCookie(res, {
       refreshAccessToken,

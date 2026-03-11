@@ -1,14 +1,13 @@
 import { Prisma, DbService, type User } from '@/db';
 import type { ClientUser } from '3u-aura-common';
 
-import { Injectable, Logger } from '@nestjs/common';
-import { compareSync, hashSync } from 'bcrypt';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
 
-  constructor(private readonly db: DbService) {}
+  constructor(private readonly db: DbService) { }
 
   async count(args?: Prisma.UserCountArgs) {
     const data = await this.db.user.count(args);
@@ -17,20 +16,7 @@ export class UserService {
   }
 
   async create(args: Prisma.UserCreateArgs) {
-    return this.db.$transaction(async () => {
-      // 准备用户数据，添加默认的 User 角色
-      const userData: Prisma.UserCreateInput = {
-        ...args.data,
-        password: this.hashPassword(args.data.password),
-      };
-
-      const updatedUser = await this.db.user.create({
-        ...args,
-        data: userData,
-      });
-
-      return updatedUser;
-    });
+    return this.db.user.create(args);
   }
 
   async findMany<T extends Prisma.UserFindManyArgs>(
@@ -44,10 +30,19 @@ export class UserService {
   ): Promise<Prisma.UserGetPayload<T>> {
     const { exception = true, ...rest } = args;
 
-    return this.db.user[exception ? 'findFirstOrThrow' : 'findFirst'](
+    const user = await this.db.user[exception ? 'findFirstOrThrow' : 'findFirst'](
       rest as any,
-    ) as any;
+    );
+
+    return user as any;
   }
+
+  async findById(id: string, exception = true): Promise<User | null> {
+    return this.db.user[exception ? 'findFirstOrThrow' : 'findFirst']({
+      where: { id },
+    }) as any;
+  }
+
   async update(args: Prisma.UserUpdateArgs) {
     const data = await this.db.user.update(args);
     return data;
@@ -57,27 +52,20 @@ export class UserService {
     user,
     exception = true,
   }: {
-    user: number | User;
+    user: string | User;
     exception?: boolean;
   }) {
-    return typeof user === 'number'
-      ? await this.findOne({ where: { id: user }, exception })
-      : user;
+    if (typeof user === 'string') {
+      return await this.findById(user, exception);
+    }
+    return user;
   }
 
   toClient(data?: User) {
     if (data) {
-      const { password: _password, ...user } = data as any;
+      const { ...user } = data as any;
       return user as ClientUser;
     }
     return data;
-  }
-
-  hashPassword(password: string) {
-    return hashSync(password, 10);
-  }
-
-  verifyPassword(password: string, hashedPassword: string) {
-    return compareSync(password, hashedPassword);
   }
 }
