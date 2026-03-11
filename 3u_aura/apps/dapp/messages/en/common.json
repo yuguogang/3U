@@ -1,0 +1,12 @@
+{
+  "nav": {
+    "home": "Home",
+    "swap": "Swap",
+    "products": "Subscribe",
+    "loan": "Loan",
+    "redeem": "Redeem",
+    "share": "Share",
+    "manage": "Manage",
+    "binding": "Binding"
+  }
+}

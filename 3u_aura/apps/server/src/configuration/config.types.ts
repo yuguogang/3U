@@ -1,0 +1,41 @@
+import type { RedisClientOptions } from '@keyv/redis';
+import type {
+  CorsOptions,
+  CorsOptionsDelegate,
+} from '@nestjs/common/interfaces/external/cors-options.interface';
+import type { JwtModuleOptions, JwtSignOptions } from '@nestjs/jwt';
+import type { ThrottlerOptions } from '@nestjs/throttler';
+import type { QueueOptions } from 'bullmq';
+
+import { RedisOptions } from 'ioredis';
+import * as pg from 'pg';
+
+export type ConfigOptions = {
+  api: {
+    prefix?: string;
+  };
+  auth: {
+    jwt: JwtModuleOptions & {
+      refresh: {
+        secret?: string;
+        signOptions?: JwtSignOptions;
+      };
+    };
+  };
+  cache: RedisClientOptions;
+  cors: CorsOptions | CorsOptionsDelegate<any>;
+  db: pg.PoolConfig;
+  host: string;
+  bull: QueueOptions;
+  port: number;
+  prod: boolean;
+  throttler: {
+    redis?: RedisOptions | string;
+    throttlers: Array<ThrottlerOptions>;
+  };
+  dataSync: {
+    startDate: string;
+    timeoutHours: number;
+    coreSymbols: string[];
+  };
+};

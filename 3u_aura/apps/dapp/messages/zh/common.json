@@ -1,0 +1,12 @@
+{
+  "nav": {
+    "home": "首页",
+    "swap": "闪兑",
+    "products": "申购",
+    "loan": "借贷",
+    "redeem": "赎回",
+    "share": "分享",
+    "manage": "管理",
+    "binding": "绑定"
+  }
+}

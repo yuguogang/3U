@@ -1,0 +1,230 @@
+# 3U AURA Project AI Rules & Standards
+
+## Project Context
+This is a Monorepo for the "3U AURA" Web3 protocol.
+
+- **Frontend**: `apps/dapp` (Next.js 16, Wagmi, TailwindCSS)
+- **Backend**: `apps/server` (NestJS 11, Prisma, BullMQ, Redis)
+- **Smart Contracts**: `apps/contracts` (Foundry, Solidity)
+- **Shared Models**: `packages/common` (Types, Zod schemas)
+- **Key Business**: Binary tree volume calculation, daily check-ins ($3 USDT), AURA token rewards, Founder NFT (ERC721A), Lottery system.
+
+## Core Engineering Goals
+- Keep the codebase auditable, testable, and maintainable.
+- Preserve clear boundaries between UI, business logic, persistence, and on-chain logic.
+- Ensure financial and reward-related workflows are deterministic, idempotent, and traceable.
+- Favor repeatable tooling and scripted verification over manual ad hoc debugging.
+
+## Architecture Boundaries
+1. **Controllers must stay thin**
+   - Controllers only handle request parsing, authentication/authorization, validation, and response mapping.
+   - Controllers must not contain business rules, settlement logic, tree traversal logic, reward calculations, or queue orchestration logic.
+
+2. **Business logic belongs in Services / Engines**
+   - Binary tree calculation, lottery qualification, settlement logic, NFT eligibility, and reward distribution must live in Services or dedicated Engines/Domain modules.
+   - Complex business logic should be extracted into framework-agnostic modules whenever possible.
+
+3. **Repositories / Prisma access layers must stay persistence-focused**
+   - Prisma queries and repository classes should handle persistence and query composition only.
+   - Do not hide business branching or business policy inside database query code.
+
+4. **Shared contracts must come from `packages/common`**
+   - Shared enums, Zod schemas, queue payloads, API request/response shapes, and domain constants must come from `packages/common`.
+   - Do not redefine equivalent shared DTOs or enums separately in frontend/backend unless there is a strong reason and explicit approval.
+
+## Coding Standards
+
+### NestJS
+1. Use `nestjs-zod` for validation.
+2. Keep business logic in Services/Engines, not Controllers.
+3. Prefer explicit module boundaries:
+   - `application` orchestration in Services
+   - `domain` logic in Engines / pure modules
+   - `infrastructure` logic in Prisma / queue / adapters
+4. Financial or settlement-related services must be written with idempotency and auditability in mind.
+
+### Prisma
+1. All financial operations (e.g. deduct USDT and grant AURA) **must** run inside a Prisma `$transaction`.
+2. No external RPC calls, HTTP calls, or long-running computations inside Prisma transactions.
+3. All reward/payment/claim related writes must have an **idempotency strategy**.
+4. All chain-related records should persist:
+   - `chainId`
+   - raw `txHash`
+   - a normalized unique key when applicable
+5. Schema changes affecting financial tables, tree relations, eligibility, or claim logic require extra review.
+
+### BullMQ / Async Jobs
+1. BullMQ payloads must use shared Zod schemas from `packages/common`.
+2. Jobs must be **idempotent**, **retry-safe**, and **resumable** where practical.
+3. Queue processors should orchestrate Services; they should not contain heavy business policy.
+4. Settlement, distribution, and root-generation jobs must persist progress and verification results.
+
+### Smart Contracts
+1. Prioritize `OpenZeppelin` contracts and audited patterns.
+2. Focus on gas optimization only after correctness and safety are clear.
+3. Use ERC721A where appropriate and safe.
+4. Write NatSpec comments for all public/external functions and important state variables.
+5. All signature-based or claim-related logic must explicitly test:
+   - replay protection
+   - nonce handling
+   - chainId/domain mismatch
+   - expired signatures
+   - unauthorized callers
+6. Contract changes affecting storage layout, mint rules, claim rules, or fee routing require explicit review.
+
+### Next.js
+1. Separate Wagmi/Ethers/Web3 hooks from UI components.
+2. Use `use client` strictly where needed.
+3. UI components should not directly contain contract call assembly logic.
+4. Prefer:
+   - `hooks/` for chain interaction
+   - `services/` or adapters for contract-specific logic
+   - presentational components for rendering only
+5. Do not mix wallet state, business logic, formatting, and UI rendering inside a single component unless the scope is truly trivial.
+
+## Testing Rules
+1. Critical business logic must have unit tests:
+   - binary tree volume calculation
+   - lottery qualification
+   - weekly settlement
+   - NFT eligibility
+   - reward distribution
+2. Financial workflows must have integration tests covering:
+   - happy path
+   - duplicate / retry path
+   - failure / rollback path
+3. Smart contracts must use `forge test` and include:
+   - happy path tests
+   - revert path tests
+   - access control tests
+   - event emission checks
+   - replay / edge case tests
+4. Frontend should include at least smoke coverage for critical user flows:
+   - connect wallet
+   - daily check-in
+   - claim
+   - NFT mint / purchase flow
+5. No business-critical feature is considered complete without tests for success and failure/retry behavior.
+
+## Financial Safety Rules
+1. All balance, reward, claim, and payment-related mutations must be transactional, idempotent, and auditable.
+2. Every financial side effect must have:
+   - a unique business key or idempotency key
+   - an audit trail
+   - clear status transitions
+3. Business states must distinguish at least where relevant:
+   - pending
+   - confirmed
+   - failed
+   - finalized / claimed
+4. Never rely on a single in-memory step for settlement-critical workflows.
+5. If money, rewards, claimability, or eligibility changes, the operation must be traceable afterward.
+
+## Database & Schema Governance
+1. All Prisma schema changes must be accompanied by migration files.
+2. Breaking schema changes must include compatibility notes and, if needed, a data migration plan.
+3. Changes to enums/shared models require checking compatibility with:
+   - backend DTOs
+   - frontend consumption
+   - queue payloads
+   - contract integration logic
+4. High-risk tables require extra care:
+   - ledger
+   - claim
+   - payment receipt
+   - settlement / epoch
+   - user referral tree
+   - NFT eligibility
+
+## Debugging Workflow (Critical)
+1. Do **not** run interactive commands like `docker exec -it ...` that may hang or require special permissions.
+2. For database reading/writing during development, prefer:
+   - Prisma Studio (`npx prisma studio`)
+   - local scripts with Prisma Client
+3. For Smart Contracts, rely on:
+   - `forge test`
+   - Foundry fork tests
+   - deterministic scripts
+   rather than hasty testnet deployments.
+4. Prefer reproducible commands and package scripts over manual debugging.
+5. Verification steps must be recordable and repeatable.
+
+## Verification & Quality Gates
+For every non-trivial change, the following should pass before the task is considered complete:
+
+- lint
+- typecheck
+- relevant tests
+- build for affected apps/packages
+- updated `execution.md` with evidence of verification
+
+A change is not complete until code, tests, and execution logs are all updated.
+
+## Agentic Workflow: Plan-Approval-Execution (PAE)
+
+### 1. Path Strategy
+Root directory for all logs is:
+
+`docs/plan-excution/`
+
+### 2. Hierarchy
+Use nested directories for complex tasks to mirror the architecture, for example:
+
+`docs/plan-excution/Phase2-Contracts/AURA-FounderNFT/`
+
+### 3. Core Files
+Every task directory must contain:
+
+- `plan.md`: Technical strategy, requirements, and step-by-step task breakdown.
+- `execution.md`: Journal of implementation, shell command outputs, verification results, and completion notes.
+
+### 4. Task Classification
+- **Minor**: Small fix or localized refactor. Can use a lighter plan if risk is low.
+- **Major**: Multi-file feature or structural change. Full PAE required.
+- **Critical**: Any task involving funds, claims, settlement, permissions, contracts, eligibility, or schema-risk areas. Full PAE plus explicit review checklist required.
+
+### 5. The Cycle
+#### Planning Phase
+- Create the task directory and `plan.md`.
+- Document technical strategy, requirements, risks, and execution steps.
+- Present the plan to the user.
+
+#### Approval
+- Do **not** proceed to implementation until the user has reviewed and approved the `plan.md`.
+
+#### Execution Phase
+- After approval, implement changes.
+- Append progress, command outputs, and manual/automated test results to `execution.md`.
+- Every significant code modification must be reflected in `execution.md`.
+
+#### Completion Phase
+- Update `execution.md` with final verification, summary of delivered work, and recommended next steps.
+- If tests were skipped, state exactly what was skipped and why.
+
+### 6. Review Checklist
+Before requesting approval for completion, verify:
+- architecture boundaries are respected
+- shared models remain consistent
+- transaction boundaries are safe
+- idempotency is preserved where needed
+- tests cover happy path and failure/retry path
+- execution logs reflect the real work performed
+
+### 7. Consistency Rule
+Every significant code modification must be reflected in the corresponding `execution.md` of that phase.
+
+## Recommended Standard Verification Commands
+Use project scripts where possible, for example:
+
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm test:server`
+- `pnpm test:dapp`
+- `pnpm test:contracts`
+- `pnpm build`
+
+Record the actually executed commands and high-level results in `execution.md`.
+
+## Final Principle
+Prefer explicit structure over convenience, deterministic workflows over ad hoc fixes, and traceable implementation over hidden complexity.

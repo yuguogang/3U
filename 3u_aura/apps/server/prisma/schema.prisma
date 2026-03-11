@@ -1,0 +1,742 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+generator json {
+  provider = "prisma-json-types-generator"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// 团队挂载位置：用于二叉推荐树的左右区结构
+enum TeamPosition {
+  LEFT
+  RIGHT
+}
+
+/// 用户状态：控制账户是否可继续参与业务
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+/// 签到业务状态：用于追踪签到业务生命周期
+enum CheckinStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  CANCELLED
+}
+
+/// 支付凭证状态：独立于签到状态，便于后续对账、补单、退款
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  CANCELLED
+  MISMATCHED
+  REFUNDED
+}
+
+/// 内部账本来源：发行前 AURA 奖励先记账，发行后再统一处理
+enum LedgerSourceType {
+  CHECKIN
+  DIRECT_REFERRAL
+  INDIRECT_REFERRAL
+  CONSOLATION
+  MANUAL_ADJUSTMENT
+  TOKEN_GENESIS_CLAIM
+}
+
+/// 账本资产类型：当前主要用于 AURA / USDT 两类
+enum LedgerAssetType {
+  AURA
+  USDT
+}
+
+/// 账本状态：区分已确认、可领取、已领取等阶段
+enum LedgerStatus {
+  PENDING
+  CONFIRMED
+  CLAIMABLE
+  CLAIMED
+  VOIDED
+}
+
+/// 周期类型：推广周结算、NFT 补贴周期、代币分红周期
+enum EpochType {
+  WEEKLY_PROMOTION
+  NFT_SUBSIDY
+  TOKEN_DIVIDEND
+}
+
+/// 周期状态：控制一周结算从开放到 root 发布再到结算完成的生命周期
+enum EpochStatus {
+  PENDING
+  OPEN
+  CALCULATING
+  ROOT_POSTED
+  SETTLED
+  CANCELLED
+}
+
+/// 奖励类型：每周抽奖、排名、安慰奖、NFT 补贴、代币分红等
+enum RewardType {
+  LOTTERY_USDT
+  RANKING_USDT
+  CONSOLATION_AURA
+  NFT_WEEKLY_USDT
+  TOKEN_DIVIDEND_USDT
+  MANUAL
+}
+
+/// 奖励状态：用于奖励记录本身的发放与领取状态
+enum RewardStatus {
+  PENDING
+  CLAIMABLE
+  CLAIMED
+  EXPIRED
+  VOIDED
+}
+
+/// 领取类型：用于区分是 merkle claim、NFT 补贴 claim 还是分红 claim
+enum ClaimType {
+  MERKLE_LOTTERY
+  MERKLE_RANKING
+  MERKLE_AURA
+  NFT_SUBSIDY
+  TOKEN_DIVIDEND
+  TOKEN_GENESIS
+}
+
+/// 领取状态：记录 claim 请求与链上执行结果
+enum ClaimStatus {
+  PENDING
+  CLAIMABLE
+  CLAIMED
+  FAILED
+  VOIDED
+}
+
+/// NFT 类型：购买型 / 推广型
+enum NftType {
+  PURCHASED
+  REFERRAL
+}
+
+/// NFT 状态：有效、销毁、锁定
+enum NftStatus {
+  ACTIVE
+  BURNED
+  LOCKED
+}
+
+/// 推广型 NFT 资格状态：从不满足到可签名、已 mint
+enum NftEligibilityStatus {
+  INELIGIBLE
+  ELIGIBLE
+  SIGNED
+  MINTED
+  EXPIRED
+  REVOKED
+}
+
+/// 用户主表
+/// 作用：保存钱包地址、邀请关系、二叉树父子关系、推荐 nonce 等核心身份信息
+model User {
+  id            String     @id @default(cuid())
+  walletAddress String     @unique @db.VarChar(64)
+  inviteCode    String?    @unique @db.VarChar(32)
+  status        UserStatus @default(ACTIVE)
+
+  inviterId String?
+  inviter   User?   @relation("UserInviter", fields: [inviterId], references: [id], onDelete: SetNull)
+  invitees  User[]  @relation("UserInviter")
+
+  /// 二叉树上级
+  parentId String?
+  parent   User?   @relation("TeamParent", fields: [parentId], references: [id], onDelete: SetNull)
+  children User[]  @relation("TeamParent")
+
+  /// 当前用户挂在父节点的 LEFT / RIGHT
+  teamPosition TeamPosition?
+
+  /// 由应用层生成，例如 `${parentId}:LEFT`；用于强约束“同一父节点同一侧只能一个人”
+  /// 根节点为空
+  placementKey String? @unique @db.VarChar(128)
+
+  /// EIP712 / 推广型 NFT 签名相关递增 nonce，防止重放
+  referralNonce Int @default(0)
+
+  lastSeenAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  profile            UserProfile?
+  checkins           Checkin[]
+  dailyStats         UserDailyStat[]
+  auraLedgers        AuraLedger[]
+  lotteryTickets     LotteryTicket[]
+  rewards            WeeklyReward[]
+  claims             ClaimRecord[]
+  nftHoldings        NftHolding[]
+  nftEligibilities   NftReferralEligibility[]
+  merkleLeaves       MerkleLeaf[]
+  paymentReceipts    PaymentReceipt[]
+  teamAncestors      TeamClosure[]            @relation("ClosureDescendant")
+  teamDescendants    TeamClosure[]            @relation("ClosureAncestor")
+  nftSubsidyClaims   NftSubsidyClaim[]
+  tokenGenesisLeaves TokenGenesisLeaf[]
+
+  @@index([inviterId])
+  @@index([parentId])
+  @@index([teamPosition])
+  @@index([status])
+}
+
+/// 用户画像与累计统计表
+/// 作用：缓存用户累计签到、累计交易量、累计奖励、左右区与小区业绩等高频查询字段
+model UserProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  totalCheckinDays  Int @default(0)
+  currentStreakDays Int @default(0)
+  maxStreakDays     Int @default(0)
+
+  totalCheckinCount        Int     @default(0)
+  totalCheckinUsdt         Decimal @default(0) @db.Decimal(30, 8)
+  totalAuraFromCheckin     Decimal @default(0) @db.Decimal(30, 8)
+  totalAuraFromDirect      Decimal @default(0) @db.Decimal(30, 8)
+  totalAuraFromIndirect    Decimal @default(0) @db.Decimal(30, 8)
+  totalAuraFromConsolation Decimal @default(0) @db.Decimal(30, 8)
+
+  leftTeamVolume  Decimal @default(0) @db.Decimal(30, 8)
+  rightTeamVolume Decimal @default(0) @db.Decimal(30, 8)
+  smallLegVolume  Decimal @default(0) @db.Decimal(30, 8)
+
+  hasPurchasedNft Boolean @default(false)
+  hasReferralNft  Boolean @default(false)
+
+  lastCheckinDate    DateTime?
+  tokenLaunchClaimed Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// 团队闭包表
+/// 作用：加速整棵推荐树 / 某节点全部上级或下级的查询，避免左右区累计统计越来越难算
+model TeamClosure {
+  id String @id @default(cuid())
+
+  ancestorId String
+  ancestor   User   @relation("ClosureAncestor", fields: [ancestorId], references: [id], onDelete: Cascade)
+
+  descendantId String
+  descendant   User   @relation("ClosureDescendant", fields: [descendantId], references: [id], onDelete: Cascade)
+
+  /// 深度：0 表示自己到自己，1 表示直连父子，2 表示祖孙，以此类推
+  depth Int
+
+  createdAt DateTime @default(now())
+
+  @@unique([ancestorId, descendantId])
+  @@index([ancestorId, depth])
+  @@index([descendantId, depth])
+}
+
+/// 签到记录表
+/// 作用：记录每一次签到业务请求；支持同一天多次签到，但 streak 只计一次
+model Checkin {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// 自然日键，例如 2026-03-11
+  dateKey String @db.VarChar(16)
+
+  /// 同一天内第几次签到，从 1 开始递增
+  checkinCountToday Int @default(1)
+
+  /// 同一天只允许一笔计入连续签到
+  isCountedForStreak Boolean @default(true)
+
+  payToken         String  @default("USDT") @db.VarChar(16)
+  payAmountUsdt    Decimal @db.Decimal(30, 8)
+  rewardAuraAmount Decimal @db.Decimal(30, 8)
+
+  /// 链上字段统一要求带 chainId，避免未来测试网/多链混库冲突
+  chainId     Int
+  txHash      String? @db.VarChar(128)
+  txHashKey   String? @unique @db.VarChar(160)
+  blockNumber BigInt?
+
+  status        CheckinStatus @default(PENDING)
+  failureReason String?
+  confirmedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ledgers        AuraLedger[]
+  paymentReceipt PaymentReceipt?
+
+  @@unique([userId, dateKey, checkinCountToday])
+  @@index([userId, dateKey])
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// 支付凭证表
+/// 作用：把链上 USDT 支付事件与签到业务状态拆开，方便对账、补单、失败重试
+model PaymentReceipt {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  checkinId String?  @unique
+  checkin   Checkin? @relation(fields: [checkinId], references: [id], onDelete: SetNull)
+
+  purpose     String  @db.VarChar(32) // CHECKIN / NFT_PURCHASE / MANUAL
+  tokenSymbol String  @db.VarChar(16)
+  amount      Decimal @db.Decimal(30, 8)
+
+  payerAddress    String  @db.VarChar(64)
+  receiverAddress String? @db.VarChar(64)
+
+  chainId     Int
+  txHash      String? @db.VarChar(128)
+  txHashKey   String? @unique @db.VarChar(160)
+  blockNumber BigInt?
+
+  status        PaymentStatus @default(PENDING)
+  failureReason String?
+  confirmedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, purpose])
+  @@index([status])
+}
+
+/// 用户日统计表
+/// 作用：按天汇总签到次数、自身交易量、左右区业绩、直推/间推/安慰奖等，便于日报与周结算
+model UserDailyStat {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  dateKey String @db.VarChar(16)
+
+  checkinTimes Int @default(0)
+
+  /// 同一天最多计 1 个有效签到日
+  countedCheckinDays Int @default(0)
+
+  selfVolumeUsdt     Decimal @default(0) @db.Decimal(30, 8)
+  selfAuraReward     Decimal @default(0) @db.Decimal(30, 8)
+  leftVolumeUsdt     Decimal @default(0) @db.Decimal(30, 8)
+  rightVolumeUsdt    Decimal @default(0) @db.Decimal(30, 8)
+  smallLegVolumeUsdt Decimal @default(0) @db.Decimal(30, 8)
+
+  directReferralAura   Decimal @default(0) @db.Decimal(30, 8)
+  indirectReferralAura Decimal @default(0) @db.Decimal(30, 8)
+  consolationAura      Decimal @default(0) @db.Decimal(30, 8)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, dateKey])
+  @@index([dateKey])
+}
+
+/// AURA / USDT 内部账本表
+/// 作用：承接发行前的签到奖励、推荐奖励、安慰奖，以及发行后的统一 claim 映射
+model AuraLedger {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  assetType  LedgerAssetType  @default(AURA)
+  sourceType LedgerSourceType
+  amount     Decimal          @db.Decimal(30, 8)
+
+  /// 记录账本来源，例如某次 checkin、某次排名结算、某个补单操作
+  sourceRefId   String?
+  sourceRefType String? @db.VarChar(64)
+
+  epochId String?
+  epoch   WeeklyEpoch? @relation(fields: [epochId], references: [id], onDelete: SetNull)
+
+  status        LedgerStatus @default(CONFIRMED)
+  claimRecordId String?
+  claimRecord   ClaimRecord? @relation(fields: [claimRecordId], references: [id], onDelete: SetNull)
+
+  checkinId String?
+  checkin   Checkin? @relation(fields: [checkinId], references: [id], onDelete: SetNull)
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, sourceType])
+  @@index([epochId])
+  @@index([status])
+  @@index([sourceRefId, sourceRefType])
+}
+
+/// 周结算周期表
+/// 作用：定义每周推广周期 / NFT 补贴周期 / 分红周期，并保存 root、奖池与结算状态
+model WeeklyEpoch {
+  id        String      @id @default(cuid())
+  epochNo   Int
+  epochType EpochType   @default(WEEKLY_PROMOTION)
+  status    EpochStatus @default(PENDING)
+
+  startAt    DateTime
+  endAt      DateTime
+  snapshotAt DateTime?
+
+  participantCount     Int @default(0)
+  qualifiedTicketCount Int @default(0)
+
+  lotteryPoolUsdt     Decimal @default(0) @db.Decimal(30, 8)
+  rankingPoolUsdt     Decimal @default(0) @db.Decimal(30, 8)
+  consolationPoolAura Decimal @default(0) @db.Decimal(30, 8)
+  nftSubsidyPoolUsdt  Decimal @default(0) @db.Decimal(30, 8)
+  dividendPoolUsdt    Decimal @default(0) @db.Decimal(30, 8)
+  rolloverUsdt        Decimal @default(0) @db.Decimal(30, 8)
+
+  merkleRoot    String? @db.VarChar(128)
+  merkleTreeUri String?
+  rewardJsonUri String?
+
+  calculationRemark String?
+  settledAt         DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lotteryTickets    LotteryTicket[]
+  rewards           WeeklyReward[]
+  claims            ClaimRecord[]
+  merkleLeaves      MerkleLeaf[]
+  auraLedgers       AuraLedger[]
+  nftEligibilities  NftReferralEligibility[]
+  nftSubsidyClaims  NftSubsidyClaim[]
+  tokenGenesisRoots TokenGenesisRoot[]
+
+  /// 避免不同周期类型之间 epochNo 互相冲突
+  @@unique([epochType, epochNo])
+  @@index([epochType, status])
+  @@index([startAt, endAt])
+}
+
+/// 抽奖门票表
+/// 作用：记录某个用户在某一周是否具备抽奖资格以及门票数量
+model LotteryTicket {
+  id      String      @id @default(cuid())
+  epochId String
+  epoch   WeeklyEpoch @relation(fields: [epochId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  streakDays  Int     @default(0)
+  isEligible  Boolean @default(false)
+  ticketCount Int     @default(0)
+
+  qualifiedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([epochId, userId])
+  @@index([userId])
+  @@index([isEligible])
+}
+
+/// 周奖励明细表
+/// 作用：记录某个用户在某个周期获得的奖励条目，可对应抽奖、排名、安慰奖、NFT 补贴等
+model WeeklyReward {
+  id      String      @id @default(cuid())
+  epochId String
+  epoch   WeeklyEpoch @relation(fields: [epochId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rewardType RewardType
+  status     RewardStatus @default(PENDING)
+
+  /// 例如 LOTTERY_WINNER、RANK_1、RANK_2、CONSOLATION_DEFAULT、NFT_SUBSIDY_DEFAULT
+  /// 用它替代“nullable rank 参与 unique”的不稳定写法
+  distributionKey String @default("DEFAULT") @db.VarChar(64)
+
+  rank       Int?
+  amountUsdt Decimal @default(0) @db.Decimal(30, 8)
+  amountAura Decimal @default(0) @db.Decimal(30, 8)
+
+  merkleIndex    Int?
+  merkleLeafHash String? @db.VarChar(128)
+  proofJsonUri   String?
+
+  sourceNote  String?
+  claimTxHash String?   @db.VarChar(128)
+  claimedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  claimRecords ClaimRecord[]
+
+  @@unique([epochId, userId, rewardType, distributionKey])
+  @@index([epochId, rewardType])
+  @@index([userId, rewardType])
+  @@index([status])
+}
+
+/// 领取记录表
+/// 作用：统一保存所有 claim 请求及其链上执行结果，方便审计与幂等控制
+model ClaimRecord {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  epochId String?
+  epoch   WeeklyEpoch? @relation(fields: [epochId], references: [id], onDelete: SetNull)
+
+  rewardId String?
+  reward   WeeklyReward? @relation(fields: [rewardId], references: [id], onDelete: SetNull)
+
+  claimType ClaimType
+  status    ClaimStatus @default(PENDING)
+
+  tokenSymbol String  @db.VarChar(16)
+  amount      Decimal @db.Decimal(30, 8)
+
+  merkleIndex     Int?
+  merkleProofJson Json?
+  root            String? @db.VarChar(128)
+
+  contractAddress String? @db.VarChar(64)
+
+  chainId   Int
+  txHash    String? @db.VarChar(128)
+  txHashKey String? @unique @db.VarChar(160)
+
+  failureReason String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  claimedAt     DateTime?
+
+  auraLedgers AuraLedger[]
+
+  @@index([userId, claimType, status])
+  @@index([epochId])
+  @@index([rewardId])
+}
+
+/// NFT 持仓表
+/// 作用：保存用户已持有 NFT 的类型、tokenId、铸造交易与后续补贴领取关系
+model NftHolding {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  chainId         Int
+  contractAddress String @db.VarChar(64)
+  tokenId         BigInt
+
+  nftType NftType
+  status  NftStatus @default(ACTIVE)
+
+  mintTxHash    String? @db.VarChar(128)
+  mintTxHashKey String? @unique @db.VarChar(160)
+
+  purchasedPriceUsdt Decimal?  @db.Decimal(30, 8)
+  mintedAt           DateTime
+  burnedAt           DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  subsidyClaims NftSubsidyClaim[]
+
+  @@unique([chainId, contractAddress, tokenId])
+  @@index([userId, nftType])
+  @@index([status])
+}
+
+/// 推广型 NFT 资格表
+/// 作用：记录用户是否满足“签到天数 + 小区业绩”条件，以及签名、过期、mint 状态
+model NftReferralEligibility {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// 改为必填，避免 nullable 复合 unique 带来的约束失效
+  epochId String
+  epoch   WeeklyEpoch @relation(fields: [epochId], references: [id], onDelete: Cascade)
+
+  personalCheckinDays  Int     @default(0)
+  smallLegVolumeUsdt   Decimal @default(0) @db.Decimal(30, 8)
+  requiredCheckinDays  Int     @default(7)
+  requiredSmallLegUsdt Decimal @default(3000) @db.Decimal(30, 8)
+
+  status NftEligibilityStatus @default(INELIGIBLE)
+
+  /// 与 EIP712 签名绑定的 nonce / payload hash
+  signedNonce       Int?
+  signedPayloadHash String?   @db.VarChar(128)
+  signedAt          DateTime?
+  expiresAt         DateTime?
+
+  mintedTokenId   BigInt?
+  mintedTxHash    String?   @db.VarChar(128)
+  mintedTxHashKey String?   @unique @db.VarChar(160)
+  mintedAt        DateTime?
+
+  remark    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, epochId])
+  @@index([userId, status])
+  @@index([epochId])
+}
+
+/// Merkle 叶子表
+/// 作用：保存离线结算后生成的叶子索引、哈希、proof 与原始 payload，便于重算与审计
+model MerkleLeaf {
+  id      String      @id @default(cuid())
+  epochId String
+  epoch   WeeklyEpoch @relation(fields: [epochId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rewardType  RewardType
+  tokenSymbol String     @db.VarChar(16)
+  amount      Decimal    @db.Decimal(30, 8)
+
+  leafIndex   Int
+  leafHash    String @db.VarChar(128)
+  proofJson   Json?
+  payloadJson Json?
+
+  createdAt DateTime @default(now())
+
+  @@unique([epochId, leafIndex])
+  @@index([userId, rewardType])
+  @@index([epochId, rewardType])
+}
+
+/// NFT 补贴领取表
+/// 作用：记录购买型 NFT 在每个周期的补贴及其领取状态，防止重复领取
+model NftSubsidyClaim {
+  id           String     @id @default(cuid())
+  nftHoldingId String
+  nftHolding   NftHolding @relation(fields: [nftHoldingId], references: [id], onDelete: Cascade)
+
+  epochId String
+  epoch   WeeklyEpoch @relation(fields: [epochId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amountUsdt Decimal     @default(30) @db.Decimal(30, 8)
+  status     ClaimStatus @default(PENDING)
+
+  contractAddress String? @db.VarChar(64)
+
+  chainId   Int
+  txHash    String? @db.VarChar(128)
+  txHashKey String? @unique @db.VarChar(160)
+
+  claimedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([nftHoldingId, epochId])
+  @@index([userId, epochId])
+  @@index([status])
+}
+
+/// 代币发行总 claim root 表
+/// 作用：把发行前内部账本汇总成首次 AURA 发行 claim 的 root，单独与每周奖励 root 分开管理
+model TokenGenesisRoot {
+  id String @id @default(cuid())
+
+  epochId String?
+  epoch   WeeklyEpoch? @relation(fields: [epochId], references: [id], onDelete: SetNull)
+
+  root            String  @unique @db.VarChar(128)
+  totalUsers      Int     @default(0)
+  totalAuraAmount Decimal @default(0) @db.Decimal(30, 8)
+
+  snapshotAt    DateTime
+  publishedAt   DateTime?
+  rewardJsonUri String?
+  merkleTreeUri String?
+  remark        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  leaves TokenGenesisLeaf[]
+}
+
+/// 代币发行总 claim 叶子表
+/// 作用：保存每个用户发行时一次性可领取的 AURA 汇总值及 proof
+model TokenGenesisLeaf {
+  id String @id @default(cuid())
+
+  tokenGenesisRootId String
+  tokenGenesisRoot   TokenGenesisRoot @relation(fields: [tokenGenesisRootId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  totalAuraAmount Decimal @db.Decimal(30, 8)
+  leafIndex       Int
+  leafHash        String  @db.VarChar(128)
+  proofJson       Json?
+  payloadJson     Json?
+
+  createdAt DateTime @default(now())
+
+  @@unique([tokenGenesisRootId, userId])
+  @@unique([tokenGenesisRootId, leafIndex])
+  @@index([userId])
+}
+
+/// 系统配置表
+/// 作用：保存可变业务参数，例如签到金额、直推比例、每周奖池参数、签名过期时间等
+model SystemConfig {
+  id          String   @id @default(cuid())
+  configKey   String   @unique @db.VarChar(64)
+  configValue Json
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+/// 管理后台审计表
+/// 作用：记录管理员手工调整、补单、回滚、发布 root、修改配置等关键动作
+model AdminAuditLog {
+  id             String   @id @default(cuid())
+  operatorWallet String?  @db.VarChar(64)
+  action         String   @db.VarChar(128)
+  targetType     String?  @db.VarChar(64)
+  targetId       String?  @db.VarChar(64)
+  payload        Json?
+  createdAt      DateTime @default(now())
+
+  @@index([action])
+  @@index([createdAt])
+}
