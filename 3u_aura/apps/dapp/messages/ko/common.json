@@ -1,12 +1,10 @@
 {
   "nav": {
-    "home": "홈",
-    "swap": "스왑",
-    "products": "구독",
-    "loan": "대출",
-    "redeem": "상환",
-    "share": "공유",
-    "manage": "관리",
-    "binding": "바인딩"
+    "dashboard": "대시보드",
+    "checkin": "체크인",
+    "team": "팀",
+    "rewards": "보상",
+    "nft": "NFT",
+    "claims": "클레임"
   }
 }

@@ -16,7 +16,7 @@ export class AdminAuthController {
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
     private readonly userService: UserService,
-  ) { }
+  ) {}
 
   @Post('login')
   async login(
@@ -32,7 +32,10 @@ export class AdminAuthController {
       accessTokenExpired,
       refreshAccessToken,
       refreshAccessTokenExpired,
-    } = await this.authService.createTokensForUser(user, payload.device || DEVICES.BROWSER);
+    } = await this.authService.createTokensForUser(
+      user,
+      payload.device || DEVICES.BROWSER,
+    );
 
     this.setRefreshCookie(res, {
       refreshAccessToken,
@@ -47,20 +50,20 @@ export class AdminAuthController {
   }
 
   @Post('logout')
-  async logout(@Res({ passthrough: true }) res: Response) {
+  logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('refresh_token', this.cookieOptions());
     return { success: true };
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async me(@CurrentUser() user: User) {
+  me(@CurrentUser() user: User) {
     return { user: this.userService.toClient(user) };
   }
 
   private cookieOptions(expiresIn: number = 60 * 60 * 24 * 30 * 1000) {
-    const isProd = !!this.configService.get('prod');
-    const sameSite = (isProd ? 'none' : 'lax') as any;
+    const isProd = this.configService.get<boolean>('prod') ?? false;
+    const sameSite: 'lax' | 'none' = isProd ? 'none' : 'lax';
     const secure = isProd;
 
     return {

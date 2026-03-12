@@ -1,12 +1,15 @@
+import { z } from "zod";
 import {
-  type AuthSignatureMessageInput,
   type AuthSignatureSigninInput,
+  AuthSignatureMessageSchema,
 } from "3u-aura-common";
 import {
   apiAuthGetSignatureMessage,
   apiAuthSigninBySignature,
 } from "../api/auth";
 import { useMutation } from "@tanstack/react-query";
+
+type AuthSignatureMessageInput = z.infer<typeof AuthSignatureMessageSchema>;
 
 export function useAuthSignatureMessageMutation() {
   return useMutation({

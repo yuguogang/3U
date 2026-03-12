@@ -1,7 +1,7 @@
 # Execution
 
 ## Status
-Completed with validation notes.
+Completed.
 
 ## Notes
 - 审批后仅修改了 model / shared model 层：
@@ -19,6 +19,7 @@ Completed with validation notes.
   - 金额字段统一改为原子单位整数语义的 `Decimal(78,0)`
   - `NftReferralEligibility` 改为按 `userId` 唯一，使用 `snapshotEpochId` 记录最近评估来源
   - 修复 `apps/server/prisma/seed.ts` 中重复导入/重复执行 `userSeed` 的明显缺陷
+- 用户后续清理历史模块后，重新验证 `apps/server` 构建已通过。
 
 ## Commands Run
 - `pnpm exec prisma validate --schema prisma/schema.prisma`
@@ -30,6 +31,9 @@ Completed with validation notes.
 - `pnpm exec prisma format --schema prisma/schema.prisma`
 - `pnpm run build`
   - workdir: `apps/server`
+- `pnpm run build`
+  - workdir: `apps/server`
+  - rerun after historical module cleanup
 
 ## Verification Results
 - `pnpm exec prisma validate --schema prisma/schema.prisma`
@@ -41,10 +45,9 @@ Completed with validation notes.
 - `pnpm exec prisma migrate diff ...`
   - Passed. Generated initial SQL migration under `apps/server/prisma/migrations/20260311_schema_model_alignment_hardening/`.
 - `pnpm run build` in `apps/server`
-  - Failed, but failure is dominated by pre-existing repository issues unrelated to this task:
-    - legacy modules referencing removed/nonexistent Prisma models such as `Asset`, `Balance`, `Deposit`, `Withdraw`
-    - missing `3u-aura-common` exports unrelated to this schema task
-    - pre-existing duplicate `userSeed` import in `prisma/seed.ts` was fixed during this task
+  - Initially failed due to pre-existing repository issues unrelated to this task.
+- `pnpm run build` in `apps/server` after historical module cleanup
+  - Passed.
 
 ## Deviations From Plan
 - Milestone 2 originally proposed SQL `BigInt` / integer amounts. Implementation changed to `Decimal(78,0)` instead.
@@ -54,5 +57,4 @@ Completed with validation notes.
   - Reason: repository had no existing Prisma migrations history to diff against.
 
 ## Follow-up Risks
-- The server codebase still contains large amounts of legacy code that do not match the current Prisma schema and will continue to fail `pnpm run build` until separately cleaned up.
 - If later services expect human-readable decimal amounts instead of atomic-unit strings, conversion helpers must be introduced in the service / adapter layer before implementation proceeds.

@@ -1,12 +1,10 @@
 {
   "nav": {
-    "home": "ホーム",
-    "swap": "スワップ",
-    "products": "購入",
-    "loan": "ローン",
-    "redeem": "償還",
-    "share": "シェア",
-    "manage": "管理",
-    "binding": "バインド"
+    "dashboard": "ダッシュボード",
+    "checkin": "チェックイン",
+    "team": "チーム",
+    "rewards": "報酬",
+    "nft": "NFT",
+    "claims": "請求"
   }
 }

@@ -10,7 +10,7 @@ export class UserController {
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  profile(@CurrentUser() user: User) {
-    return this.userService.toClient(user);
+  async profile(@CurrentUser() user: User) {
+    return this.userService.findClientProfileById(user.id);
   }
 }

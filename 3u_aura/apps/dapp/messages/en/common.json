@@ -1,12 +1,10 @@
 {
   "nav": {
-    "home": "Home",
-    "swap": "Swap",
-    "products": "Subscribe",
-    "loan": "Loan",
-    "redeem": "Redeem",
-    "share": "Share",
-    "manage": "Manage",
-    "binding": "Binding"
+    "dashboard": "Dashboard",
+    "checkin": "Check-In",
+    "team": "Team",
+    "rewards": "Rewards",
+    "nft": "NFT",
+    "claims": "Claims"
   }
 }

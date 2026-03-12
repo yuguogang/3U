@@ -6,7 +6,7 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 export const isDev = () => {
   return process.env.NODE_ENV === 'development';
 };
-let agent: any;
+let agent: HttpsProxyAgent<string> | undefined;
 const proxyUrl =
   process.env.https_proxy ||
   process.env.HTTPS_PROXY ||
@@ -91,6 +91,40 @@ export const configuration = () => {
       ),
       coreSymbols: (process.env.DATA_SYNC_CORE_SYMBOLS || 'BTC,ETH,TRX').split(
         ',',
+      ),
+    },
+    promotion: {
+      claimChainId: Number.parseInt(
+        process.env.PROMOTION_CLAIM_CHAIN_ID || '97',
+      ),
+      startAt: process.env.PROMOTION_START_AT || '2026-03-11T00:00:00+08:00',
+      checkinReceiverAddress:
+        process.env.PROMOTION_CHECKIN_RECEIVER_ADDRESS || undefined,
+      merkleDistributorAddress:
+        process.env.PROMOTION_MERKLE_DISTRIBUTOR_ADDRESS || undefined,
+      nftSaleAddress: process.env.PROMOTION_NFT_SALE_ADDRESS || undefined,
+      paymentTokenAddress:
+        process.env.PROMOTION_PAYMENT_TOKEN_ADDRESS || undefined,
+      rpcUrl:
+        process.env.PROMOTION_RPC_URL ||
+        process.env.PROMOTION_REFERRAL_RPC_URL ||
+        undefined,
+      referralRpcUrl: process.env.PROMOTION_REFERRAL_RPC_URL || undefined,
+      referralSignerPrivateKey:
+        process.env.PROMOTION_REFERRAL_SIGNER_PRIVATE_KEY || undefined,
+      referralSignatureTtlSeconds: Number.parseInt(
+        process.env.PROMOTION_REFERRAL_SIGNATURE_TTL_SECONDS || '900',
+      ),
+      settlementAddress: process.env.PROMOTION_SETTLEMENT_ADDRESS || undefined,
+      timezone: process.env.PROMOTION_TIMEZONE || 'Asia/Shanghai',
+      epochLengthDays: Number.parseInt(
+        process.env.PROMOTION_EPOCH_LENGTH_DAYS || '7',
+      ),
+      ticketStreakDays: Number.parseInt(
+        process.env.PROMOTION_TICKET_STREAK_DAYS || '7',
+      ),
+      minimumParticipants: Number.parseInt(
+        process.env.PROMOTION_MINIMUM_PARTICIPANTS || '12',
       ),
     },
   };

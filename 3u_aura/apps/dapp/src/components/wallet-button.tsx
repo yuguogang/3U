@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useConnection, useSignMessage } from "wagmi";
+import { useAccount, useChainId, useSignMessage } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
@@ -14,7 +14,7 @@ import {
   useAuthSigninBySignatureMutation,
 } from "@/queries/auth.query";
 import { queryClient } from "@/lib/query.client";
-import { Chains, DEVICES, SignatureScenarios } from "3u-aura-common";
+import { DEVICES, SignatureScenarios } from "3u-aura-common";
 
 function shortenAddress(addr: string) {
   if (!addr) return "";
@@ -27,8 +27,8 @@ function isSameAddress(a?: string | null, b?: string | null) {
 }
 
 export function WalletButton() {
-  const { address, isConnected } = useConnection();
-
+  const { address, isConnected } = useAccount();
+  const chainId = useChainId();
   const signMessage = useSignMessage();
 
   const {
@@ -127,8 +127,7 @@ export function WalletButton() {
         address,
         // 新用户创建时服务端要求 name，优先用 RainbowKit 的 displayName
         name: name || shortenAddress(address),
-        message,
-        chain: Chains.BSC,
+        chain: chainId,
         signature,
         device: DEVICES.BROWSER,
       });

@@ -46,7 +46,7 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
 
-  /* RAN Design System Colors */
+  /* 3U AURA Design System Colors */
   --gradient-primary: linear-gradient(
     180deg,
     rgba(250, 43, 21, 1) 0%,
@@ -86,6 +86,11 @@
   --chart-4: oklch(0.488 0.243 264.376);
   --chart-5: oklch(0.424 0.199 265.638);
   --radius: 0.625rem;
+  --font-sans:
+    "Avenir Next", "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", system-ui, sans-serif;
+  --font-geist-mono:
+    "SFMono-Regular", "JetBrains Mono", "Menlo", "Monaco", monospace;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);

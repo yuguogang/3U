@@ -18,6 +18,7 @@ import { createKeyv } from '@keyv/redis';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { AuthModule } from './auth';
+import { AuraDomainModule } from './modules';
 import { UserModule } from './user';
 
 @Module({
@@ -66,6 +67,7 @@ import { UserModule } from './user';
     // 业务模块
     AuthModule,
     UserModule,
+    AuraDomainModule,
   ],
   controllers: [AppController],
   providers: [
@@ -76,4 +78,4 @@ import { UserModule } from './user';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

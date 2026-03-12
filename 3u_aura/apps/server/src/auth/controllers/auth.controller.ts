@@ -10,6 +10,7 @@ import {
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import * as dayjs from 'dayjs';
+import { DEVICES } from '3u-aura-common';
 
 import { AuthService } from '../services/auth.service';
 import { SignatureMessageDto } from '../dto/signature-message.dto';
@@ -25,7 +26,7 @@ export class AuthController {
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
     private readonly userService: UserService,
-  ) { }
+  ) {}
 
   @Get('signature_message')
   async getSignatureMessage(
@@ -49,7 +50,10 @@ export class AuthController {
       accessTokenExpired,
       refreshAccessToken,
       refreshAccessTokenExpired,
-    } = await this.authService.createTokensForUser(user, payload.device);
+    } = await this.authService.createTokensForUser(
+      user,
+      payload.device ?? DEVICES.BROWSER,
+    );
 
     this.setRefreshCookie(res, {
       refreshAccessToken,
@@ -61,13 +65,13 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async me(@CurrentUser() user: User) {
+  me(@CurrentUser() user: User) {
     return this.userService.toClient(user);
   }
 
   private cookieOptions(expiresIn: number = 60 * 60 * 24 * 30 * 1000) {
-    const isProd = !!this.configService.get('prod');
-    const sameSite = (isProd ? 'none' : 'lax') as any;
+    const isProd = this.configService.get<boolean>('prod') ?? false;
+    const sameSite: 'lax' | 'none' = isProd ? 'none' : 'lax';
     const secure = isProd;
 
     return {

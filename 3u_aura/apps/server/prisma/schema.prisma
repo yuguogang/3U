@@ -193,6 +193,7 @@ model User {
   nftEligibility     NftReferralEligibility?
   merkleLeaves       MerkleLeaf[]
   paymentReceipts    PaymentReceipt[]
+  poolSplitFacts     PoolSplitFact[]
   teamAncestors      TeamClosure[]           @relation("ClosureDescendant")
   teamDescendants    TeamClosure[]           @relation("ClosureAncestor")
   nftSubsidyClaims   NftSubsidyClaim[]
@@ -293,6 +294,7 @@ model Checkin {
 
   ledgers        AuraLedger[]
   paymentReceipt PaymentReceipt?
+  poolSplitFact  PoolSplitFact?
 
   @@unique([userId, dateKey, checkinCountToday])
   @@index([userId, dateKey])
@@ -329,8 +331,39 @@ model PaymentReceipt {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  poolSplitFact PoolSplitFact?
+
   @@index([userId, purpose])
   @@index([status])
+}
+
+/// 签到池子拆分事实表
+/// 作用：记录每笔签到的奖池/金库拆分结果，作为后续周结算和资金审计的稳定事实来源
+model PoolSplitFact {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  checkinId String
+  checkin   Checkin @relation(fields: [checkinId], references: [id], onDelete: Cascade)
+
+  paymentReceiptId String
+  paymentReceipt   PaymentReceipt @relation(fields: [paymentReceiptId], references: [id], onDelete: Cascade)
+
+  dateKey String @db.VarChar(16)
+
+  totalAmountUsdt    Decimal @db.Decimal(78, 0)
+  lotteryAmountUsdt  Decimal @db.Decimal(78, 0)
+  treasuryAmountUsdt Decimal @db.Decimal(78, 0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([checkinId])
+  @@unique([paymentReceiptId])
+  @@index([userId, dateKey])
+  @@index([dateKey])
 }
 
 /// 用户日统计表

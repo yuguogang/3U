@@ -1,8 +1,11 @@
+import { z } from "zod";
 import { fetchClient } from "@/lib/fetch.client";
-import type {
-  AuthSignatureMessageInput,
-  AuthSignatureSigninInput,
+import {
+  type AuthSignatureSigninInput,
+  AuthSignatureMessageSchema,
 } from "3u-aura-common";
+
+type AuthSignatureMessageInput = z.infer<typeof AuthSignatureMessageSchema>;
 
 export type AuthSignatureMessageResponse = {
   message: string;

@@ -43,6 +43,21 @@ export class UserService {
     }) as any;
   }
 
+  async findClientProfileById(id: string): Promise<ClientUser> {
+    const user = await this.db.user.findUnique({
+      where: { id },
+      include: {
+        profile: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user as unknown as ClientUser;
+  }
+
   async update(args: Prisma.UserUpdateArgs) {
     const data = await this.db.user.update(args);
     return data;

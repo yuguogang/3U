@@ -38,4 +38,21 @@ export type ConfigOptions = {
     timeoutHours: number;
     coreSymbols: string[];
   };
+  promotion: {
+    claimChainId: number;
+    startAt: string;
+    checkinReceiverAddress?: string;
+    merkleDistributorAddress?: string;
+    nftSaleAddress?: string;
+    paymentTokenAddress?: string;
+    rpcUrl?: string;
+    referralRpcUrl?: string;
+    referralSignerPrivateKey?: string;
+    referralSignatureTtlSeconds: number;
+    settlementAddress?: string;
+    timezone: string;
+    epochLengthDays: number;
+    ticketStreakDays: number;
+    minimumParticipants: number;
+  };
 };

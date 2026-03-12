@@ -1,0 +1,47 @@
+{
+  "epochId": 1,
+  "merkleRoot": "0x202f977095dd267888e9d956db8ca5d8a1ff740639a5ebc7236bcaf4fdb7abfe",
+  "leaves": [
+    {
+      "index": 0,
+      "account": "0x0000000000000000000000000000000000000001",
+      "amount": 25000000,
+      "rewardId": "reward_1",
+      "rewardType": "LOTTERY_USDT",
+      "rewardTypeCode": 1,
+      "userId": "user_1",
+      "leafHash": "0x92edd74fbcdf18677902bb797bc3dfa7933375c19dad82afe91127a0d100aeac",
+      "proof": [
+        "0xbe912df1143550ad632820bc0b688ca25028ca8444612df356ff840d9959f25b",
+        "0x99ea6ecea212545e7ea6bb409e445eb9dbeeeca89a5869babde9c769fbe30807"
+      ]
+    },
+    {
+      "index": 1,
+      "account": "0x0000000000000000000000000000000000000002",
+      "amount": 15000000,
+      "rewardId": "reward_2",
+      "rewardType": "RANKING_USDT",
+      "rewardTypeCode": 2,
+      "userId": "user_2",
+      "leafHash": "0xbe912df1143550ad632820bc0b688ca25028ca8444612df356ff840d9959f25b",
+      "proof": [
+        "0x92edd74fbcdf18677902bb797bc3dfa7933375c19dad82afe91127a0d100aeac",
+        "0x99ea6ecea212545e7ea6bb409e445eb9dbeeeca89a5869babde9c769fbe30807"
+      ]
+    },
+    {
+      "index": 2,
+      "account": "0x0000000000000000000000000000000000000003",
+      "amount": 10000000,
+      "rewardId": "reward_3",
+      "rewardType": "LOTTERY_USDT",
+      "rewardTypeCode": 1,
+      "userId": "user_3",
+      "leafHash": "0x99ea6ecea212545e7ea6bb409e445eb9dbeeeca89a5869babde9c769fbe30807",
+      "proof": [
+        "0xdfad79fb55d32b1c1c8176b79ffff2668d844169a745e8dba85416ab61c27a11"
+      ]
+    }
+  ]
+}

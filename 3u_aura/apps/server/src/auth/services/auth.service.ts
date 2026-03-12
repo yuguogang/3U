@@ -17,6 +17,23 @@ import { UserService } from '@/user';
 import { ConfigService } from '@nestjs/config';
 import { RefreshTokenService } from './refresh-token.service';
 
+type AuthSignatureMessagePayload = {
+  expired: number;
+  message: string;
+};
+
+type RefreshTokenRecordPayload = {
+  refreshAccessToken: string;
+  refreshAccessTokenExpired: number;
+};
+
+type TokenBundlePayload = {
+  accessToken: string;
+  accessTokenExpired: number;
+  refreshAccessToken: string;
+  refreshAccessTokenExpired: number;
+};
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -61,13 +78,10 @@ export class AuthService {
   }: {
     address: string;
     scenario: SignatureScenarios;
-  }) {
+  }): Promise<AuthSignatureMessagePayload> {
     const expiredSeconds = 5 * 60; // 5 minutes
     const key = `sign_msg:${scenario}:${address}`;
-    let data = await this.cacheManager.get<{
-      expired: number;
-      message: string;
-    }>(key);
+    let data = await this.cacheManager.get<AuthSignatureMessagePayload>(key);
     if (
       !data ||
       dayjs.unix(data.expired).subtract(15, 'seconds').isBefore(new Date())
@@ -88,7 +102,7 @@ Expired: ${expired.format('YYYY/MM/DD HH:mm:ss')}`;
     return randomBytes(16).toString('hex');
   }
 
-  async signinBySignature(payload: AuthSignatureSigninInput) {
+  async signinBySignature(payload: AuthSignatureSigninInput): Promise<User> {
     const { message: storedMessage } = await this.generateMessage({
       address: payload.address,
       scenario: SignatureScenarios.SIGNIN,
@@ -132,7 +146,10 @@ Expired: ${expired.format('YYYY/MM/DD HH:mm:ss')}`;
     return nanoid(8).toUpperCase();
   }
 
-  async createRefreshTokenRecord(userId: string, device: string) {
+  async createRefreshTokenRecord(
+    userId: string,
+    device: string,
+  ): Promise<RefreshTokenRecordPayload> {
     const token = nanoid();
 
     const refreshAccessToken = await this.jwtService.sign(
@@ -156,7 +173,10 @@ Expired: ${expired.format('YYYY/MM/DD HH:mm:ss')}`;
     return { refreshAccessToken, refreshAccessTokenExpired };
   }
 
-  async createTokensForUser(user: User, device: string) {
+  async createTokensForUser(
+    user: User,
+    device: string,
+  ): Promise<TokenBundlePayload> {
     const accessToken = await this.jwtService.sign(
       { sub: user.id },
       {
