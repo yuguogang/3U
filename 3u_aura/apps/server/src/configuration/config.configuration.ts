@@ -29,6 +29,12 @@ export const configuration = () => {
     api: {
       prefix: process.env.API_PREFIX,
     },
+    admin: {
+      allowlistWallets: (process.env.ADMIN_ALLOWLIST_WALLETS || '')
+        .split(',')
+        .map((wallet) => wallet.trim())
+        .filter(Boolean),
+    },
     cors: {
       credentials: process.env.CORS_CREDENTIALS !== 'false',
       origin: process.env.CORS_ORIGIN

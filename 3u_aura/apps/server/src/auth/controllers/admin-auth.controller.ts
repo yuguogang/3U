@@ -1,19 +1,22 @@
-import { Controller, Get, Post, Body, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { DEVICES } from '3u-aura-common';
 import { AuthService } from '../services/auth.service';
 import { SignatureSigninDto } from '../dto/signature-signin.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { AdminWalletGuard } from '../guards/admin-wallet.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { UserService } from '@/user';
 import type { User } from '@/db';
 import * as dayjs from 'dayjs';
+import { AdminPermissionService } from '../services/admin-permission.service';
 
 @Controller('admin/auth')
 export class AdminAuthController {
   constructor(
     private readonly configService: ConfigService,
+    private readonly adminPermissionService: AdminPermissionService,
     private readonly authService: AuthService,
     private readonly userService: UserService,
   ) {}
@@ -24,8 +27,7 @@ export class AdminAuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const user = await this.authService.signinBySignature(payload);
-
-    // TODO: 实际项目中应检查该地址是否有管理员权限
+    this.adminPermissionService.assertAdminWallet(user.walletAddress);
 
     const {
       accessToken,
@@ -55,10 +57,13 @@ export class AdminAuthController {
     return { success: true };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminWalletGuard)
   @Get('me')
   me(@CurrentUser() user: User) {
-    return { user: this.userService.toClient(user) };
+    return {
+      isAdmin: true,
+      user: this.userService.toClient(user),
+    };
   }
 
   private cookieOptions(expiresIn: number = 60 * 60 * 24 * 30 * 1000) {

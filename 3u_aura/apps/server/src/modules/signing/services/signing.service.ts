@@ -195,7 +195,8 @@ export class SigningService {
 
   private assertEligibleForSigning(eligibility: NftEligibilityView): void {
     if (
-      eligibility.status !== NftEligibilityStatus.ELIGIBLE &&
+      eligibility.status !== NftEligibilityStatus.APPROVED &&
+      eligibility.status !== NftEligibilityStatus.EXPIRED &&
       eligibility.status !== NftEligibilityStatus.SIGNED
     ) {
       throw new ConflictException(

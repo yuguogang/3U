@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --background: #07111b;
+  --foreground: #edf2f7;
+  --muted: #102030;
+  --muted-foreground: #8ca0b3;
+  --panel: rgba(7, 17, 27, 0.74);
+  --panel-border: rgba(255, 255, 255, 0.1);
+  --accent: #ef7d3b;
+  --accent-strong: #f97316;
+  --danger: #ef4444;
+  --success: #22c55e;
+  --warning: #f59e0b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(239, 125, 59, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.14), transparent 30%),
+    linear-gradient(180deg, #07111b 0%, #0b1622 46%, #030712 100%);
+  color: var(--foreground);
+  font-family:
+    "Avenir Next", "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", system-ui, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}

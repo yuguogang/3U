@@ -91,6 +91,10 @@ export function NftPage() {
     isCorrectChain &&
     Boolean(address) &&
     Boolean(promotionContracts.nftSaleAddress);
+  const canProceedReferralMint =
+    eligibility?.status === "APPROVED" ||
+    eligibility?.status === "SIGNED" ||
+    eligibility?.status === "EXPIRED";
   const canBuyPurchasedNft =
     isConnected &&
     isAuthenticated &&
@@ -204,7 +208,7 @@ export function NftPage() {
     <MobileLayout
       eyebrow="Promotion / NFT"
       title="Founder NFT"
-      description="Purchased NFTs are fully wallet-driven on the sale contract. Referral NFTs now use the backend signer payload and submit the final `mintNFTByReferral()` call on the configured promotion chain."
+      description="Purchased NFTs remain wallet-driven on the sale contract. Referral NFTs now require admin approval first; only approved users can request the backend signer payload and submit the final `mintNFTByReferral()` call on the configured promotion chain."
     >
       <div className="space-y-4">
         {!isCorrectChain ? (
@@ -347,12 +351,42 @@ export function NftPage() {
                     previewSummary?.expiresAt ?? eligibility?.expiresAt,
                   )}
                 </p>
+                <p className="mt-2">
+                  Approved at: {formatDateTime(eligibility?.approvedAt)}
+                </p>
+                <p className="mt-2">
+                  Rejected at: {formatDateTime(eligibility?.rejectedAt)}
+                </p>
+                <p className="mt-2">
+                  Decision: {eligibility?.decisionReason ?? "-"}
+                </p>
               </div>
+              {eligibility?.status === "PENDING_APPROVAL" ? (
+                <div className="rounded-3xl border border-amber-400/20 bg-amber-400/8 p-4 text-sm text-amber-100">
+                  Thresholds are met, but referral mint is waiting for admin approval.
+                </div>
+              ) : null}
+              {eligibility?.status === "REJECTED" ? (
+                <div className="rounded-3xl border border-rose-400/20 bg-rose-400/8 p-4 text-sm text-rose-100">
+                  Referral mint was rejected by the operator. Review the decision reason above before retrying.
+                </div>
+              ) : null}
+              {eligibility?.status === "APPROVED" ? (
+                <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/8 p-4 text-sm text-emerald-100">
+                  Approval is in place. You can now request the final signer payload and mint on-chain.
+                </div>
+              ) : null}
+              {eligibility?.status === "EXPIRED" ? (
+                <div className="rounded-3xl border border-amber-400/20 bg-amber-400/8 p-4 text-sm text-amber-100">
+                  The previous signer payload expired before mint. Request a refreshed payload to continue.
+                </div>
+              ) : null}
               <div className="flex flex-wrap gap-3">
                 <Button
                   className="h-11 rounded-2xl px-6"
                   disabled={
                     !canRequestReferralMint ||
+                    !canProceedReferralMint ||
                     previewMutation.isPending
                   }
                   onClick={handlePrepareReferralMint}
@@ -366,6 +400,7 @@ export function NftPage() {
                   className="h-11 rounded-2xl px-6"
                   disabled={
                     !canRequestReferralMint ||
+                    !canProceedReferralMint ||
                     signatureMutation.isPending ||
                     referralMintWrite.isPending
                   }

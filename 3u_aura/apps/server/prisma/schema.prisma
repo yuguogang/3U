@@ -145,8 +145,11 @@ enum NftStatus {
 enum NftEligibilityStatus {
   INELIGIBLE
   ELIGIBLE
+  PENDING_APPROVAL
+  APPROVED
   SIGNED
   MINTED
+  REJECTED
   EXPIRED
   REVOKED
 }
@@ -631,6 +634,12 @@ model NftReferralEligibility {
   requiredSmallLegUsdt Decimal @default(6000000000) @db.Decimal(78, 0)
 
   status NftEligibilityStatus @default(INELIGIBLE)
+
+  approvedAt       DateTime?
+  approvedByWallet String?   @db.VarChar(64)
+  decisionReason   String?
+  rejectedAt       DateTime?
+  rejectedByWallet String?   @db.VarChar(64)
 
   /// 与 EIP712 签名绑定的 nonce / payload hash
   signedNonce       Int?

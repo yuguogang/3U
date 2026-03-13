@@ -14,6 +14,9 @@ export type ConfigOptions = {
   api: {
     prefix?: string;
   };
+  admin: {
+    allowlistWallets: string[];
+  };
   auth: {
     jwt: JwtModuleOptions & {
       refresh: {

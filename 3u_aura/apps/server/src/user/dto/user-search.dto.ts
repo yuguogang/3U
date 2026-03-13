@@ -1,18 +1,21 @@
 import { createZodDto } from 'nestjs-zod';
+import {
+  type AdminUserListQuery,
+  AdminUserListQuerySchema,
+  UserStatus,
+} from '3u-aura-common';
 import { z } from 'zod';
-import { UserStatus } from '3u-aura-common';
 
-export const UserSearchSchema = z.object({
-  skip: z.preprocess((v) => Number(v), z.number()).optional(),
-  take: z.preprocess((v) => Number(v), z.number()).optional(),
-  search: z.string().optional(),
-  status: z.nativeEnum(UserStatus).optional(),
-});
+export const UserSearchSchema = AdminUserListQuerySchema;
 
-export class UserSearchDto extends createZodDto(UserSearchSchema) { }
+export type UserSearchInput = AdminUserListQuery;
+
+export class UserSearchDto extends createZodDto(UserSearchSchema) {}
 
 export const UpdateUserStatusSchema = z.object({
   status: z.nativeEnum(UserStatus),
 });
 
-export class UpdateUserStatusDto extends createZodDto(UpdateUserStatusSchema) { }
+export type UpdateUserStatusInput = z.infer<typeof UpdateUserStatusSchema>;
+
+export class UpdateUserStatusDto extends createZodDto(UpdateUserStatusSchema) {}

@@ -115,8 +115,11 @@ export enum NftStatus {
 export enum NftEligibilityStatus {
     INELIGIBLE = 'INELIGIBLE',
     ELIGIBLE = 'ELIGIBLE',
+    PENDING_APPROVAL = 'PENDING_APPROVAL',
+    APPROVED = 'APPROVED',
     SIGNED = 'SIGNED',
     MINTED = 'MINTED',
+    REJECTED = 'REJECTED',
     EXPIRED = 'EXPIRED',
     REVOKED = 'REVOKED',
 }

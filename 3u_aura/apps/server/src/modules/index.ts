@@ -1,4 +1,5 @@
 export * from './aura-domain.module';
+export * from './admin';
 export * from './audit';
 export * from './checkin';
 export * from './claims';

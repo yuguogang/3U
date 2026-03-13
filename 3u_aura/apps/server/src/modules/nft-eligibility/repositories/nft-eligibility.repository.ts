@@ -77,6 +77,56 @@ export class NftEligibilityRepository {
     });
   }
 
+  async markApproved(
+    data: {
+      decisionReason?: string;
+      operatorWallet: string;
+      userId: string;
+    },
+    executor: DbExecutor = this.db,
+  ) {
+    return executor.nftReferralEligibility.update({
+      where: { userId: data.userId },
+      data: {
+        approvedAt: new Date(),
+        approvedByWallet: getAddress(data.operatorWallet),
+        decisionReason: data.decisionReason,
+        expiresAt: null,
+        rejectedAt: null,
+        rejectedByWallet: null,
+        signedAt: null,
+        signedNonce: null,
+        signedPayloadHash: null,
+        status: NftEligibilityStatus.APPROVED,
+      },
+    });
+  }
+
+  async markRejected(
+    data: {
+      decisionReason: string;
+      operatorWallet: string;
+      userId: string;
+    },
+    executor: DbExecutor = this.db,
+  ) {
+    return executor.nftReferralEligibility.update({
+      where: { userId: data.userId },
+      data: {
+        approvedAt: null,
+        approvedByWallet: null,
+        decisionReason: data.decisionReason,
+        expiresAt: null,
+        rejectedAt: new Date(),
+        rejectedByWallet: getAddress(data.operatorWallet),
+        signedAt: null,
+        signedNonce: null,
+        signedPayloadHash: null,
+        status: NftEligibilityStatus.REJECTED,
+      },
+    });
+  }
+
   async markSignedPayload(
     data: {
       expiresAt: Date;

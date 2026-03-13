@@ -15,7 +15,7 @@ describe('SigningService', () => {
     '0x000000000000000000000000000000000000000000000000000000000000beef';
   const signerAddress = privateKeyToAccount(signerPrivateKey).address;
   const request = {
-    chainId: 56,
+    chainId: 97,
     recipient: '0x1111111111111111111111111111111111111111',
   };
   const contractAddress = '0x9999999999999999999999999999999999999999';
@@ -25,7 +25,7 @@ describe('SigningService', () => {
       get: jest.fn((key: string) => {
         if (key === 'promotion') {
           return {
-            claimChainId: 56,
+            claimChainId: 97,
             nftSaleAddress: contractAddress,
             referralSignerPrivateKey: signerPrivateKey,
             referralSignatureTtlSeconds: 900,
@@ -73,7 +73,7 @@ describe('SigningService', () => {
       signingNonceRepository,
     } = createService();
     nftEligibilityApplicationService.getCurrentEligibility.mockResolvedValue({
-      status: NftEligibilityStatus.ELIGIBLE,
+      status: NftEligibilityStatus.APPROVED,
       userId: 'user_1',
     });
 
@@ -86,7 +86,7 @@ describe('SigningService', () => {
         recipient: request.recipient,
       });
       expect(result).toEqual({
-        chainId: 56,
+        chainId: 97,
         contractAddress,
         expiry: 1773317700,
         expiresAt: '2026-03-12T12:15:00.000Z',
@@ -106,7 +106,7 @@ describe('SigningService', () => {
       service,
     } = createService();
     nftEligibilityApplicationService.getCurrentEligibility.mockResolvedValue({
-      status: NftEligibilityStatus.ELIGIBLE,
+      status: NftEligibilityStatus.APPROVED,
       userId: 'user_1',
     });
 
@@ -141,7 +141,7 @@ describe('SigningService', () => {
       signingNonceRepository,
     } = createService();
     nftEligibilityApplicationService.getCurrentEligibility.mockResolvedValue({
-      status: NftEligibilityStatus.INELIGIBLE,
+      status: NftEligibilityStatus.PENDING_APPROVAL,
       userId: 'user_1',
     });
 
@@ -158,7 +158,7 @@ describe('SigningService', () => {
       signingNonceRepository,
     } = createService();
     nftEligibilityApplicationService.getCurrentEligibility.mockResolvedValue({
-      status: NftEligibilityStatus.ELIGIBLE,
+      status: NftEligibilityStatus.APPROVED,
       userId: 'user_1',
     });
 
@@ -183,7 +183,7 @@ describe('SigningService', () => {
       signingNonceRepository,
     } = createService();
     nftEligibilityApplicationService.getCurrentEligibility.mockResolvedValue({
-      status: NftEligibilityStatus.ELIGIBLE,
+      status: NftEligibilityStatus.APPROVED,
       userId: 'user_1',
     });
     signingNonceRepository.readSigningState.mockResolvedValue({

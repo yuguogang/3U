@@ -57,8 +57,14 @@ export interface NftEligibilityView {
   smallLegVolumeUsdt: string; // atomic units as string
   requiredCheckinCount: number;
   requiredSmallLegUsdt: string; // atomic units as string
+  approvedAt?: Date;
+  approvedByWallet?: string;
+  decisionReason?: string;
   expiresAt?: Date;
   mintedTokenId?: string;
+  rejectedAt?: Date;
+  rejectedByWallet?: string;
+  signedAt?: Date;
 }
 
 export interface ReferralMintPayloadBase {

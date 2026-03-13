@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuditModule } from './audit';
+import { AdminModule } from './admin';
 import { CheckinModule } from './checkin';
 import { ClaimsModule } from './claims';
 import { EpochModule } from './epoch';
@@ -20,6 +21,7 @@ import { VolumeModule } from './volume';
 @Module({
   imports: [
     SharedDomainModule,
+    AdminModule,
     CheckinModule,
     PaymentModule,
     ClaimsModule,

@@ -1,0 +1,17 @@
+-- AlterEnum
+ALTER TYPE "NftEligibilityStatus" ADD VALUE IF NOT EXISTS 'PENDING_APPROVAL';
+ALTER TYPE "NftEligibilityStatus" ADD VALUE IF NOT EXISTS 'APPROVED';
+ALTER TYPE "NftEligibilityStatus" ADD VALUE IF NOT EXISTS 'REJECTED';
+
+-- AlterTable
+ALTER TABLE "NftReferralEligibility"
+ADD COLUMN IF NOT EXISTS "approvedAt" TIMESTAMP(3),
+ADD COLUMN IF NOT EXISTS "approvedByWallet" VARCHAR(64),
+ADD COLUMN IF NOT EXISTS "decisionReason" TEXT,
+ADD COLUMN IF NOT EXISTS "rejectedAt" TIMESTAMP(3),
+ADD COLUMN IF NOT EXISTS "rejectedByWallet" VARCHAR(64);
+
+-- DataMigration
+UPDATE "NftReferralEligibility"
+SET "status" = 'PENDING_APPROVAL'
+WHERE "status" = 'ELIGIBLE';

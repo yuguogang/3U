@@ -12,6 +12,61 @@ importers:
         specifier: ^9.3.1
         version: 9.3.1
 
+  apps/admin:
+    dependencies:
+      3u-aura-common:
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@rainbow-me/rainbowkit':
+        specifier: ^2.2.10
+        version: 2.2.10(@tanstack/react-query@5.90.20)(@types/react@19.2.13)(react-dom@19.2.3)(react@19.2.3)(typescript@5.9.3)(viem@2.45.1)(wagmi@3.4.2)
+      '@tanstack/react-query':
+        specifier: ^5.90.20
+        version: 5.90.20(react@19.2.3)
+      lucide-react:
+        specifier: ^0.563.0
+        version: 0.563.0(react@19.2.3)
+      next:
+        specifier: 16.1.6
+        version: 16.1.6(@babel/core@7.29.0)(react-dom@19.2.3)(react@19.2.3)
+      react:
+        specifier: 19.2.3
+        version: 19.2.3
+      react-dom:
+        specifier: 19.2.3
+        version: 19.2.3(react@19.2.3)
+      wagmi:
+        specifier: ^3.4.2
+        version: 3.4.2(@metamask/sdk@0.34.0)(@tanstack/react-query@5.90.20)(@types/react@19.2.13)(react@19.2.3)(typescript@5.9.3)(viem@2.45.1)
+      zustand:
+        specifier: ^5.0.11
+        version: 5.0.11(@types/react@19.2.13)(react@19.2.3)
+    devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.1.18
+      '@types/node':
+        specifier: ^20
+        version: 20.19.32
+      '@types/react':
+        specifier: ^19
+        version: 19.2.13
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.2.3(@types/react@19.2.13)
+      eslint:
+        specifier: ^9
+        version: 9.39.2
+      eslint-config-next:
+        specifier: 16.1.6
+        version: 16.1.6(@typescript-eslint/parser@8.54.0)(eslint@9.39.2)(typescript@5.9.3)
+      tailwindcss:
+        specifier: ^4
+        version: 4.1.18
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
   apps/dapp:
     dependencies:
       3u-aura-common:

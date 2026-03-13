@@ -5,8 +5,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './controllers/auth.controller';
 import { AdminAuthController } from './controllers/admin-auth.controller';
 import { AuthService } from './services/auth.service';
+import { AdminPermissionService } from './services/admin-permission.service';
 import { UserModule } from '@/user';
 import { RefreshTokenService } from './services/refresh-token.service';
+import { AdminWalletGuard } from './guards/admin-wallet.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -14,6 +16,7 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 
 @Module({
   imports: [
+    ConfigModule,
     forwardRef(() => UserModule),
 
     PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -38,11 +41,19 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
   providers: [
     JwtStrategy,
     JwtRefreshStrategy,
+    AdminPermissionService,
+    AdminWalletGuard,
     JwtAuthGuard,
     JwtRefreshAuthGuard,
     AuthService,
     RefreshTokenService,
   ],
-  exports: [JwtAuthGuard, JwtRefreshAuthGuard, AuthService],
+  exports: [
+    AdminPermissionService,
+    AdminWalletGuard,
+    JwtAuthGuard,
+    JwtRefreshAuthGuard,
+    AuthService,
+  ],
 })
 export class AuthModule {}

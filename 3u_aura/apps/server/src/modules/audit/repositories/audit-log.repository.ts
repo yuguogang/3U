@@ -1,9 +1,25 @@
+import { DbService } from '@/db';
 import { DomainAuditEvent } from '../../shared';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AuditLogRepository {
-  async append(_event: DomainAuditEvent): Promise<void> {
-    // Concrete audit persistence lands in a later phase once audit storage is finalized.
+  constructor(private readonly db: DbService) {}
+
+  async append(event: DomainAuditEvent): Promise<void> {
+    await this.db.adminAuditLog.create({
+      data: {
+        action: event.action,
+        operatorWallet: event.operatorWallet,
+        payload: {
+          actorId: event.actorId,
+          entityId: event.entityId,
+          metadata: event.metadata,
+          payload: event.payload,
+        },
+        targetId: event.targetId,
+        targetType: event.targetType,
+      },
+    });
   }
 }
