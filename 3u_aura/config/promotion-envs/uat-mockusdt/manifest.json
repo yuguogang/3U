@@ -1,0 +1,77 @@
+{
+  "environment": "uat-mockusdt",
+  "status": "active",
+  "chain": {
+    "id": 97,
+    "rpcUrl": "https://data-seed-prebsc-1-s1.binance.org:8545/",
+    "referralRpcUrl": "https://data-seed-prebsc-1-s1.binance.org:8545/"
+  },
+  "promotion": {
+    "startAt": "2026-03-11T00:00:00+08:00",
+    "timezone": "Asia/Shanghai",
+    "epochLengthDays": 7,
+    "ticketStreakDays": 7,
+    "minimumParticipants": 12,
+    "referralSignatureTtlSeconds": 900
+  },
+  "contracts": {
+    "paymentTokenAddress": "0xc71B28f0286b43f4Bec8404E8ca5962543138883",
+    "paymentTokenKind": "mockusdt",
+    "paymentTokenSymbol": "USDT",
+    "founderNftAddress": "0x224861ef38c45d6c9C2353Cc856A495591828E97",
+    "nftSaleAddress": "0x6A7837A21c3E8471bb25AfCFaC1aa412f1058F71",
+    "merkleDistributorAddress": "0x4F12F0C90B5D7e7292dFFFd36A80bAED587a96f6",
+    "settlementAddress": "0xdc886F6983851897f2D7043a742a718402e9A298",
+    "nftName": "3U AURA Founder NFT",
+    "nftSymbol": "3UAURA",
+    "baseUri": "",
+    "maxSubsidyEpochs": 12
+  },
+  "roles": {
+    "owner": "0x951f5f74f8a5b480DC42aA41c04522C8eCED6d64",
+    "financeWallet": "0xDB45228dA324fb9A832c2a1C8Edf08D6820Ccc9C",
+    "checkinReceiverAddress": "0xDB45228dA324fb9A832c2a1C8Edf08D6820Ccc9C",
+    "referralSignerAddress": "0xF9f72F7bB3639164E163081BDbe9e4d2c5FC4a7c",
+    "settlementPublisher": "0x47eec8D283F825389114C4B0d3Ec617A6D6c792b",
+    "rootPublisher": "0x951f5f74f8a5b480DC42aA41c04522C8eCED6d64",
+    "adminAllowlistWallets": [
+      "0x951f5f74f8a5b480DC42aA41c04522C8eCED6d64",
+      "0xDB45228dA324fb9A832c2a1C8Edf08D6820Ccc9C"
+    ]
+  },
+  "infra": {
+    "server": {
+      "port": 3110,
+      "host": "http://localhost:3110",
+      "publicApiBaseUrl": "http://localhost:3110"
+    },
+    "dapp": {
+      "baseUrl": "http://localhost:3100"
+    },
+    "admin": {
+      "baseUrl": "http://localhost:3101"
+    },
+    "database": {
+      "host": "127.0.0.1",
+      "port": 5433,
+      "name": "3u_aura_uat_mockusdt",
+      "schema": "public"
+    },
+    "redis": {
+      "cacheUrl": "redis://127.0.0.1:6379/11",
+      "throttlerUrl": "redis://127.0.0.1:6379/12",
+      "bullHost": "127.0.0.1",
+      "bullPort": 6379,
+      "bullPrefix": "3u_aura:uat-mockusdt",
+      "instanceId": "uat_mockusdt_01"
+    }
+  },
+  "frontend": {
+    "walletConnectProjectId": ""
+  },
+  "artifacts": {
+    "deployMockUsdtBroadcast": "apps/contracts/broadcast/DeployMockUSDT.s.sol/97/run-1773473115.json",
+    "deployCoreBroadcast": "apps/contracts/broadcast/DeployNFTCore.s.sol/97/run-1773473145.json",
+    "deploySettlementBroadcast": "apps/contracts/broadcast/DeploySettlementClaim.s.sol/97/run-1773473174.json"
+  }
+}

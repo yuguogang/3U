@@ -1,0 +1,276 @@
+# Execution
+
+## Status
+In progress.
+
+## Last Updated
+2026-03-14
+
+## Summary
+- 已落地 promotion 多环境注册表目录：`uat-mockusdt`、`testnet-live`、`release`。
+- 已实现 manifest -> `contracts/server/dapp/admin` 的 public env 生成与运行时加载脚本。
+- 已把三套环境的数据库、Redis DB、BullMQ prefix、端口矩阵写入版本化 manifest。
+- 已创建三套独立 PostgreSQL 数据库：
+  - `3u_aura_testnet_live`
+  - `3u_aura_uat_mockusdt`
+  - `3u_aura_release`
+- 已验证 `testnet-live` server 可通过新加载器启动，并实际使用隔离后的：
+  - `DATABASE_NAME=3u_aura_testnet_live`
+  - `CACHE_URL=redis://127.0.0.1:6379/1`
+  - `THROTTLER_REDIS=redis://127.0.0.1:6379/2`
+  - `BULL_PREFIX=3u_aura:testnet-live`
+- 已完成 `uat-mockusdt` 的独立链上部署：
+  - `MockUSDT`: `0xc71B28f0286b43f4Bec8404E8ca5962543138883`
+  - `FounderNFT`: `0x224861ef38c45d6c9C2353Cc856A495591828E97`
+  - `NFTSale`: `0x6A7837A21c3E8471bb25AfCFaC1aa412f1058F71`
+  - `Settlement`: `0xdc886F6983851897f2D7043a742a718402e9A298`
+  - `MerkleClaim`: `0x4F12F0C90B5D7e7292dFFFd36A80bAED587a96f6`
+- 已验证 `uat-mockusdt` server 可并行运行在 `3110`，并实际使用隔离后的：
+  - `DATABASE_NAME=3u_aura_uat_mockusdt`
+  - `CACHE_URL=redis://127.0.0.1:6379/11`
+  - `THROTTLER_REDIS=redis://127.0.0.1:6379/12`
+  - `BULL_PREFIX=3u_aura:uat-mockusdt`
+- 已生成 `uat-mockusdt` 的 5 个自动化测试钱包，并用 owner `0x951f5f74f8a5b480DC42aA41c04522C8eCED6d64` 完成资金准备：
+  - 每钱包 `0.1 tBNB`
+  - `admin/referrer/userB/userC` 各 `1000 MockUSDT`
+  - `userA` `1003 MockUSDT`（覆盖 `1` 次 check-in + `1` 次 buy NFT）
+- 已将 `testnet-live` 的 deployment artifact 从 `run-latest.json` 固定为 timestamped broadcast 文件，避免被 `uat-mockusdt` 新部署覆盖。
+- 已修复 `dapp/admin` 环境加载遗漏的 `PORT` 注入问题，并验证 `uat-mockusdt` 前端三端可并行运行：
+  - `dapp`: `http://127.0.0.1:3100` -> `200 OK`
+  - `admin`: `http://127.0.0.1:3101/dashboard` -> `200 OK`
+- `env:start:dev` 仍受现有 Nest watch 重建 `dist/` 的行为影响，会删除 Prisma runtime symlink；本次改用 `env:start:prod` 完成真实启动验证。
+
+## Work Completed
+- 新增环境注册表目录与环境清单：
+  - `config/promotion-envs/testnet-live/`
+  - `config/promotion-envs/uat-mockusdt/`
+  - `config/promotion-envs/release/`
+- 为三套环境新增并生成：
+  - `manifest.json`
+  - `contracts.public.env`
+  - `server.public.env`
+  - `dapp.public.env`
+  - `admin.public.env`
+  - `notes.md`
+  - `wallets.example.json`（`uat-mockusdt`）
+- 新增环境脚本：
+  - `scripts/promotion-env/lib.mjs`
+  - `scripts/promotion-env/print-env.mjs`
+  - `scripts/promotion-env/run-with-env.mjs`
+  - `scripts/promotion-env/sync-public-envs.mjs`
+- 根目录与各 app 新增环境脚本入口：
+  - root `promotion-env:print` / `promotion-env:sync`
+  - server `env:print` / `env:start*` / `env:db:*`
+  - dapp `env:print` / `env:dev` / `env:build` / `env:start`
+  - admin `env:print` / `env:dev` / `env:build` / `env:start`
+- server 配置已接入 `BULL_PREFIX`，用于隔离 BullMQ 队列命名空间。
+- 新增 `MockUSDT` 相关 Foundry 脚本：
+  - `apps/contracts/script/DeployMockUSDT.s.sol`
+  - `apps/contracts/script/MintMockUSDT.s.sol`
+- 已补充 `apps/contracts/.env.example` 的 `MINT_RECIPIENT` / `MINT_AMOUNT`。
+- 已创建三套独立数据库并验证每套都有 `20` 张 `public` schema 表。
+- 为 server 环境启动器补充 Prisma runtime bridge：
+  - 启动前自动确保 `apps/server/dist/generated -> ../generated`
+  - 修正 `apps/server/package.json` 的 `start:prod` / `env:start:prod` 到 `dist/src/main.js`
+- 为 `dapp/admin` 环境加载补充端口注入：
+  - `scripts/promotion-env/lib.mjs` 现会从 manifest 的 `baseUrl` 派生 `PORT`
+  - `sync-public-envs.mjs` 已同步生成 `PORT=3100/3101` 等前端运行参数
+- 新增可重复部署脚本：
+  - `scripts/promotion-env/deploy-contract-suite.mjs`
+  - root script `promotion-env:deploy-suite`
+- 已完成 `uat-mockusdt` 链上部署并自动回填：
+  - `config/promotion-envs/uat-mockusdt/manifest.json`
+  - `config/promotion-envs/uat-mockusdt/contracts.public.env`
+  - `config/promotion-envs/uat-mockusdt/server.public.env`
+  - `config/promotion-envs/uat-mockusdt/dapp.public.env`
+- 已固定 `testnet-live` artifact 路径到 timestamped Foundry broadcast：
+  - `apps/contracts/broadcast/DeployNFTCore.s.sol/97/run-1773387582.json`
+  - `apps/contracts/broadcast/DeploySettlementClaim.s.sol/97/run-1773387637.json`
+- 已同步修正文档中的旧证据引用：
+  - `docs/plan-excution/Phase9.4-Testnet-Deployment-UAT/execution.md`
+- 新增 `uat-mockusdt` 钱包准备脚本与模板：
+  - `scripts/promotion-env/prepare-wallet-fixtures.mjs`
+  - `config/promotion-envs/uat-mockusdt/wallets/.gitignore`
+  - `config/promotion-envs/uat-mockusdt/wallets.example.json`
+- 已在未跟踪目录生成自动化钱包与公开 funding 报告：
+  - `config/promotion-envs/uat-mockusdt/wallets/admin.json`
+  - `config/promotion-envs/uat-mockusdt/wallets/referrer.json`
+  - `config/promotion-envs/uat-mockusdt/wallets/userA.json`
+  - `config/promotion-envs/uat-mockusdt/wallets/userB.json`
+  - `config/promotion-envs/uat-mockusdt/wallets/userC.json`
+  - `config/promotion-envs/uat-mockusdt/wallets/funding-report.json`
+
+## Commands Run
+- `node scripts/promotion-env/sync-public-envs.mjs`
+- `node scripts/promotion-env/print-env.mjs --env testnet-live --target server`
+- `pnpm --dir apps/server run env:print`
+- `pnpm --dir apps/dapp run env:print`
+- `pnpm --dir apps/admin run env:print`
+- `pnpm --dir apps/server run build`
+- `cd apps/contracts && forge build`
+- `node scripts/promotion-env/run-with-env.mjs --env testnet-live --target server -- node -e "console.log(process.env.PROMOTION_ENV, process.env.BULL_PREFIX, process.env.DATABASE_NAME, process.env.PORT)"`
+- `node <<'NODE' ... select pid, usename, application_name, client_addr::text, state, backend_type from pg_stat_activity where datname = '3u_aura' ... NODE`
+- `node <<'NODE' ... select pg_terminate_backend(pid) ... create database "3u_aura_testnet_live" template "3u_aura" ... create database "3u_aura_uat_mockusdt" template "3u_aura" ... create database "3u_aura_release" template "3u_aura" ... NODE`
+- `node <<'NODE' ... select count(*) from information_schema.tables where table_schema = 'public' ... NODE`
+- `PROMOTION_ENV=testnet-live pnpm --dir apps/server run env:start`
+- `PROMOTION_ENV=testnet-live pnpm --dir apps/server run env:start:dev`
+- `PROMOTION_ENV=testnet-live pnpm --dir apps/server run build`
+- `PROMOTION_ENV=testnet-live pnpm --dir apps/server run env:start:prod`
+- `curl -s http://127.0.0.1:3010/api/v1/health`
+- `ps eww -p 57217`
+- `node <<'NODE' ... privateKeyToAccount(PRIVATE_KEY) ... compare with OWNER ... NODE`
+- `node scripts/promotion-env/deploy-contract-suite.mjs --env uat-mockusdt`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/server run env:start:prod`
+- `curl -s http://127.0.0.1:3110/api/v1/health`
+- `ps eww -p 65646`
+- `node scripts/promotion-env/print-env.mjs --env uat-mockusdt --target dapp`
+- `node scripts/promotion-env/print-env.mjs --env uat-mockusdt --target admin`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/dapp run env:build`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/admin run env:build`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/dapp run env:start`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/admin run env:start`
+- `curl -I -s http://127.0.0.1:3100`
+- `curl -I -s http://127.0.0.1:3101/dashboard`
+- `lsof -i :3100`
+- `lsof -i :3101`
+- `node scripts/promotion-env/prepare-wallet-fixtures.mjs --env uat-mockusdt`
+
+## Verification Results
+- `node scripts/promotion-env/sync-public-envs.mjs`
+  - 成功生成三套环境的 `*.public.env`。
+- `node scripts/promotion-env/print-env.mjs --env testnet-live --target server`
+  - 成功输出 `testnet-live` 的 `DATABASE_NAME/BULL_PREFIX/PORT` 等派生配置。
+- `pnpm --dir apps/server run env:print`
+  - 成功输出 server 运行态环境。
+- `pnpm --dir apps/dapp run env:print`
+  - 成功输出 dapp 公开环境，`NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` 从本地 `.env` 继承。
+- `pnpm --dir apps/admin run env:print`
+  - 成功输出 admin 公开环境，`NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` 从本地 `.env` 继承。
+- `pnpm --dir apps/server run build`
+  - 成功。
+- `cd apps/contracts && forge build`
+  - 成功，新增 `MockUSDT` 脚本无编译错误。
+- 独立数据库创建后检查：
+  - `3u_aura_testnet_live` `publicTables=20`
+  - `3u_aura_uat_mockusdt` `publicTables=20`
+  - `3u_aura_release` `publicTables=20`
+- `PROMOTION_ENV=testnet-live pnpm --dir apps/server run env:start:prod`
+  - 成功启动 Nest，监听 `3010`。
+- `curl -s http://127.0.0.1:3010/api/v1/health`
+  - 返回 `{"status":"ok","ts":"2026-03-14T05:33:30.552Z"}`
+- `ps eww -p 57217`
+  - 运行中进程环境确认：
+    - `PROMOTION_ENV=testnet-live`
+    - `DATABASE_URL=postgresql://postgres:password@127.0.0.1:5433/3u_aura_testnet_live?schema=public`
+    - `DATABASE_NAME=3u_aura_testnet_live`
+    - `CACHE_URL=redis://127.0.0.1:6379/1`
+    - `THROTTLER_REDIS=redis://127.0.0.1:6379/2`
+    - `BULL_PREFIX=3u_aura:testnet-live`
+    - `INSTANCE_ID=testnet_live_01`
+- `node <<'NODE' ... privateKeyToAccount(PRIVATE_KEY) ... compare with OWNER ... NODE`
+  - 本地校验通过：deployer 地址与 manifest `owner` 一致。
+- `node scripts/promotion-env/deploy-contract-suite.mjs --env uat-mockusdt`
+  - 成功部署并回填：
+    - `MockUSDT=0xc71B28f0286b43f4Bec8404E8ca5962543138883`
+    - `FounderNFT=0x224861ef38c45d6c9C2353Cc856A495591828E97`
+    - `NFTSale=0x6A7837A21c3E8471bb25AfCFaC1aa412f1058F71`
+    - `Settlement=0xdc886F6983851897f2D7043a742a718402e9A298`
+    - `MerkleClaim=0x4F12F0C90B5D7e7292dFFFd36A80bAED587a96f6`
+  - 对应 broadcast 证据已固定到：
+    - `apps/contracts/broadcast/DeployMockUSDT.s.sol/97/run-1773473115.json`
+    - `apps/contracts/broadcast/DeployNFTCore.s.sol/97/run-1773473145.json`
+    - `apps/contracts/broadcast/DeploySettlementClaim.s.sol/97/run-1773473174.json`
+  - `uat-mockusdt` manifest 状态已切换为 `active`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/server run env:start:prod`
+  - 成功启动 Nest，监听 `3110`。
+- `curl -s http://127.0.0.1:3110/api/v1/health`
+  - 返回 `{"status":"ok","ts":"2026-03-14T07:35:02.351Z"}`
+- `ps eww -p 65646`
+  - 运行中进程环境确认：
+    - `PROMOTION_ENV=uat-mockusdt`
+    - `DATABASE_URL=postgresql://postgres:password@127.0.0.1:5433/3u_aura_uat_mockusdt?schema=public`
+    - `DATABASE_NAME=3u_aura_uat_mockusdt`
+    - `CACHE_URL=redis://127.0.0.1:6379/11`
+    - `THROTTLER_REDIS=redis://127.0.0.1:6379/12`
+    - `BULL_PREFIX=3u_aura:uat-mockusdt`
+    - `INSTANCE_ID=uat_mockusdt_01`
+- `node scripts/promotion-env/print-env.mjs --env uat-mockusdt --target dapp`
+  - 成功输出 `PORT=3100`
+- `node scripts/promotion-env/print-env.mjs --env uat-mockusdt --target admin`
+  - 成功输出 `PORT=3101`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/dapp run env:build`
+  - 构建成功；存在现有的 wagmi/rainbowkit connector optional dependency warnings，但未阻塞产物生成。
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/admin run env:build`
+  - 构建成功；同样存在 optional dependency warnings，但未阻塞产物生成。
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/dapp run env:start`
+  - 成功启动 Next，监听 `3100`。
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/admin run env:start`
+  - 成功启动 Next，监听 `3101`。
+- `curl -I -s http://127.0.0.1:3100`
+  - 返回 `HTTP/1.1 200 OK`
+- `curl -I -s http://127.0.0.1:3101/dashboard`
+  - 返回 `HTTP/1.1 200 OK`
+- `lsof -i :3100`
+  - 监听进程 `PID 69241`
+- `lsof -i :3101`
+  - 监听进程 `PID 69172`
+- `node scripts/promotion-env/prepare-wallet-fixtures.mjs --env uat-mockusdt`
+  - 成功生成并充值 5 个自动化钱包：
+    - `admin=0x4Af8649c22063c95F50862d7ad2a64014de36483`
+      - `bnbTopUpTxHash=0x54296a8c5cf052b1dc20a794463d1df34810499896a248c15dec2c015192654f`
+      - `mockUsdtMintTxHash=0xcdd6c2e337818b42fa1d3e5c713039c81639b8dc6178ce6613b2977afad01771`
+      - `finalBnb=0.1`
+      - `finalMockUsdt=1000`
+    - `referrer=0xeF74F399A6E93E91F796A09c107119E489B3aD2e`
+      - `bnbTopUpTxHash=0xdc5b6160dbf3f8a95817b81dd9f4bebede7292dbf016942bbaae9e825d3fc6cb`
+      - `mockUsdtMintTxHash=0x3a999fa6df0354804c3ef90d672e22cb54bc1ea029c7ce3dcb8da6b9ecc5bc74`
+      - `finalBnb=0.1`
+      - `finalMockUsdt=1000`
+    - `userA=0xFe399706e6E69Fc713Aa13b0DE64c0f8Bf5C1Ca6`
+      - `bnbTopUpTxHash=0x2110c14466b09c83d722593a522fe9f3c578d20654e357bef6aad7a9d0979d0f`
+      - `mockUsdtMintTxHash=0x7e8b9229ee29f00592a232cfe3d6f7266391fc5382845792ad7d80c65658721d`
+      - `finalBnb=0.1`
+      - `finalMockUsdt=1003`
+    - `userB=0xB909cb43498F6845629a6F1e4B0D128D97B57587`
+      - `bnbTopUpTxHash=0xb2fd02f2e3ecf6b6b7f98a1ec5754fad48d166a3d6f886d2cb0a123deb868510`
+      - `mockUsdtMintTxHash=0x8c612f5035362c428b583f6c84f4a4c7f3e62ac9c27d77074e60d3711057ddac`
+      - `finalBnb=0.1`
+      - `finalMockUsdt=1000`
+    - `userC=0x6005F38d4417Fc309716786F2DF5Cf6a55Aa7196`
+      - `bnbTopUpTxHash=0xc1ddf809c2d10aa488a5d2f31de6e53cc84accf4fed4313ebc195485371d52a1`
+      - `mockUsdtMintTxHash=0x15f0e2054e35da193d89f19d08d00cd64a2e77fdc119934e78ed56fb78ee363d`
+      - `finalBnb=0.1`
+      - `finalMockUsdt=1000`
+  - 钱包私钥已写入未跟踪目录 `config/promotion-envs/uat-mockusdt/wallets/*.json`，未写入版本化文档。
+
+## Deviations From Original Plan
+- 原计划中优先以 `env:start:dev` 进行本地 server 验证；实际执行时发现 `nest start --watch` 会重建 `apps/server/dist/`，从而删除 `dist/generated` symlink，导致 Prisma runtime 仍无法启动。
+- 为保证本阶段完成真实运行验证，本次改用 `env:start:prod` 验证隔离环境接线；`env:start:dev` 仍需后续单独处理。
+- 创建数据库时首次失败，原因是源库 `3u_aura` 存在 `pgAdmin` 与其他空闲连接；后续通过终止空闲连接后完成克隆。
+- `uat-mockusdt` 的 `3110` 健康检查在沙箱内访问会报本地连接错误；最终通过受控本机执行的 `curl` 完成验证。
+- 前端首次尝试 `env:dev` 失败，原因不是环境配置错误，而是：
+  - `dapp/admin` loader 当时未注入 `PORT`
+  - 现有 `next dev` 实例占用同项目 `.next/dev/lock`
+  - 后续通过补 `PORT`，并改用 `env:build + env:start` 完成并行验证
+
+## Current Runtime State
+- `testnet-live` server 当前正在本机运行：
+  - `PID 57217`
+  - `http://127.0.0.1:3010/api/v1/health`
+- `uat-mockusdt` server 当前也在本机运行：
+  - `PID 65646`
+  - `http://127.0.0.1:3110/api/v1/health`
+- `uat-mockusdt` dapp 当前也在本机运行：
+  - `PID 69241`
+  - `http://127.0.0.1:3100`
+- `uat-mockusdt` admin 当前也在本机运行：
+  - `PID 69172`
+  - `http://127.0.0.1:3101/dashboard`
+
+## Next Required Actions
+- 决定是否进一步修复 `env:start:dev`：
+  - 若需要 dev watch，也要补一个不依赖 `dist/generated` symlink 的 Prisma runtime 方案
+- 若要进入 Playwright/Synpress 自动 UAT：
+  - 让测试执行器读取 `config/promotion-envs/uat-mockusdt/wallets/*.json`
+  - 生成首批 `reports/artifacts`
+  - 补自动登录、bind、placement、check-in、buy NFT、claim 的可重复脚本

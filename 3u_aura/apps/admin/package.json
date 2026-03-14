@@ -5,6 +5,10 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
+    "env:build": "node ../../scripts/promotion-env/run-with-env.mjs --target admin -- next build --webpack",
+    "env:dev": "node ../../scripts/promotion-env/run-with-env.mjs --target admin -- next dev --webpack",
+    "env:print": "node ../../scripts/promotion-env/print-env.mjs --target admin",
+    "env:start": "node ../../scripts/promotion-env/run-with-env.mjs --target admin -- next start",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit"

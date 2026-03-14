@@ -157,6 +157,7 @@ export function CheckinPage() {
               </label>
               <Input
                 id="txHash"
+                data-testid="checkin-txhash-input"
                 placeholder="0x..."
                 value={txHash}
                 onChange={(event) => setTxHash(event.target.value)}
@@ -176,6 +177,7 @@ export function CheckinPage() {
               </p>
             ) : null}
             <Button
+              data-testid="checkin-submit-button"
               className="h-11 rounded-2xl px-6"
               disabled={
                 !isConnected ||

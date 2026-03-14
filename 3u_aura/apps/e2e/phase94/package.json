@@ -1,0 +1,20 @@
+{
+  "name": "3u-aura-phase94-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:precheck": "playwright test tests/precheck.spec.ts",
+    "test:smoke": "playwright test --grep @smoke",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "wallets:build": "synpress",
+    "wallets:build:serial": "node ./scripts/build-wallet-cache.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.48.2",
+    "@synthetixio/synpress": "4.0.5",
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.3",
+    "viem": "2.45.1"
+  }
+}

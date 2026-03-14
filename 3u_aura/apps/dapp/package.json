@@ -5,6 +5,10 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
+    "env:build": "node ../../scripts/promotion-env/run-with-env.mjs --target dapp -- next build --webpack",
+    "env:dev": "node ../../scripts/promotion-env/run-with-env.mjs --target dapp -- next dev --webpack",
+    "env:print": "node ../../scripts/promotion-env/print-env.mjs --target dapp",
+    "env:start": "node ../../scripts/promotion-env/run-with-env.mjs --target dapp -- next start",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"

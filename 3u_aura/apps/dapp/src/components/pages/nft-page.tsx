@@ -259,6 +259,7 @@ export function NftPage() {
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
               <Button
+                data-testid="nft-approve-button"
                 className="h-11 rounded-2xl px-6"
                 disabled={
                   !isConnected ||
@@ -274,6 +275,7 @@ export function NftPage() {
                 {approveWrite.isPending ? "Approving..." : "Approve 1000 USDT"}
               </Button>
               <Button
+                data-testid="nft-buy-button"
                 className="h-11 rounded-2xl px-6"
                 disabled={!canBuyPurchasedNft || buyWrite.isPending}
                 onClick={handleBuy}
@@ -383,6 +385,7 @@ export function NftPage() {
               ) : null}
               <div className="flex flex-wrap gap-3">
                 <Button
+                  data-testid="nft-prepare-referral-button"
                   className="h-11 rounded-2xl px-6"
                   disabled={
                     !canRequestReferralMint ||
@@ -397,6 +400,7 @@ export function NftPage() {
                     : "Prepare Referral Mint"}
                 </Button>
                 <Button
+                  data-testid="nft-referral-mint-button"
                   className="h-11 rounded-2xl px-6"
                   disabled={
                     !canRequestReferralMint ||

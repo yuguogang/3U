@@ -1,0 +1,74 @@
+{
+  "environment": "release",
+  "status": "planned",
+  "chain": {
+    "id": 56,
+    "rpcUrl": "https://example.invalid",
+    "referralRpcUrl": "https://example.invalid"
+  },
+  "promotion": {
+    "startAt": "2026-03-11T00:00:00+08:00",
+    "timezone": "Asia/Shanghai",
+    "epochLengthDays": 7,
+    "ticketStreakDays": 7,
+    "minimumParticipants": 12,
+    "referralSignatureTtlSeconds": 900
+  },
+  "contracts": {
+    "paymentTokenAddress": "",
+    "paymentTokenKind": "release-token",
+    "paymentTokenSymbol": "USDT",
+    "founderNftAddress": "",
+    "nftSaleAddress": "",
+    "merkleDistributorAddress": "",
+    "settlementAddress": "",
+    "nftName": "3U AURA Founder NFT",
+    "nftSymbol": "3UAURA",
+    "baseUri": "",
+    "maxSubsidyEpochs": 12
+  },
+  "roles": {
+    "owner": "",
+    "financeWallet": "",
+    "checkinReceiverAddress": "",
+    "referralSignerAddress": "",
+    "settlementPublisher": "",
+    "rootPublisher": "",
+    "adminAllowlistWallets": []
+  },
+  "infra": {
+    "server": {
+      "port": 3210,
+      "host": "http://localhost:3210",
+      "publicApiBaseUrl": "http://localhost:3210"
+    },
+    "dapp": {
+      "baseUrl": "http://localhost:3200"
+    },
+    "admin": {
+      "baseUrl": "http://localhost:3201"
+    },
+    "database": {
+      "host": "127.0.0.1",
+      "port": 5433,
+      "name": "3u_aura_release",
+      "schema": "public"
+    },
+    "redis": {
+      "cacheUrl": "redis://127.0.0.1:6379/21",
+      "throttlerUrl": "redis://127.0.0.1:6379/22",
+      "bullHost": "127.0.0.1",
+      "bullPort": 6379,
+      "bullPrefix": "3u_aura:release",
+      "instanceId": "release_01"
+    }
+  },
+  "frontend": {
+    "walletConnectProjectId": ""
+  },
+  "artifacts": {
+    "deployMockUsdtBroadcast": "",
+    "deployCoreBroadcast": "",
+    "deploySettlementBroadcast": ""
+  }
+}

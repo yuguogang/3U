@@ -76,13 +76,35 @@
 
 ## 8. Risks
 - 部署地址在 server / dapp / admin 三端不一致，导致联调结果失真
-- `PROMOTION_REFERRAL_SIGNER_PRIVATE_KEY` 与链上 `REFERRAL_SIGNER` 不一致，导致 referral NFT mint 全部失败
+- `PROMOTION_REFERRAL_SIGNER_PRIVATE_KEY` 与链上 `REFERRAL_SIGNER_ADDRESS` 不一致，导致 referral NFT mint 全部失败
 - check-in 使用的 USDT 地址、收款地址或链 ID 配错，导致支付验证结果无效
 - claim / settlement 使用错误 epochId 或 proof 数据，出现“本地可过、链上失败”的漂移
 - 测试链 UAT 如果不记录真实 txHash、钱包和时间点，后续无法复盘
 - 若在 UAT 中临时修代码但不回写 execution，会让 Phase9.4 失去审计价值
 
 ## 9. Milestones
+
+### Milestone 0 — Automation UAT Sub-Plan (Optional but Recommended)
+**Goal**
+- 为 `Milestone 4` 提供可重复自动化执行能力（Playwright + Synpress + 5 钱包角色）。
+
+**Affected files/modules**
+- `docs/plan-excution/Phase9.4-Testnet-Deployment-UAT/automation-e2e-uat/*`
+- （审批后）e2e test harness 与运行脚本目录
+
+**Implementation notes**
+- 本里程碑先落地子计划，不直接改业务代码。
+- 详细计划见：
+  - `docs/plan-excution/Phase9.4-Testnet-Deployment-UAT/automation-e2e-uat/plan.md`
+
+**Risks**
+- 自动化方案未先审批就直接实现，会扩大变更面并增加回滚成本。
+
+**Verification commands**
+- `ls -la /Users/ygg/vs/ai/3U/3u_aura/docs/plan-excution/Phase9.4-Testnet-Deployment-UAT/automation-e2e-uat`
+
+**Expected outputs**
+- 自动化子计划文档与执行记录模板就绪，进入审批后再实施。
 
 ### Milestone 1 — Testnet Deployment Inputs & Address Manifest Freeze
 **Goal**

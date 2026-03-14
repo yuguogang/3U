@@ -94,7 +94,7 @@ export function TeamPage() {
               <p>
                 Your invite code:{" "}
                 <span className="font-semibold text-white">
-                  {user?.inviteCode ?? "-"}
+                  <span data-testid="team-invite-code">{user?.inviteCode ?? "-"}</span>
                 </span>
               </p>
               <p>
@@ -129,6 +129,7 @@ export function TeamPage() {
             </p>
             <div className="mt-5 space-y-3">
               <Input
+                data-testid="team-bind-invite-code-input"
                 placeholder="Invite code"
                 value={inviteCode}
                 onChange={(event) => setInviteCode(event.target.value)}
@@ -141,6 +142,7 @@ export function TeamPage() {
                 </p>
               ) : null}
               <Button
+                data-testid="team-bind-inviter-button"
                 className="h-11 rounded-2xl px-6"
                 disabled={
                   !isAuthenticated ||
@@ -171,6 +173,7 @@ export function TeamPage() {
               {pendingPlacements.map((invitee) => (
                 <button
                   key={invitee.userId}
+                  data-testid={`team-pending-placement-${invitee.userId}`}
                   className={`rounded-3xl border px-4 py-4 text-left transition ${
                     selectedPlacementUserId === invitee.userId
                       ? "border-orange-300/50 bg-orange-400/10"
@@ -221,6 +224,7 @@ export function TeamPage() {
             {selectableSlots.slice(0, 24).map((slot) => (
               <button
                 key={slot.placementKey}
+                data-testid={`team-slot-${slot.placementKey}`}
                 className={`rounded-3xl border px-4 py-4 text-left transition ${
                   selectedSlotKey === slot.placementKey
                     ? "border-orange-300/50 bg-orange-400/10"
@@ -252,6 +256,7 @@ export function TeamPage() {
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <Button
+              data-testid="team-confirm-placement-button"
               className="h-11 rounded-2xl px-6"
               disabled={
                 !selectedPlacementUserId ||

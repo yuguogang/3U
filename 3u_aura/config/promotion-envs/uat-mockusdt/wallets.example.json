@@ -1,0 +1,42 @@
+[
+  {
+    "name": "admin",
+    "address": "0xAdminWallet",
+    "privateKeyEnv": "PROMOTION_ADMIN_PRIVATE_KEY",
+    "initialBnbMin": "0.1",
+    "initialUsdtMin": "1000",
+    "role": "admin"
+  },
+  {
+    "name": "referrer",
+    "address": "0xReferrerWallet",
+    "privateKeyEnv": "PROMOTION_REFERRER_PRIVATE_KEY",
+    "initialBnbMin": "0.1",
+    "initialUsdtMin": "1000",
+    "role": "referrer"
+  },
+  {
+    "name": "userA",
+    "address": "0xUserAWallet",
+    "privateKeyEnv": "PROMOTION_USER_A_PRIVATE_KEY",
+    "initialBnbMin": "0.1",
+    "initialUsdtMin": "1003",
+    "role": "userA"
+  },
+  {
+    "name": "userB",
+    "address": "0xUserBWallet",
+    "privateKeyEnv": "PROMOTION_USER_B_PRIVATE_KEY",
+    "initialBnbMin": "0.1",
+    "initialUsdtMin": "1000",
+    "role": "userB"
+  },
+  {
+    "name": "userC",
+    "address": "0xUserCWallet",
+    "privateKeyEnv": "PROMOTION_USER_C_PRIVATE_KEY",
+    "initialBnbMin": "0.1",
+    "initialUsdtMin": "1000",
+    "role": "userC"
+  }
+]

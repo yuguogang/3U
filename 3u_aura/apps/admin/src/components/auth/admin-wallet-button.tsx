@@ -136,6 +136,7 @@ export function AdminWalletButton() {
             return (
               <button
                 className="inline-flex items-center gap-2 rounded-full border border-orange-400/30 bg-orange-500/20 px-4 py-2 text-sm font-medium text-orange-100 transition hover:bg-orange-500/25"
+                data-testid="admin-wallet-connect-button"
                 onClick={openConnectModal}
                 type="button"
               >
@@ -150,6 +151,7 @@ export function AdminWalletButton() {
               <button
                 className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/15 px-4 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-500/25 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isSigning}
+                data-testid="admin-wallet-signin-button"
                 onClick={() => handleAuthenticate(account.displayName)}
                 type="button"
               >
@@ -163,6 +165,7 @@ export function AdminWalletButton() {
             <div className="flex items-center gap-3">
               <button
                 className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm text-white transition hover:bg-white/10"
+                data-testid="admin-wallet-account-button"
                 onClick={openAccountModal}
                 type="button"
               >
@@ -170,6 +173,7 @@ export function AdminWalletButton() {
               </button>
               <button
                 className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                data-testid="admin-wallet-signout-button"
                 onClick={handleLogout}
                 type="button"
               >

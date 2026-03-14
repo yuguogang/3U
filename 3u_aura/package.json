@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "promotion-env:deploy-suite": "node scripts/promotion-env/deploy-contract-suite.mjs",
+    "promotion-env:print": "node scripts/promotion-env/print-env.mjs",
+    "promotion-env:sync": "node scripts/promotion-env/sync-public-envs.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

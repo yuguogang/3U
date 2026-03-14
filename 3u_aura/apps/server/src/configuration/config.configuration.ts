@@ -45,6 +45,7 @@ export const configuration = () => {
     },
     db: {
       host: process.env.DATABASE_HOST,
+      port: Number.parseInt(process.env.DATABASE_PORT || '5432'),
       user: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_NAME,
@@ -54,6 +55,7 @@ export const configuration = () => {
       password: process.env.CACHE_PASSWORD,
     },
     bull: {
+      prefix: process.env.BULL_PREFIX || undefined,
       connection: {
         host: process.env.BULL_HOST,
         port: Number.parseInt(process.env.BULL_PORT || '6379'),

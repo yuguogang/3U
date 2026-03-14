@@ -169,6 +169,7 @@ export function WalletButton() {
           return (
             <button
               onClick={openConnectModal}
+              data-testid="wallet-connect-button"
               className={cn(
                 "flex h-[26px] items-center justify-center gap-[10px] rounded-[30px] px-3 text-xs font-medium leading-[26px] text-white",
                 "hover:opacity-90 transition-opacity"
@@ -188,6 +189,9 @@ export function WalletButton() {
                 : () => handleLogin(account.displayName)
             }
             disabled={isSigning}
+            data-testid={
+              isAuthenticated ? "wallet-account-button" : "wallet-signin-button"
+            }
             className={cn(
               "flex h-[26px] items-center justify-center gap-[10px] rounded-[30px] px-3 text-xs font-medium leading-[26px] text-white",
               "hover:opacity-90 transition-opacity"

@@ -14,7 +14,7 @@ contract DeployNFTCore is Script {
         address finalOwner = vm.envOr("OWNER", broadcaster);
         address usdtAddress = vm.envAddress("USDT_ADDRESS");
         address financeWallet = vm.envAddress("FINANCE_WALLET");
-        address referralSigner = vm.envAddress("REFERRAL_SIGNER");
+        address referralSigner = vm.envAddress("REFERRAL_SIGNER_ADDRESS");
         string memory collectionName = vm.envOr("NFT_NAME", string("3U AURA Founder NFT"));
         string memory collectionSymbol = vm.envOr("NFT_SYMBOL", string("3UAURA"));
         string memory baseURI = vm.envOr("BASE_URI", string(""));
