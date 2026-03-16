@@ -110,6 +110,19 @@ In progress.
   - 已识别一项额外 UI 阻塞：
     - `/rewards` 页面当前会因既有 profile 数值序列化问题触发 client-side exception
     - 因此 Wave 2 暂以 rewards API + claims UI 作为最小可验证面，后续若要恢复 `/rewards` UI 断言，需要先单独修这个前端问题
+- 已完成 Wave 3 首轮落地并真实通过：
+  - 已抽出 weekly threshold-met 共用 setup：
+    - `apps/e2e/phase94/src/weekly-fork-threshold.ts`
+  - 已补 lottery / ranking 独立 specs：
+    - `apps/e2e/phase94/tests/weekly-fork/lottery.spec.ts`
+    - `apps/e2e/phase94/tests/weekly-fork/ranking.spec.ts`
+  - 已把 synthetic seed 扩展为支持不同真实观察钱包：
+    - `scripts/uat/seed-weekly-fork-fixtures.mjs`
+  - 当前已覆盖的 Wave 3 语义：
+    - lottery success path：观察钱包能看到 `LOTTERY_USDT` + `MERKLE_LOTTERY`
+    - lottery partial-bucket path：在未满配 bucket 下仍成功出奖，同时 `lotteryRolloverUsdt > 0`
+    - ranking success path：观察钱包能看到 deterministic `RANK_1` + `MERKLE_RANKING`
+    - ranking top10 path：`draftRewardCount = 10`、`rankingRolloverUsdt = 0`
 - 已确认一项执行环境限制：
   - 当前 Codex 受限沙箱会阻止本机监听端口与部分 `127.0.0.1` DB 访问
   - 因此涉及 anvil、Next/Nest dev server、本机 Postgres 的最终验证需在带本机权限的上下文中执行
@@ -130,6 +143,10 @@ In progress.
 - Wave 2 真实回归：
   - `apps/e2e/phase94/tests/weekly-fork/threshold-met.spec.ts`
   - 已确认 fresh future epoch + synthetic participants + direct draft materializer 可稳定打出最小 rewards / merkle claim happy path
+- Wave 3 真实回归：
+  - `apps/e2e/phase94/tests/weekly-fork/lottery.spec.ts`
+  - `apps/e2e/phase94/tests/weekly-fork/ranking.spec.ts`
+  - 已确认两条独立 spec 都能在 fork-anvil 上快速稳定通过
 
 - 新增 E2E 项目目录与配置：
   - `apps/e2e/phase94/package.json`
@@ -285,6 +302,9 @@ In progress.
 - `node /Users/ygg/vs/ai/3U/3u_aura/scripts/uat/materialize-weekly-fork-draft.mjs --env fork-anvil --epoch-id cmmsxthh6000nombp2e8y51f5`
 - `pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit`
 - `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec playwright test tests/weekly-fork/threshold-met.spec.ts`（多轮修正后通过）
+- `pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit`
+- `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec playwright test tests/weekly-fork/lottery.spec.ts`
+- `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec playwright test tests/weekly-fork/ranking.spec.ts`
 - `curl -sS --max-time 5 http://127.0.0.1:3210/api/v1/health`
 - `curl -sS --max-time 5 -H 'content-type: application/json' -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' http://127.0.0.1:18545`
 - `pnpm --dir apps/e2e/phase94 run test:weekly-fork`
@@ -729,6 +749,9 @@ In progress.
 - 继续推进 Wave 3：
   - 在现有 Wave 2 synthetic fixture 基础上拆出 lottery / ranking 独立 spec
   - 分别补 success / underfilled bucket / insufficient candidate 边界
+- 继续推进 Wave 4：
+  - 基于现有 draft / claim row 基座补 publish / deposit / publishRoot bridge
+  - 把 weekly merkle claim 从 read-model happy path 推进到真实链上 claim happy path
 - 基于新的 `txHash` 同步入口，继续推进 `claim` 自动化：
   - 先区分“server 已能同步 purchased NFT”与“链上 subsidy epoch 尚未发布”两个问题
   - 若 public UAT 仍无 `published subsidy epoch`，则将 `claim` 主验证迁移到 `fork + anvil + 可控 referenceAt` 测试层

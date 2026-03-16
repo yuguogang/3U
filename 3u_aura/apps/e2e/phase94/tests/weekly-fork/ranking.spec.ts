@@ -6,7 +6,7 @@ import { prepareThresholdMetEpoch } from "../../src/weekly-fork-threshold";
 
 test.setTimeout(5 * 60 * 1000);
 
-test("@weekly-fork threshold-met epoch can draft weekly rewards and merkle rows", async ({
+test("@weekly-fork ranking draft yields deterministic top-rank rows when enough candidates exist", async ({
   page,
 }) => {
   const runtime = loadRuntimeConfig();
@@ -26,47 +26,52 @@ test("@weekly-fork threshold-met epoch can draft weekly rewards and merkle rows"
       page,
     });
     observerWalletAddress = observerWallet.address;
-
-    expect(draft.mode).toBe("draft");
-    expect(draft.epochId).toBe(thresholdEpoch.epochId);
-    expect(draft.lottery.draftRewardCount).toBeGreaterThan(0);
-    expect(draft.ranking.draftRewardCount).toBeGreaterThan(0);
-    expect(draft.merkle.claimCount).toBeGreaterThan(0);
-
     const [claims, rewards] = await Promise.all([
       getMyClaims(observerSignin.accessToken),
       getMyRewards(observerSignin.accessToken),
     ]);
-    const epochRewards = rewards.data.filter(
-      (reward) => reward.epochId === thresholdEpoch.epochId,
+    const epochRankingRewards = rewards.data.filter(
+      (reward) =>
+        reward.epochId === thresholdEpoch.epochId &&
+        reward.rewardType === "RANKING_USDT",
     );
-    const epochClaims = claims.data.merkleClaims.filter(
-      (claim) => claim.epochId === thresholdEpoch.epochId,
+    const epochRankingClaims = claims.data.merkleClaims.filter(
+      (claim) =>
+        claim.epochId === thresholdEpoch.epochId &&
+        claim.claimType === "MERKLE_RANKING",
+    );
+    const topRankReward = epochRankingRewards.find(
+      (reward) => reward.distributionKey === "RANK_1",
     );
 
-    expect(epochRewards.length).toBeGreaterThan(0);
-    expect(epochRewards.some((reward) => BigInt(reward.amountUsdt) > 0n)).toBe(true);
-    expect(epochClaims.length).toBeGreaterThan(0);
-    expect(epochClaims.every((claim) => claim.status === "PENDING")).toBe(true);
+    expect(thresholdEpoch.ticketRefresh.participantCount).toBeGreaterThanOrEqual(
+      seeded.minimumParticipants,
+    );
+    expect(draft.ranking.draftRewardCount).toBe(10);
+    expect(draft.ranking.rankingRolloverUsdt).toBe("0");
+    expect(topRankReward).toBeTruthy();
+    expect(topRankReward?.rank).toBe(1);
+    expect(BigInt(topRankReward?.amountUsdt ?? "0")).toBeGreaterThan(0n);
+    expect(epochRankingClaims.length).toBeGreaterThan(0);
 
     await page.goto(`${runtime.manifest.infra.dapp.baseUrl}/claims`);
     await expect(
       page.getByText("No weekly merkle claim rows are available for this wallet."),
     ).toHaveCount(0);
-    await expect(page.locator("body")).toContainText(`epoch #${seeded.targetEpochNo}`);
+    await expect(page.locator("body")).toContainText("MERKLE_RANKING");
 
     appendUatReport({
-      test: "weekly-fork-threshold-met",
-      step: "draft-weekly-rewards-minimal-happy-path",
+      test: "weekly-fork-ranking",
+      step: "top10-ranking-success-path",
       wallet: observerWallet.address,
       result: "success",
       apiStatus: epochSync.status,
-      uiCheckpoint: `referenceAt=${window.referenceAt},epochNo=${seeded.targetEpochNo},participantCount=${thresholdEpoch!.ticketRefresh.participantCount}`,
+      uiCheckpoint: `referenceAt=${window.referenceAt},epochNo=${seeded.targetEpochNo},rankingRewards=${epochRankingRewards.length},topRank=${topRankReward?.amountUsdt ?? "0"}`,
     });
   } catch (error) {
     appendUatReport({
-      test: "weekly-fork-threshold-met",
-      step: "draft-weekly-rewards-minimal-happy-path",
+      test: "weekly-fork-ranking",
+      step: "top10-ranking-success-path",
       wallet: observerWalletAddress,
       result: "failed",
       error: error instanceof Error ? error.message : String(error),
