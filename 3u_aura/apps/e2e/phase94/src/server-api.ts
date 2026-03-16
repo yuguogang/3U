@@ -5,6 +5,7 @@ import type {
   PromotionClaimSyncResult,
   PromotionClaimsView,
   PromotionPurchasedNftSyncResult,
+  PromotionRewardView,
   ReferralPendingPlacementView,
   ReferralPlacementSlotView,
   WeeklyEpochBoundaryView,
@@ -125,6 +126,45 @@ export async function previewAdminEpochSync(
       method: "POST",
     },
   );
+}
+
+type AdminEpochSyncExecuteView = {
+  currentEpoch: WeeklyEpochBoundaryView;
+  processedEpochs: Array<{
+    epochId: string;
+    rollover: {
+      epochId: string;
+      nextEpochId?: string;
+      rolledOver: boolean;
+      totalPromotionPoolUsdt: string;
+    };
+    ticketRefresh: {
+      eligibleUserIds: string[];
+      epochId: string;
+      participantCount: number;
+      qualifiedTicketCount: number;
+    };
+  }>;
+};
+
+export async function executeAdminEpochSync(
+  accessToken: string,
+  referenceAt?: string,
+) {
+  return requestServerJson<AdminOperationResultEnvelope<AdminEpochSyncExecuteView>>(
+    "/api/v1/admin/ops/epochs/sync",
+    {
+      accessToken,
+      body: referenceAt ? { referenceAt } : {},
+      method: "POST",
+    },
+  );
+}
+
+export async function getMyRewards(accessToken: string) {
+  return requestServerJson<PromotionRewardView[]>("/api/v1/rewards/me", {
+    accessToken,
+  });
 }
 
 export async function syncMyClaim(

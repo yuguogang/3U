@@ -75,11 +75,35 @@ In progress.
   - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:weekly-fork` 最终 `2 passed`
   - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:uat` 最终 `6 passed`
   - `stack:stop` 与 `fork:stop` 已验证可清理全部相关监听端口
+- 已将自动化子计划重构为索引 + milestone docs + coverage matrix + runbook：
+  - `plan.md` 现在仅承担索引与审批入口
+  - `milestones/` 承载各阶段详细设计
+  - `matrices/coverage.md` 固化 weekly flow 的 success / blocked / failed 边界
+  - `runbooks/weekly-fork.md` 固化 fork 启停与执行顺序
+- 已继续细化 `Milestone 8` 的实施波次：
+  - Wave 1 聚焦 `WF-02` rollover success path
+  - Wave 2 聚焦 `WF-03` threshold-met minimal happy path 与 synthetic fixture strategy
+  - Wave 3 聚焦 `lottery / ranking` 的 draft payout 验证
+  - Wave 4 聚焦 weekly merkle claim 的 funding/root publish bridge
+- 已开始进入 Wave 1 实现：
+  - `apps/e2e/phase94/src/server-api.ts` 已新增 `executeAdminEpochSync()` 与 `getMyRewards()`
+  - `apps/e2e/phase94/tests/weekly-fork/rollover.spec.ts` 已建立 below-threshold rollover success path 的首版 spec
+  - 已通过 E2E TypeScript 静态检查；真实 runner 验证仍待本机权限上下文执行
 - 已确认一项执行环境限制：
   - 当前 Codex 受限沙箱会阻止本机监听端口与部分 `127.0.0.1` DB 访问
   - 因此涉及 anvil、Next/Nest dev server、本机 Postgres 的最终验证需在带本机权限的上下文中执行
 
 ## Work Completed
+- 文档结构重构：
+  - 将原单体 `plan.md` 拆分为索引、milestones、coverage matrix、weekly fork runbook
+  - 将 `Milestone 8` 的周流程覆盖边界从段落说明收敛为可检索矩阵
+  - 将 `Milestone 8` 的实现顺序进一步收敛为四个实施波次，并补上现成入口与 helper 缺口
+  - 本次为文档重构，无额外业务逻辑变更
+- Wave 1 实现起步：
+  - `apps/e2e/phase94/src/server-api.ts`
+  - `apps/e2e/phase94/tests/weekly-fork/rollover.spec.ts`
+  - 当前仅完成 helper/spec 骨架与静态校验，尚未在本机权限上下文中跑过真实 fork runner
+
 - 新增 E2E 项目目录与配置：
   - `apps/e2e/phase94/package.json`
   - `apps/e2e/phase94/tsconfig.json`
@@ -240,6 +264,7 @@ In progress.
 - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:uat`
 - `pnpm --dir apps/server exec jest db/prisma-pg-config.spec.ts --runInBand`
 - `pnpm --dir apps/server run build`
+- `pnpm --dir apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit`
 - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run stack:start`
 - `node scripts/uat/reset-weekly-fork-db.mjs --env fork-anvil`
 - `node scripts/promotion-env/run-with-env.mjs --target server --env fork-anvil -- pnpm exec node -e '<pg probe for enum types / enum columns / defaults>'`
@@ -456,6 +481,9 @@ In progress.
     已全部兼容当前实现。
 - `pnpm --dir apps/e2e/phase94 run typecheck`
   - 本轮新增 weekly-fork 相关改动后再次通过。
+- `pnpm --dir apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit`
+  - 通过。
+  - 已验证新增 `executeAdminEpochSync()` helper 与 `rollover.spec.ts` 能通过 TypeScript 编译。
 - `node scripts/uat/prepare-weekly-fork-db.mjs --env fork-anvil`
   - 通过。
   - 已验证：
@@ -659,6 +687,9 @@ In progress.
 - 基于已打通的 bootstrap 登录链路，继续推进剩余业务烟测：
   - claim
   - 如有需要，补 admin 侧与 NFT/claim 相关的二次断言页
+- 先在带本机权限的上下文中执行 Wave 1：
+  - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/rollover.spec.ts`
+  - 确认 below-threshold rollover 在真实 fork runner 下稳定通过
 - 基于新的 `txHash` 同步入口，继续推进 `claim` 自动化：
   - 先区分“server 已能同步 purchased NFT”与“链上 subsidy epoch 尚未发布”两个问题
   - 若 public UAT 仍无 `published subsidy epoch`，则将 `claim` 主验证迁移到 `fork + anvil + 可控 referenceAt` 测试层
