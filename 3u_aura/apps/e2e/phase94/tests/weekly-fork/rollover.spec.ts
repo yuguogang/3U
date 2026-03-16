@@ -4,6 +4,7 @@ import {
   executeAdminEpochSync,
   getMyClaims,
   getMyRewards,
+  previewAdminEpochSync,
 } from "../../src/server-api";
 import { loadRuntimeConfig, loadWalletFixture } from "../../src/runtime";
 import {
@@ -11,21 +12,47 @@ import {
   bootstrapDappSession,
 } from "../../src/session-bootstrap";
 
-const REFERENCE_AT = "2026-03-18T00:00:00.000Z";
+const BASE_REFERENCE_AT = "2026-03-18T00:00:00.000Z";
 const MINIMUM_PARTICIPANTS = 12;
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+async function findRunnableReferenceAt(accessToken: string) {
+  let candidateAt = new Date(BASE_REFERENCE_AT);
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const preview = await previewAdminEpochSync(
+      accessToken,
+      candidateAt.toISOString(),
+    );
+    const latestEpochNo = Math.max(
+      0,
+      ...preview.data.result.latestEpochs.map((epoch) => epoch.epochNo),
+    );
+    const currentEpochNo = preview.data.result.currentBoundary.epochNo ?? 0;
+
+    if (currentEpochNo > latestEpochNo) {
+      return candidateAt.toISOString();
+    }
+
+    candidateAt = new Date(candidateAt.getTime() + WEEK_MS);
+  }
+
+  throw new Error("No runnable weekly epoch window found within 8 attempts");
+}
 
 test("@weekly-fork below-threshold epochs rollover and stay non-claimable", async ({
   page,
 }) => {
   const runtime = loadRuntimeConfig();
   const adminWallet = loadWalletFixture("admin", runtime.environment);
-  const observerWallet = loadWalletFixture("userC", runtime.environment);
+  const observerWallet = loadWalletFixture("userB", runtime.environment);
 
   try {
     const adminSignin = await bootstrapAdminSession(page, adminWallet);
+    const referenceAt = await findRunnableReferenceAt(adminSignin.accessToken);
     const epochSync = await executeAdminEpochSync(
       adminSignin.accessToken,
-      REFERENCE_AT,
+      referenceAt,
     );
     const rolledOverEpochs = epochSync.data.result.processedEpochs.filter(
       (epoch) => epoch.rollover.rolledOver,
@@ -70,7 +97,7 @@ test("@weekly-fork below-threshold epochs rollover and stay non-claimable", asyn
       wallet: adminWallet.address,
       result: "success",
       apiStatus: epochSync.status,
-      uiCheckpoint: `referenceAt=${REFERENCE_AT},rolledOverEpochs=${rolledOverEpochs.length}`,
+      uiCheckpoint: `referenceAt=${referenceAt},rolledOverEpochs=${rolledOverEpochs.length}`,
     });
   } catch (error) {
     appendUatReport({

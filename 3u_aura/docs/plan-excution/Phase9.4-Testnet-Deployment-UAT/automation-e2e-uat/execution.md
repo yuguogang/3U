@@ -89,6 +89,27 @@ In progress.
   - `apps/e2e/phase94/src/server-api.ts` 已新增 `executeAdminEpochSync()` 与 `getMyRewards()`
   - `apps/e2e/phase94/tests/weekly-fork/rollover.spec.ts` 已建立 below-threshold rollover success path 的首版 spec
   - 已通过 E2E TypeScript 静态检查；真实 runner 验证仍待本机权限上下文执行
+- 已完成 Wave 1 首次真实通过：
+  - `rollover.spec.ts` 已改为先用 admin preview 滚动寻找可执行的 future weekly window，避免重复运行时 referenceAt 被消费后直接空跑
+  - 观察钱包已从 `userC` 切到 `userB`，规避 purchased NFT subsidy 历史数据对“无周奖励/无 merkle claim”断言的污染
+  - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/rollover.spec.ts` 已在本机上下文下真实通过
+- 已完成 Wave 2 首轮落地并真实通过：
+  - 已新增 weekly synthetic fixture seeding：
+    - `scripts/uat/seed-weekly-fork-fixtures.mjs`
+    - `apps/e2e/phase94/src/weekly-fork-fixtures.ts`
+  - 已新增 weekly draft materializer / epoch resolver：
+    - `scripts/uat/materialize-weekly-fork-draft.mjs`
+    - `scripts/uat/resolve-weekly-fork-epoch.mjs`
+    - `apps/e2e/phase94/src/weekly-fork-rewards.ts`
+  - 已新增 `apps/e2e/phase94/tests/weekly-fork/threshold-met.spec.ts`
+  - 当前最小 happy path 已覆盖：
+    - synthetic participants 达到 `minimumParticipants`
+    - epoch sync 进入 `rolledOver=false` 分支
+    - weekly draft 生成 lottery / ranking / merkle claim rows
+    - 观察钱包可通过 API 看到 rewards / merkle claims，且 `/claims` 页面可见对应 epoch 行
+  - 已识别一项额外 UI 阻塞：
+    - `/rewards` 页面当前会因既有 profile 数值序列化问题触发 client-side exception
+    - 因此 Wave 2 暂以 rewards API + claims UI 作为最小可验证面，后续若要恢复 `/rewards` UI 断言，需要先单独修这个前端问题
 - 已确认一项执行环境限制：
   - 当前 Codex 受限沙箱会阻止本机监听端口与部分 `127.0.0.1` DB 访问
   - 因此涉及 anvil、Next/Nest dev server、本机 Postgres 的最终验证需在带本机权限的上下文中执行
@@ -103,6 +124,12 @@ In progress.
   - `apps/e2e/phase94/src/server-api.ts`
   - `apps/e2e/phase94/tests/weekly-fork/rollover.spec.ts`
   - 当前仅完成 helper/spec 骨架与静态校验，尚未在本机权限上下文中跑过真实 fork runner
+- Wave 1 真实回归：
+  - `apps/e2e/phase94/tests/weekly-fork/rollover.spec.ts`
+  - 本次补上 dynamic referenceAt 选择与 observer wallet 修正后，单测已真实通过
+- Wave 2 真实回归：
+  - `apps/e2e/phase94/tests/weekly-fork/threshold-met.spec.ts`
+  - 已确认 fresh future epoch + synthetic participants + direct draft materializer 可稳定打出最小 rewards / merkle claim happy path
 
 - 新增 E2E 项目目录与配置：
   - `apps/e2e/phase94/package.json`
@@ -249,6 +276,15 @@ In progress.
 - `node scripts/uat/prepare-weekly-fork-db.mjs --env fork-anvil`
 - `pnpm --dir apps/e2e/phase94 run fork:start`
 - `node scripts/promotion-env/run-with-env.mjs --target server --env fork-anvil -- pnpm --dir apps/server exec nest start`
+- `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec playwright test tests/weekly-fork/rollover.spec.ts`（首次失败：`userC` 存在历史 `nftSubsidyClaims`）
+- `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec playwright test tests/weekly-fork/rollover.spec.ts`（第二次失败：固定 `referenceAt=2026-03-18` 已无待处理 epoch）
+- `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec playwright test tests/weekly-fork/rollover.spec.ts`（通过）
+- `pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit`
+- `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec playwright test tests/weekly-fork/rollover.spec.ts`（dynamic referenceAt 修正后复验通过）
+- `node /Users/ygg/vs/ai/3U/3u_aura/scripts/promotion-env/run-with-env.mjs --target server --env fork-anvil -- pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/server exec ts-node -r tsconfig-paths/register scripts/settle-weekly-epoch-rewards.ts --epoch-id cmmsxthh6000nombp2e8y51f5 --mode draft`（用于确认 ts-node 可跑通原始 draft script）
+- `node /Users/ygg/vs/ai/3U/3u_aura/scripts/uat/materialize-weekly-fork-draft.mjs --env fork-anvil --epoch-id cmmsxthh6000nombp2e8y51f5`
+- `pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit`
+- `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec playwright test tests/weekly-fork/threshold-met.spec.ts`（多轮修正后通过）
 - `curl -sS --max-time 5 http://127.0.0.1:3210/api/v1/health`
 - `curl -sS --max-time 5 -H 'content-type: application/json' -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' http://127.0.0.1:18545`
 - `pnpm --dir apps/e2e/phase94 run test:weekly-fork`
@@ -687,9 +723,12 @@ In progress.
 - 基于已打通的 bootstrap 登录链路，继续推进剩余业务烟测：
   - claim
   - 如有需要，补 admin 侧与 NFT/claim 相关的二次断言页
-- 先在带本机权限的上下文中执行 Wave 1：
-  - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/rollover.spec.ts`
-  - 确认 below-threshold rollover 在真实 fork runner 下稳定通过
+- 继续推进 Wave 2：
+  - 为 threshold-met 场景补 synthetic fixture helper
+  - 新增最小 happy path spec，覆盖达到参与人数门槛后的 weekly payout draft 入口
+- 继续推进 Wave 3：
+  - 在现有 Wave 2 synthetic fixture 基础上拆出 lottery / ranking 独立 spec
+  - 分别补 success / underfilled bucket / insufficient candidate 边界
 - 基于新的 `txHash` 同步入口，继续推进 `claim` 自动化：
   - 先区分“server 已能同步 purchased NFT”与“链上 subsidy epoch 尚未发布”两个问题
   - 若 public UAT 仍无 `published subsidy epoch`，则将 `claim` 主验证迁移到 `fork + anvil + 可控 referenceAt` 测试层
