@@ -255,6 +255,21 @@ export class StatsRepository {
     });
   }
 
+  async setPurchasedNftFlag(
+    data: {
+      hasPurchasedNft: boolean;
+      userId: string;
+    },
+    executor: DbExecutor = this.db,
+  ): Promise<UserProfile> {
+    return executor.userProfile.update({
+      where: { userId: data.userId },
+      data: {
+        hasPurchasedNft: data.hasPurchasedNft,
+      },
+    });
+  }
+
   async applyProfileConsolationProjection(
     data: {
       amountAura: Prisma.Decimal;

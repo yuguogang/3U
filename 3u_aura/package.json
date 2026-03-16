@@ -4,6 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "promotion-env:fork:create": "node scripts/uat/create-weekly-fork-env.mjs --env ${PROMOTION_ENV:-fork-anvil}",
+    "promotion-env:fork:db:prepare": "node scripts/uat/prepare-weekly-fork-db.mjs --env ${PROMOTION_ENV:-fork-anvil}",
+    "promotion-env:fork:db:reset": "node scripts/uat/reset-weekly-fork-db.mjs --env ${PROMOTION_ENV:-fork-anvil}",
+    "promotion-env:fork:start": "node scripts/uat/start-weekly-fork.mjs --env ${PROMOTION_ENV:-fork-anvil}",
+    "promotion-env:fork:stop": "node scripts/uat/stop-weekly-fork.mjs --env ${PROMOTION_ENV:-fork-anvil}",
+    "promotion-env:fork:reset": "node scripts/uat/reset-weekly-fork.mjs --env ${PROMOTION_ENV:-fork-anvil}",
+    "promotion-env:fork:advance-time": "node scripts/uat/advance-weekly-fork-time.mjs --env ${PROMOTION_ENV:-fork-anvil}",
     "promotion-env:deploy-suite": "node scripts/promotion-env/deploy-contract-suite.mjs",
     "promotion-env:print": "node scripts/promotion-env/print-env.mjs",
     "promotion-env:sync": "node scripts/promotion-env/sync-public-envs.mjs",

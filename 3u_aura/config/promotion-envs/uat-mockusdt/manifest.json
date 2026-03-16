@@ -35,6 +35,7 @@
     "settlementPublisher": "0x47eec8D283F825389114C4B0d3Ec617A6D6c792b",
     "rootPublisher": "0x951f5f74f8a5b480DC42aA41c04522C8eCED6d64",
     "adminAllowlistWallets": [
+      "0x4Af8649c22063c95F50862d7ad2a64014de36483",
       "0x951f5f74f8a5b480DC42aA41c04522C8eCED6d64",
       "0xDB45228dA324fb9A832c2a1C8Edf08D6820Ccc9C"
     ]
@@ -42,14 +43,14 @@
   "infra": {
     "server": {
       "port": 3110,
-      "host": "http://localhost:3110",
-      "publicApiBaseUrl": "http://localhost:3110"
+      "host": "http://127.0.0.1:3110",
+      "publicApiBaseUrl": "http://127.0.0.1:3110"
     },
     "dapp": {
-      "baseUrl": "http://localhost:3100"
+      "baseUrl": "http://127.0.0.1:3100"
     },
     "admin": {
-      "baseUrl": "http://localhost:3101"
+      "baseUrl": "http://127.0.0.1:3101"
     },
     "database": {
       "host": "127.0.0.1",
@@ -67,6 +68,7 @@
     }
   },
   "frontend": {
+    "e2eInjectedWallet": true,
     "walletConnectProjectId": ""
   },
   "artifacts": {

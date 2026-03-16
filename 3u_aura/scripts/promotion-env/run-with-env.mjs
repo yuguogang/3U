@@ -58,6 +58,17 @@ function ensureServerPrismaRuntimeLink() {
 
 ensureServerPrismaRuntimeLink();
 
+const prismaRuntimeLinkWatch =
+  args.target === 'server'
+    ? setInterval(() => {
+        try {
+          ensureServerPrismaRuntimeLink();
+        } catch (error) {
+          process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+        }
+      }, 1_000)
+    : null;
+
 const child = spawn(args.command[0], args.command.slice(1), {
   cwd: process.cwd(),
   env: context.env,
@@ -66,6 +77,10 @@ const child = spawn(args.command[0], args.command.slice(1), {
 });
 
 child.on('exit', (code, signal) => {
+  if (prismaRuntimeLinkWatch) {
+    clearInterval(prismaRuntimeLinkWatch);
+  }
+
   if (signal) {
     process.kill(process.pid, signal);
     return;

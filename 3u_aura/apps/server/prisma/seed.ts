@@ -3,9 +3,17 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 import { userSeed } from './seeds/user.seed';
+import {
+  resolveDatabaseSchemaFromEnv,
+  splitPrismaPgPoolConfig,
+} from '../src/db/prisma-pg-config';
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
+const { poolConfig, schema } = splitPrismaPgPoolConfig({
+  connectionString: process.env.DATABASE_URL,
+  schema: resolveDatabaseSchemaFromEnv(),
+});
+const pool = new Pool(poolConfig);
+const adapter = new PrismaPg(pool, schema ? { schema } : undefined);
 const prisma = new PrismaClient({ adapter });
 
 const main = async () => {

@@ -8,7 +8,7 @@ import type { ThrottlerOptions } from '@nestjs/throttler';
 import type { QueueOptions } from 'bullmq';
 
 import { RedisOptions } from 'ioredis';
-import * as pg from 'pg';
+import type { PrismaPgPoolConfig } from '@/db/prisma-pg-config';
 
 export type ConfigOptions = {
   api: {
@@ -27,7 +27,7 @@ export type ConfigOptions = {
   };
   cache: RedisClientOptions;
   cors: CorsOptions | CorsOptionsDelegate<any>;
-  db: pg.PoolConfig;
+  db: PrismaPgPoolConfig;
   host: string;
   bull: QueueOptions;
   port: number;

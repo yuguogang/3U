@@ -1,3 +1,4 @@
+import { type User } from '@/db';
 import { Injectable } from '@nestjs/common';
 import {
   ClaimStatus,
@@ -14,10 +15,12 @@ export class ClaimsReadService {
     private readonly nftSubsidyClaimRepository: NftSubsidyClaimRepository,
   ) {}
 
-  async listClaimsForUser(userId: string): Promise<PromotionClaimsView> {
+  async listClaimsForUser(
+    user: Pick<User, 'id' | 'walletAddress'>,
+  ): Promise<PromotionClaimsView> {
     const [merkleClaims, nftSubsidyClaims] = await Promise.all([
-      this.claimRecordRepository.listMerkleClaimsForUser(userId),
-      this.nftSubsidyClaimRepository.listClaimsForUser(userId),
+      this.claimRecordRepository.listMerkleClaimsForUser(user.id),
+      this.nftSubsidyClaimRepository.listClaimsForUser(user.id),
     ]);
 
     return {

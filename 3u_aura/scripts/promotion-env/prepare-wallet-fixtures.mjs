@@ -107,6 +107,38 @@ function buildWalletRecord({ manifest, template, account }) {
   };
 }
 
+function isForkEnvironment(manifest) {
+  return Boolean(manifest.fork) || manifest.environment.startsWith('fork-');
+}
+
+function resolveFundingAccount({ baseEnv, manifest, walletRecords }) {
+  if (isForkEnvironment(manifest)) {
+    const fundingWallet =
+      walletRecords.find((wallet) => wallet.role === 'admin') ?? walletRecords[0];
+
+    if (!fundingWallet?.privateKey) {
+      throw new Error(
+        `Fork environment ${manifest.environment} is missing a local funding wallet`,
+      );
+    }
+
+    return privateKeyToAccount(ensureHexPrivateKey(fundingWallet.privateKey));
+  }
+
+  const ownerPrivateKey = ensureHexPrivateKey(
+    process.env.PRIVATE_KEY || baseEnv.PRIVATE_KEY,
+  );
+  const ownerAccount = privateKeyToAccount(ownerPrivateKey);
+
+  if (ownerAccount.address.toLowerCase() !== manifest.roles.owner.toLowerCase()) {
+    throw new Error(
+      `Owner private key address ${ownerAccount.address} does not match manifest owner ${manifest.roles.owner}`,
+    );
+  }
+
+  return ownerAccount;
+}
+
 async function main() {
   const { envName } = parseArgs(process.argv.slice(2));
   const envDir = path.join(REPO_ROOT, 'config', 'promotion-envs', envName);
@@ -120,14 +152,6 @@ async function main() {
   }
 
   const baseEnv = loadBaseEnv(path.join(REPO_ROOT, 'apps', 'contracts'));
-  const ownerPrivateKey = ensureHexPrivateKey(process.env.PRIVATE_KEY || baseEnv.PRIVATE_KEY);
-  const ownerAccount = privateKeyToAccount(ownerPrivateKey);
-
-  if (ownerAccount.address.toLowerCase() !== manifest.roles.owner.toLowerCase()) {
-    throw new Error(
-      `Owner private key address ${ownerAccount.address} does not match manifest owner ${manifest.roles.owner}`,
-    );
-  }
 
   ensureDir(walletsDir);
 
@@ -157,12 +181,18 @@ async function main() {
     generatedNames.push(template.name);
   }
 
+  const fundingAccount = resolveFundingAccount({
+    baseEnv,
+    manifest,
+    walletRecords,
+  });
+
   const publicClient = createPublicClient({
     chain: bscTestnet,
     transport: http(manifest.chain.rpcUrl),
   });
   const walletClient = createWalletClient({
-    account: ownerAccount,
+    account: fundingAccount,
     chain: bscTestnet,
     transport: http(manifest.chain.rpcUrl),
   });
@@ -170,7 +200,8 @@ async function main() {
   const report = {
     environment: envName,
     chainId: manifest.chain.id,
-    ownerAddress: ownerAccount.address,
+    funderAddress: fundingAccount.address,
+    ownerAddress: manifest.roles.owner,
     paymentTokenAddress: manifest.contracts.paymentTokenAddress,
     generatedWallets: generatedNames,
     wallets: [],
@@ -203,7 +234,7 @@ async function main() {
 
     if (currentBnb < targetBnb) {
       const bnbHash = await walletClient.sendTransaction({
-        account: ownerAccount,
+        account: fundingAccount,
         to: address,
         value: targetBnb - currentBnb,
       });
@@ -213,7 +244,7 @@ async function main() {
 
     if (currentMockUsdt < targetMockUsdt) {
       const mintHash = await walletClient.writeContract({
-        account: ownerAccount,
+        account: fundingAccount,
         address: manifest.contracts.paymentTokenAddress,
         abi: MOCK_USDT_ABI,
         functionName: 'mint',
@@ -242,7 +273,8 @@ async function main() {
     `${JSON.stringify(
       {
         environment: envName,
-        ownerAddress: ownerAccount.address,
+        funderAddress: fundingAccount.address,
+        ownerAddress: manifest.roles.owner,
         generatedWallets: generatedNames,
         wallets: report.wallets,
       },

@@ -1,35 +1,25 @@
 import { test, expect } from "@playwright/test";
 import { appendUatReport } from "../../src/report";
-import { createMetaMaskSession } from "../../src/metamask-session";
-import { connectWalletFromDapp, finishDappSignin } from "../../src/smoke";
-import { loadRuntimeConfig } from "../../src/runtime";
+import { bootstrapDappSession } from "../../src/session-bootstrap";
+import { loadRuntimeConfig, loadWalletFixture } from "../../src/runtime";
 
-test("@smoke referrer can connect wallet and sign into dapp", async () => {
+test("@smoke referrer can bootstrap an authenticated dapp session", async ({
+  page,
+}) => {
   const runtime = loadRuntimeConfig();
-  const session = await createMetaMaskSession("referrer");
+  const wallet = loadWalletFixture("referrer", runtime.environment);
 
-  try {
-    await session.page.goto(runtime.manifest.infra.dapp.baseUrl);
-    await connectWalletFromDapp(
-      session.page,
-      session.metamask,
-      "wallet-connect-button",
-    );
-    await finishDappSignin(session.page, session.metamask);
+  await bootstrapDappSession(page, wallet);
+  await page.goto(`${runtime.manifest.infra.dapp.baseUrl}/team`);
+  await expect(page.getByTestId("team-invite-code")).not.toHaveText("-", {
+    timeout: 30_000,
+  });
 
-    await session.page.goto(`${runtime.manifest.infra.dapp.baseUrl}/team`);
-    await expect(session.page.getByTestId("team-invite-code")).not.toHaveText(
-      "-",
-    );
-
-    appendUatReport({
-      test: "dapp-login",
-      step: "referrer-login",
-      wallet: session.wallet.address,
-      result: "success",
-      uiCheckpoint: `${runtime.manifest.infra.dapp.baseUrl}/team`,
-    });
-  } finally {
-    await session.cleanup();
-  }
+  appendUatReport({
+    test: "dapp-login",
+    step: "referrer-bootstrap-login",
+    wallet: wallet.address,
+    result: "success",
+    uiCheckpoint: `${runtime.manifest.infra.dapp.baseUrl}/team`,
+  });
 });

@@ -6,7 +6,9 @@ import { JwtAuthGuard } from '@/auth';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+  ) {}
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)

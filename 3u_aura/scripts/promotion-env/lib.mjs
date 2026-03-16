@@ -191,6 +191,12 @@ function buildCommonPromotionEnv(manifest) {
   };
 }
 
+function buildCorsOrigins(manifest) {
+  return [manifest.infra.dapp.baseUrl, manifest.infra.admin.baseUrl]
+    .filter((value, index, values) => Boolean(value) && values.indexOf(value) === index)
+    .join(',');
+}
+
 function resolveWalletConnectProjectId(baseEnv, manifest) {
   return (
     process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ||
@@ -212,9 +218,11 @@ export function buildDerivedEnv({ manifest, target, baseEnv }) {
         PROMOTION_ENV_STATUS: manifest.status,
         PORT: String(manifest.infra.server.port),
         HOST: manifest.infra.server.host,
+        CORS_ORIGIN: process.env.CORS_ORIGIN || buildCorsOrigins(manifest),
         DATABASE_HOST: manifest.infra.database.host,
         DATABASE_PORT: String(manifest.infra.database.port),
         DATABASE_NAME: manifest.infra.database.name,
+        DATABASE_SCHEMA: manifest.infra.database.schema || 'public',
         CACHE_URL: manifest.infra.redis.cacheUrl,
         THROTTLER_REDIS: manifest.infra.redis.throttlerUrl,
         BULL_HOST: manifest.infra.redis.bullHost,
@@ -232,6 +240,11 @@ export function buildDerivedEnv({ manifest, target, baseEnv }) {
           manifest.infra.server.port,
         ),
         NEXT_PUBLIC_API_BASE_URL: manifest.infra.server.publicApiBaseUrl,
+        NEXT_PUBLIC_E2E_INJECTED_WALLET: manifest.frontend
+          .e2eInjectedWallet
+          ? 'true'
+          : 'false',
+        NEXT_PUBLIC_PROMOTION_RPC_URL: manifest.chain.rpcUrl,
         NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: resolveWalletConnectProjectId(
           baseEnv,
           manifest,
@@ -253,6 +266,11 @@ export function buildDerivedEnv({ manifest, target, baseEnv }) {
           manifest.infra.server.port,
         ),
         NEXT_PUBLIC_API_BASE_URL: manifest.infra.server.publicApiBaseUrl,
+        NEXT_PUBLIC_E2E_INJECTED_WALLET: manifest.frontend
+          .e2eInjectedWallet
+          ? 'true'
+          : 'false',
+        NEXT_PUBLIC_PROMOTION_RPC_URL: manifest.chain.rpcUrl,
         NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: resolveWalletConnectProjectId(
           baseEnv,
           manifest,
@@ -309,6 +327,7 @@ const REQUIRED_KEYS = {
   ],
   dapp: [
     'NEXT_PUBLIC_API_BASE_URL',
+    'NEXT_PUBLIC_PROMOTION_RPC_URL',
     'NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID',
     'NEXT_PUBLIC_PROMOTION_CHAIN_ID',
     'NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS',
@@ -333,7 +352,23 @@ const REQUIRED_KEYS = {
     'PROMOTION_MERKLE_DISTRIBUTOR_ADDRESS',
     'PROMOTION_SETTLEMENT_ADDRESS',
   ],
+  admin: ['NEXT_PUBLIC_API_BASE_URL', 'NEXT_PUBLIC_PROMOTION_RPC_URL', 'NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID'],
 };
+
+function getRequiredKeys({ manifest, target }) {
+  const requiredKeys = [...REQUIRED_KEYS[target]];
+
+  if (
+    manifest.frontend?.e2eInjectedWallet &&
+    (target === 'dapp' || target === 'admin')
+  ) {
+    return requiredKeys.filter(
+      (key) => key !== 'NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID',
+    );
+  }
+
+  return requiredKeys;
+}
 
 export function assertRunnable({ manifest, target, env }) {
   if (manifest.status !== 'active') {
@@ -342,7 +377,9 @@ export function assertRunnable({ manifest, target, env }) {
     );
   }
 
-  const missing = REQUIRED_KEYS[target].filter((key) => isUnsetValue(env[key]));
+  const missing = getRequiredKeys({ manifest, target }).filter((key) =>
+    isUnsetValue(env[key]),
+  );
   if (missing.length > 0) {
     throw new Error(
       `Environment "${manifest.environment}" is missing required ${target} keys: ${missing.join(', ')}`,

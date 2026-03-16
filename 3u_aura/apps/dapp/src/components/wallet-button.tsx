@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useAccount, useChainId, useSignMessage } from "wagmi";
+import { useAccount, useChainId, useConnect, useSignMessage } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
@@ -29,6 +29,7 @@ function isSameAddress(a?: string | null, b?: string | null) {
 export function WalletButton() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
+  const { connectAsync, connectors, isPending: isConnecting } = useConnect();
   const signMessage = useSignMessage();
 
   const {
@@ -41,12 +42,16 @@ export function WalletButton() {
     logout,
   } = useAuthStore();
   const [isSigning, setIsSigning] = useState(false);
+  const useAutomationInjectedWallet =
+    process.env.NEXT_PUBLIC_E2E_INJECTED_WALLET === "true";
   const autoLoginAttemptedForAddressRef = useRef<string | null>(null);
   // 记录 wagmi 是否曾经连接过，用于区分"初始加载"和"真正断开"
   const wasConnectedRef = useRef(false);
 
   const signatureMessageMutation = useAuthSignatureMessageMutation();
   const signinMutation = useAuthSigninBySignatureMutation();
+  const automationConnector =
+    connectors.find((connector) => connector.type === "injected") ?? null;
 
   // 当已登录时，获取用户信息
   const { data: userProfile } = useUserProfileQuery(
@@ -168,7 +173,23 @@ export function WalletButton() {
         if (!account) {
           return (
             <button
-              onClick={openConnectModal}
+              onClick={async () => {
+                if (useAutomationInjectedWallet) {
+                  if (!automationConnector) {
+                    console.error("Automation injected connector is unavailable");
+                    return;
+                  }
+
+                  try {
+                    await connectAsync({ connector: automationConnector });
+                  } catch (error) {
+                    console.error("Wallet connect failed:", error);
+                  }
+                  return;
+                }
+
+                openConnectModal();
+              }}
               data-testid="wallet-connect-button"
               className={cn(
                 "flex h-[26px] items-center justify-center gap-[10px] rounded-[30px] px-3 text-xs font-medium leading-[26px] text-white",
@@ -176,7 +197,9 @@ export function WalletButton() {
               )}
               style={gradientStyle}
             >
-              Connect Wallet
+              {useAutomationInjectedWallet && isConnecting
+                ? "Connecting..."
+                : "Connect Wallet"}
             </button>
           );
         }

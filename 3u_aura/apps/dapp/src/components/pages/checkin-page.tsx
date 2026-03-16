@@ -19,35 +19,52 @@ import { useAuthStore } from "@/store/auth.store";
 export function CheckinPage() {
   const chainId = useChainId();
   const { address, isConnected } = useAccount();
-  const { hasHydrated, isAuthenticated } = useAuthStore();
+  const { authAddress, hasHydrated, isAuthenticated } = useAuthStore();
   const profileQuery = useUserProfileQuery(isAuthenticated && hasHydrated);
   const checkinMutation = useSubmitCheckinMutation();
   const [txHash, setTxHash] = useState("");
   const [submittedTxHash, setSubmittedTxHash] = useState<string | null>(null);
   const profile = profileQuery.data?.profile;
+  const useAutomationInjectedWallet =
+    process.env.NEXT_PUBLIC_E2E_INJECTED_WALLET === "true";
+  const effectiveAddress =
+    isConnected && address
+      ? address
+      : useAutomationInjectedWallet && isAuthenticated
+        ? authAddress
+        : null;
+  const effectiveChainId =
+    isConnected && chainId
+      ? chainId
+      : useAutomationInjectedWallet && isAuthenticated
+        ? promotionChainId
+        : undefined;
+  const isWalletReady = Boolean(
+    effectiveAddress && effectiveChainId && isAuthenticated,
+  );
 
   const chainLabel = useMemo(() => {
-    if (!chainId) {
+    if (!effectiveChainId) {
       return `Target chain ${promotionChainId}`;
     }
 
-    return chainId === promotionChainId
-      ? `Connected chain ${chainId}`
-      : `Connected chain ${chainId}, target ${promotionChainId}`;
-  }, [chainId]);
+    return effectiveChainId === promotionChainId
+      ? `Connected chain ${effectiveChainId}`
+      : `Connected chain ${effectiveChainId}, target ${promotionChainId}`;
+  }, [effectiveChainId]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!address || !chainId) {
+    if (!effectiveAddress || !effectiveChainId) {
       return;
     }
 
     const trimmedTxHash = txHash.trim();
     await checkinMutation.mutateAsync({
       amountAtomic: "3000000",
-      chainId,
-      payerAddress: address,
+      chainId: effectiveChainId,
+      payerAddress: effectiveAddress,
       tokenSymbol: "USDT",
       txHash: trimmedTxHash,
     });
@@ -62,7 +79,7 @@ export function CheckinPage() {
       description="This page submits a wallet-originated payment receipt to the server. The server now verifies the actual on-chain USDT transfer against the configured promotion token and receiver before any check-in is recorded."
     >
       <div className="space-y-4">
-        {!isConnected || !isAuthenticated ? (
+        {!isWalletReady ? (
           <GlassCard className="border border-amber-400/20 bg-amber-400/8 p-5">
             <div className="flex items-center gap-3 text-amber-200">
               <AlertCircle className="h-5 w-5" />
@@ -164,7 +181,7 @@ export function CheckinPage() {
               />
             </div>
             <div className="rounded-3xl border border-white/10 bg-black/20 p-4 text-sm text-white/65">
-              <p>Authenticated payer: {address ?? "-"}</p>
+              <p>Authenticated payer: {effectiveAddress ?? "-"}</p>
               <p className="mt-2">
                 Server normalizes this into a deterministic `chainId:txHash` idempotency key.
               </p>
@@ -180,8 +197,7 @@ export function CheckinPage() {
               data-testid="checkin-submit-button"
               className="h-11 rounded-2xl px-6"
               disabled={
-                !isConnected ||
-                !isAuthenticated ||
+                !isWalletReady ||
                 checkinMutation.isPending ||
                 !txHash.trim()
               }

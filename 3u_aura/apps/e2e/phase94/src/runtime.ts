@@ -10,7 +10,19 @@ export type PromotionManifest = {
     rpcUrl: string;
   };
   contracts: {
+    founderNftAddress: `0x${string}`;
+    nftSaleAddress: `0x${string}`;
     paymentTokenAddress: `0x${string}`;
+    settlementAddress: `0x${string}`;
+  };
+  roles: {
+    checkinReceiverAddress: `0x${string}`;
+    owner: `0x${string}`;
+    settlementPublisher?: `0x${string}`;
+    rootPublisher?: `0x${string}`;
+    financeWallet?: `0x${string}`;
+    referralSignerAddress?: `0x${string}`;
+    adminAllowlistWallets?: `0x${string}`[];
   };
   infra: {
     server: {
@@ -21,6 +33,12 @@ export type PromotionManifest = {
     };
     admin: {
       baseUrl: string;
+    };
+    database: {
+      host: string;
+      name: string;
+      port: number;
+      schema: string;
     };
   };
 };
@@ -50,6 +68,23 @@ export type RuntimeConfig = {
   artifactsDir: string;
   uatReportPath: string;
   manifest: PromotionManifest;
+};
+
+export type WeeklyForkRuntime = {
+  adminBaseUrl: string;
+  anvilArgs: string[];
+  anvilBinary: string;
+  anvilLogPath: string;
+  anvilRpcUrl: string;
+  blockNumberHex: string;
+  chainIdHex: string;
+  dappBaseUrl: string;
+  envName: string;
+  manifestPath: string;
+  pid: number;
+  serverBaseUrl: string;
+  sourceEnvName: string;
+  startedAt: string;
 };
 
 const FILE_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -156,4 +191,22 @@ export function loadRuntimeConfig(): RuntimeConfig {
     uatReportPath: path.join(reportsDir, "uat-report.json"),
     manifest: loadManifest(environment),
   };
+}
+
+export function loadWeeklyForkRuntime(
+  environment = resolveEnvironmentName(),
+): WeeklyForkRuntime | null {
+  const runtimePath = path.join(
+    REPO_ROOT,
+    "config",
+    "promotion-envs",
+    environment,
+    "runtime.json",
+  );
+
+  if (!fs.existsSync(runtimePath)) {
+    return null;
+  }
+
+  return readJsonFile<WeeklyForkRuntime>(runtimePath);
 }

@@ -94,6 +94,18 @@ export interface PromotionClaimSyncResult {
   txHash: string;
 }
 
+export interface PromotionPurchasedNftSyncResult {
+  chainId: number;
+  claimsCreated: number;
+  claimsUpdated: number;
+  hasPurchasedNft: boolean;
+  holdingsCreated: number;
+  mintedAt: Date;
+  publishedSubsidyEpochs: number;
+  tokenId: string;
+  txHash: string;
+}
+
 export interface WeeklyEpochBoundaryView {
   epochId?: string;
   epochNo?: number;

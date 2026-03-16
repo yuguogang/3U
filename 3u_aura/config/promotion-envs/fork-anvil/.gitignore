@@ -1,0 +1,10 @@
+manifest.json
+admin.public.env
+contracts.public.env
+dapp.public.env
+server.public.env
+runtime.json
+anvil.log
+wallets/*.json
+wallets/funding-report.json
+!wallets/.gitignore

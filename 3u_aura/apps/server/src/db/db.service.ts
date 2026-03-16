@@ -4,13 +4,15 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { splitPrismaPgPoolConfig } from './prisma-pg-config';
 
 @Injectable()
 export class DbService extends PrismaClient {
   constructor(configService: ConfigService) {
     const database = configService.getOrThrow<any>('db');
-    const pool = new Pool(database);
-    const adapter = new PrismaPg(pool);
+    const { poolConfig, schema } = splitPrismaPgPoolConfig(database);
+    const pool = new Pool(poolConfig);
+    const adapter = new PrismaPg(pool, schema ? { schema } : undefined);
     const options: Prisma.PrismaClientOptions = { adapter };
 
     const isProd = configService.get<boolean>('prod');

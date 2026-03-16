@@ -2,6 +2,7 @@ import type { ConfigOptions } from './config.types';
 import axios from 'axios';
 
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import { resolveDatabaseSchemaFromEnv } from '@/db/prisma-pg-config';
 
 export const isDev = () => {
   return process.env.NODE_ENV === 'development';
@@ -22,6 +23,7 @@ if (isDev() && proxyUrl) {
 }
 
 export const configuration = () => {
+  const databaseSchema = resolveDatabaseSchemaFromEnv();
   const config: ConfigOptions = {
     prod: !isDev(),
     host: (process.env.HOST as string) || 'http://localhost:4000',
@@ -49,6 +51,7 @@ export const configuration = () => {
       user: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_NAME,
+      schema: databaseSchema,
     },
     cache: {
       url: process.env.CACHE_URL || 'redis://localhost:6379',

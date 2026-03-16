@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import path from 'node:path';
+import fs from 'node:fs';
 import {
   REPO_ROOT,
   buildTargetContext,
@@ -8,8 +9,27 @@ import {
   writeFileIfChanged,
 } from './lib.mjs';
 
-const ENVIRONMENTS = ['uat-mockusdt', 'testnet-live', 'release'];
 const TARGETS = ['contracts', 'server', 'dapp', 'admin'];
+
+const ENVIRONMENTS = fs
+  .readdirSync(path.join(REPO_ROOT, 'config', 'promotion-envs'), {
+    withFileTypes: true,
+  })
+  .filter(
+    (entry) =>
+      entry.isDirectory() &&
+      fs.existsSync(
+        path.join(
+          REPO_ROOT,
+          'config',
+          'promotion-envs',
+          entry.name,
+          'manifest.json',
+        ),
+      ),
+  )
+  .map((entry) => entry.name)
+  .sort();
 
 for (const envName of ENVIRONMENTS) {
   const envDir = path.join(REPO_ROOT, 'config', 'promotion-envs', envName);

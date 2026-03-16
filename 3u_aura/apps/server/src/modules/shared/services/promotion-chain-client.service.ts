@@ -14,6 +14,7 @@ export type PromotionChainRuntimeConfig = {
   nftSaleAddress?: string;
   paymentTokenAddress?: string;
   rpcUrl: string;
+  startAt: string;
   settlementAddress?: string;
 };
 
@@ -66,6 +67,7 @@ export class PromotionChainClientService {
         promotion?.paymentTokenAddress,
       ),
       rpcUrl,
+      startAt: promotion?.startAt ?? '2026-03-11T00:00:00+08:00',
       settlementAddress: this.normalizeOptionalAddress(
         promotion?.settlementAddress,
       ),

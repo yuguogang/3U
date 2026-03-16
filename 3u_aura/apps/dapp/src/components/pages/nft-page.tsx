@@ -38,11 +38,22 @@ import { useAuthStore } from "@/store/auth.store";
 export function NftPage() {
   const chainId = useChainId();
   const { address, isConnected } = useAccount();
-  const { hasHydrated, isAuthenticated } = useAuthStore();
-  const contractState = usePromotionContractState();
+  const { authAddress, hasHydrated, isAuthenticated } = useAuthStore();
+  const useAutomationInjectedWallet =
+    process.env.NEXT_PUBLIC_E2E_INJECTED_WALLET === "true";
+  const hasAutomationSession =
+    useAutomationInjectedWallet && hasHydrated && isAuthenticated;
+  const effectiveAddress =
+    address ?? (hasAutomationSession ? authAddress ?? undefined : undefined);
+  const effectiveReadChainId = hasAutomationSession
+    ? promotionChainId
+    : chainId;
+  const contractState = usePromotionContractState(
+    effectiveAddress as `0x${string}` | undefined,
+  );
   const eligibilityQuery = useCurrentEligibilityQuery(
-    address,
-    Boolean(isAuthenticated && hasHydrated && address),
+    effectiveAddress ?? undefined,
+    Boolean(isAuthenticated && hasHydrated && effectiveAddress),
   );
   const previewMutation = useReferralMintPreviewMutation();
   const signatureMutation = useReferralMintSignatureMutation();
@@ -68,7 +79,8 @@ export function NftPage() {
   const purchasePrice = contractState.purchasePrice ?? BigInt(0);
   const allowance = contractState.allowance ?? BigInt(0);
   const usdtBalance = contractState.usdtBalance ?? BigInt(0);
-  const isCorrectChain = isPromotionChain(chainId);
+  const isCorrectReadChain = isPromotionChain(effectiveReadChainId);
+  const isCorrectWriteChain = isPromotionChain(chainId);
   const eligibility = eligibilityQuery.data;
   const checkinProgress = eligibility
     ? formatPercent(
@@ -88,7 +100,7 @@ export function NftPage() {
   const canRequestReferralMint =
     isConnected &&
     isAuthenticated &&
-    isCorrectChain &&
+    isCorrectWriteChain &&
     Boolean(address) &&
     Boolean(promotionContracts.nftSaleAddress);
   const canProceedReferralMint =
@@ -98,7 +110,7 @@ export function NftPage() {
   const canBuyPurchasedNft =
     isConnected &&
     isAuthenticated &&
-    isCorrectChain &&
+    isCorrectWriteChain &&
     contractState.hasNftSaleConfig &&
     contractState.hasPaymentTokenConfig &&
     isApprovalSatisfied;
@@ -211,13 +223,25 @@ export function NftPage() {
       description="Purchased NFTs remain wallet-driven on the sale contract. Referral NFTs now require admin approval first; only approved users can request the backend signer payload and submit the final `mintNFTByReferral()` call on the configured promotion chain."
     >
       <div className="space-y-4">
-        {!isCorrectChain ? (
+        {!isCorrectReadChain ? (
           <GlassCard className="border border-amber-400/20 bg-amber-400/8 p-5">
             <div className="flex items-center gap-3 text-amber-200">
               <ShieldAlert className="h-5 w-5" />
               <p className="text-sm font-medium">
                 Wallet is not on the promotion claim chain. Current chain:{" "}
                 {chainId ?? "-"}, target chain: {promotionChainId}.
+              </p>
+            </div>
+          </GlassCard>
+        ) : null}
+        {hasAutomationSession && !isCorrectWriteChain ? (
+          <GlassCard className="border border-sky-400/20 bg-sky-400/8 p-5">
+            <div className="flex items-center gap-3 text-sky-100">
+              <ShieldAlert className="h-5 w-5" />
+              <p className="text-sm font-medium">
+                Automation session is reading from the configured promotion RPC.
+                Wallet writes stay disabled until the wallet switches from{" "}
+                {chainId ?? "-"} to {promotionChainId}.
               </p>
             </div>
           </GlassCard>
@@ -232,26 +256,38 @@ export function NftPage() {
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
                 <p className="text-xs text-white/50">Purchase price</p>
-                <p className="mt-2 text-xl font-semibold text-white">
+                <p
+                  className="mt-2 text-xl font-semibold text-white"
+                  data-testid="nft-purchase-price"
+                >
                   {formatUsdtAtomic(purchasePrice.toString())} USDT
                 </p>
               </div>
               <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
                 <p className="text-xs text-white/50">USDT balance</p>
-                <p className="mt-2 text-xl font-semibold text-white">
+                <p
+                  className="mt-2 text-xl font-semibold text-white"
+                  data-testid="nft-usdt-balance"
+                >
                   {formatUsdtAtomic(usdtBalance.toString())} USDT
                 </p>
               </div>
               <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
                 <p className="text-xs text-white/50">Purchased supply left</p>
-                <p className="mt-2 text-xl font-semibold text-white">
+                <p
+                  className="mt-2 text-xl font-semibold text-white"
+                  data-testid="nft-purchased-remaining"
+                >
                   {contractState.remainingSupply?.purchasedRemaining?.toString() ??
                     "-"}
                 </p>
               </div>
               <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
                 <p className="text-xs text-white/50">Referral supply left</p>
-                <p className="mt-2 text-xl font-semibold text-white">
+                <p
+                  className="mt-2 text-xl font-semibold text-white"
+                  data-testid="nft-referral-remaining"
+                >
                   {contractState.remainingSupply?.referralRemaining?.toString() ??
                     "-"}
                 </p>
@@ -264,7 +300,7 @@ export function NftPage() {
                 disabled={
                   !isConnected ||
                   !isAuthenticated ||
-                  !isCorrectChain ||
+                  !isCorrectWriteChain ||
                   !contractState.hasNftSaleConfig ||
                   !contractState.hasPaymentTokenConfig ||
                   approveWrite.isPending
@@ -286,7 +322,9 @@ export function NftPage() {
               </Button>
             </div>
             <div className="mt-4 text-sm text-white/60">
-              <p>Allowance ready: {isApprovalSatisfied ? "Yes" : "No"}</p>
+              <p data-testid="nft-allowance-ready">
+                Allowance ready: {isApprovalSatisfied ? "Yes" : "No"}
+              </p>
               <p className="mt-2">
                 Current referral nonce:{" "}
                 {contractState.referralNonce?.toString() ?? "0"}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { ShieldCheck, ShieldEllipsis } from "lucide-react";
-import { useAccount, useChainId, useSignMessage } from "wagmi";
+import { useAccount, useChainId, useConnect, useSignMessage } from "wagmi";
 import { DEVICES, SignatureScenarios } from "3u-aura-common";
 import { queryClient } from "@/lib/query.client";
 import {
@@ -29,6 +29,7 @@ function isSameAddress(a?: null | string, b?: null | string) {
 export function AdminWalletButton() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
+  const { connectAsync, connectors, isPending: isConnecting } = useConnect();
   const signMessage = useSignMessage();
 
   const {
@@ -43,11 +44,15 @@ export function AdminWalletButton() {
   } = useAuthStore();
   const [isSigning, setIsSigning] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const useAutomationInjectedWallet =
+    process.env.NEXT_PUBLIC_E2E_INJECTED_WALLET === "true";
 
   const signatureMessageMutation = useSignatureMessageMutation();
   const signinMutation = useAdminSigninMutation();
   const logoutMutation = useAdminLogoutMutation();
   const adminMeQuery = useAdminMeQuery(hasHydrated && isAuthenticated);
+  const automationConnector =
+    connectors.find((connector) => connector.type === "injected") ?? null;
 
   useEffect(() => {
     if (adminMeQuery.data?.user) {
@@ -56,15 +61,23 @@ export function AdminWalletButton() {
   }, [adminMeQuery.data, setUser]);
 
   useEffect(() => {
+    if (useAutomationInjectedWallet) {
+      return;
+    }
+
     if (adminMeQuery.error && isAuthenticated) {
       logout();
       queryClient.removeQueries({ queryKey: ["admin"] });
       setErrorMessage(adminMeQuery.error.message);
     }
-  }, [adminMeQuery.error, isAuthenticated, logout]);
+  }, [adminMeQuery.error, isAuthenticated, logout, useAutomationInjectedWallet]);
 
   useEffect(() => {
     if (!hasHydrated) {
+      return;
+    }
+
+    if (useAutomationInjectedWallet) {
       return;
     }
 
@@ -78,7 +91,15 @@ export function AdminWalletButton() {
       logout();
       queryClient.removeQueries({ queryKey: ["admin"] });
     }
-  }, [address, authAddress, hasHydrated, isAuthenticated, isConnected, logout]);
+  }, [
+    address,
+    authAddress,
+    hasHydrated,
+    isAuthenticated,
+    isConnected,
+    logout,
+    useAutomationInjectedWallet,
+  ]);
 
   async function handleAuthenticate(displayName?: string) {
     if (!address || isSigning) {
@@ -137,11 +158,36 @@ export function AdminWalletButton() {
               <button
                 className="inline-flex items-center gap-2 rounded-full border border-orange-400/30 bg-orange-500/20 px-4 py-2 text-sm font-medium text-orange-100 transition hover:bg-orange-500/25"
                 data-testid="admin-wallet-connect-button"
-                onClick={openConnectModal}
+                onClick={async () => {
+                  if (useAutomationInjectedWallet) {
+                    if (!automationConnector) {
+                      setErrorMessage(
+                        "Automation injected connector is unavailable",
+                      );
+                      return;
+                    }
+
+                    try {
+                      setErrorMessage(null);
+                      await connectAsync({ connector: automationConnector });
+                    } catch (error) {
+                      setErrorMessage(
+                        error instanceof Error
+                          ? error.message
+                          : "Wallet connect failed",
+                      );
+                    }
+                    return;
+                  }
+
+                  openConnectModal();
+                }}
                 type="button"
               >
                 <ShieldEllipsis className="h-4 w-4" />
-                Connect Wallet
+                {useAutomationInjectedWallet && isConnecting
+                  ? "Connecting..."
+                  : "Connect Wallet"}
               </button>
             );
           }

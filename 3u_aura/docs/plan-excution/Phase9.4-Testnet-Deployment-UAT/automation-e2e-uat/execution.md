@@ -4,7 +4,7 @@
 In progress.
 
 ## Last Updated
-2026-03-14 (updated)
+2026-03-16 (updated)
 
 ## Summary
 - 已落地独立 `apps/e2e/phase94` 自动化工程，并接上 `uat-mockusdt` 的 manifest、钱包目录、`uat-report.json` 与 artifacts 目录。
@@ -12,7 +12,72 @@ In progress.
 - 已通过两条真实验证：
   - `precheck`：环境清单、服务健康、5 钱包资金阈值校验通过
   - `shell smoke`：`dapp/admin` 页面可达并可在 Playwright 中稳定打开
-- 当前主要阻塞不是钱包资金，而是 `RainbowKit/wagmi + MetaMask SDK` 在自动化上下文下未弹出扩展通知页，导致 `connectToDapp()` 无法继续。
+- 已确认当前阻塞不是 RPC：
+  - `uat-mockusdt` manifest 中的 RPC 为 `https://data-seed-prebsc-1-s1.binance.org:8545/`
+  - 真实 `eth_chainId` 探测返回 `0x61`（BSC Testnet / 97）
+- 已将登录烟测主路径切换为全自动 `session bootstrap`，不再依赖 MetaMask notification page：
+  - `dapp` 登录 smoke 通过
+  - `admin` 登录 smoke 通过
+- 本轮新增识别出两个环境类问题并完成修正：
+  - `admin` 页面 `Failed to fetch` 的根因是服务端 CORS 使用 `* + credentials`，已改为 manifest 派生的显式来源
+  - `admin` dev server 曾误跑在默认 `testnet-live` 环境，已明确要求用 `uat-mockusdt` 启动
+- 已打通两条可重复执行的核心 UAT 链路：
+  - `referrer -> userA` inviter bind / placement（UI + API 双重断言）
+  - `userB` check-in（真实链上 MockUSDT 转账 + dapp 页面提交流程）
+- 已打通第三条可重复执行的核心 UAT 链路：
+  - `userC` buy purchased NFT（真实链上 approve + `buyNFT()` + dapp `/nft` 页供给读数回读）
+- 已修复本地 `uat-mockusdt` 数据库 schema 漂移：
+  - 真实根因是 UAT 库未对齐已有 Prisma migrations，缺失 `PaymentPurpose` enum 等对象
+  - 已通过 schema diff + baseline resolve 将当前库对齐到仓库 schema
+- 已新增有序执行入口：
+  - `test:core` 先跑 `wallets:prepare` 与 `precheck`，再跑 core
+  - `test:uat` 先跑 `wallets:prepare`、`precheck`，再跑 `smoke/core`
+  - 避免 broad suite 中 `precheck` 排在真实花费型用例之后而产生伪失败，同时把 MockUSDT/BNB 自动补资纳入 runner
+- 已补充跨环境 Prisma 一致性审计现状：
+  - `uat-mockusdt` 曾完成一次本地 baseline 修复并验证通过
+  - `release` 当前仍是 manifest `status=planned`，不是 runnable 环境
+  - 本轮再次核查时发现：在当前命令执行沙箱内，访问 `127.0.0.1:5433` 会被限制，导致 Prisma 命令返回 `P1001`
+  - 独立端口与容器探测表明本机 Postgres 容器本身仍处于 `healthy`
+- 已识别出当前 claim 阻塞的真实原因：
+  - `buy NFT` 链上交易可以成功
+  - 但买后 `server /profile /claims /nft-eligibility` 仍看不到购买同步结果
+  - 因此当前 `claim` 不是简单“测试没写完”，而是前置购买同步 / claim 生成链路尚未打通
+- 已把 `fork/anvil` 周流程基座从“仅生成环境”推进到“可验证基座”：
+  - 新增 fork 专用 Prisma schema prepare/reset 脚本
+  - `test:weekly-fork` 已接到真实 fork smoke，而不再是占位命令
+  - 已通过 `fork RPC + /epoch/boundary + admin epoch preview(referenceAt)` 的端到端验证
+- 已修复 fork 基座两处真实环境问题：
+  - `fork-anvil` 原默认 Redis DB 使用 `21/22`，超出本机 Redis 默认 DB 范围，已改为合法的 `13/14`
+  - weekly runner 初版复用了 `wallets:prepare`，但当前 public BSC testnet RPC 被 anvil fork 后对现网测试钱包返回 `missing trie node`；该步骤已从当前 fork smoke 基座中解耦，留待后续 wallet strategy 再补
+- 已完成 fork wallet strategy 收敛：
+  - `fork-anvil` 不再复制 public UAT 的现网钱包地址
+  - 改为使用 deterministic anvil 默认账户作为 `admin/referrer/userA/userB/userC`
+  - `adminAllowlistWallets` 已自动补入本地 fork admin 地址
+  - `wallets:prepare` 已恢复接回 `test:weekly-fork` 主 runner，并验证通过
+- 已完成 `fork-anvil` local-deploy 模式下 `/nft` 页面读链修复：
+  - 页面原先出现 `current chainid = 56 / target = 97` 且 `purchase price=0`、`remaining=-`
+  - 已将 automation 场景改为只读说明提示，不再把页面状态读取误判成阻塞性错链
+  - 已将 NFT 页面只读合约状态改为浏览器直连配置的 promotion RPC，用原生 `eth_call` 读取 purchase price / remaining / allowance / balance / referral nonce
+  - 修复后 `fork-anvil` 下 `buy-nft` 单测与整套 `test:uat` 均通过
+- 已完成 `fork-anvil` 隔离 schema 的真实运行时修复：
+  - `apps/server` 原先虽然连接到了同一库，但 Prisma PG adapter 未收到 `schema` 参数，查询仍落到 `public.*`
+  - 现已由环境派生 `DATABASE_SCHEMA`，并显式透传到 `new PrismaPg(pool, { schema })`
+  - 已用单测与真实 weekly fork 回归确认：`fork_anvil.*` 查询生效
+- 已完成 `fork-anvil` schema baseline 的 enum 自包含修复：
+  - 原先 clone 只复制表与 `_prisma_migrations`，未复制 enum type，导致真实隔离 schema 打开后报 `type "fork_anvil.<Enum>" does not exist`
+  - 现已补上 enum type clone、enum 列重绑、默认值重建
+  - 已确认 `fork_anvil` 下 enum type 与 enum 列均不再回指 `public`
+- 已完成 `fork-anvil` service stack 启停与复用稳定化：
+  - 新增统一 `stack:start/stack:stop` 服务编排脚本，管理 `server/dapp/admin`
+  - `server` 改为优先 `build -> node dist/src/main.js` 启动，规避 `nest start` 与 `dist/generated` watcher 的目录删除竞争
+  - 已修正 server 进程复用标记，不再依赖 `PWD=/apps/server` 这种不稳定环境变量
+- 已完成本轮 clean-state 回归验证：
+  - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:weekly-fork` 最终 `2 passed`
+  - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:uat` 最终 `6 passed`
+  - `stack:stop` 与 `fork:stop` 已验证可清理全部相关监听端口
+- 已确认一项执行环境限制：
+  - 当前 Codex 受限沙箱会阻止本机监听端口与部分 `127.0.0.1` DB 访问
+  - 因此涉及 anvil、Next/Nest dev server、本机 Postgres 的最终验证需在带本机权限的上下文中执行
 
 ## Work Completed
 - 新增 E2E 项目目录与配置：
@@ -27,6 +92,7 @@ In progress.
   - `apps/e2e/phase94/src/precheck.ts`
   - `apps/e2e/phase94/src/smoke.ts`
   - `apps/e2e/phase94/src/metamask-session.ts`
+  - `apps/e2e/phase94/src/session-bootstrap.ts`
 - 新增钱包 setup 与缓存脚本：
   - `apps/e2e/phase94/wallet-setup/*.setup.ts`
   - `apps/e2e/phase94/scripts/build-wallet-cache.mjs`
@@ -35,6 +101,11 @@ In progress.
   - `apps/e2e/phase94/tests/smoke/shell.spec.ts`
   - `apps/e2e/phase94/tests/smoke/dapp-referrer-login.spec.ts`
   - `apps/e2e/phase94/tests/smoke/admin-login.spec.ts`
+- 新增核心业务流测试与支撑：
+  - `apps/e2e/phase94/src/server-api.ts`
+  - `apps/e2e/phase94/src/checkin-payment.ts`
+  - `apps/e2e/phase94/tests/core/referral-bind-placement.spec.ts`
+  - `apps/e2e/phase94/tests/core/checkin.spec.ts`
 - 更新 workspace 以纳入嵌套 E2E 项目：
   - `pnpm-workspace.yaml`
 - 为自动化补充稳定选择器：
@@ -43,9 +114,77 @@ In progress.
   - `apps/dapp/src/components/pages/team-page.tsx`
   - `apps/dapp/src/components/pages/checkin-page.tsx`
   - `apps/dapp/src/components/pages/nft-page.tsx`
+- 为自动化增加环境隔离与后备登录路径：
+  - `apps/dapp/src/lib/wagmi-config.tsx`
+  - `apps/admin/src/lib/wagmi-config.tsx`
+  - `apps/dapp/src/components/wallet-button.tsx`
+  - `apps/admin/src/components/auth/admin-wallet-button.tsx`
+  - `apps/dapp/src/components/pages/checkin-page.tsx`
+  - `config/promotion-envs/uat-mockusdt/manifest.json`
+  - `scripts/promotion-env/lib.mjs`
+  - `scripts/promotion-env/run-with-env.mjs`
+- 已完成登录烟测从“扩展弹窗依赖”到“测试钱包签名 + store/bootstrap”的切换：
+  - `tests/smoke/dapp-referrer-login.spec.ts` 现在验证 referrer 的已登录 dapp 会话
+  - `tests/smoke/admin-login.spec.ts` 现在验证 admin 的已登录 dashboard 会话
+- 已完成首批 core 流程从“仅登录”扩展到“真实业务操作”：
+  - `tests/core/referral-bind-placement.spec.ts` 现在验证团队关系冻结与 placement
+  - `tests/core/checkin.spec.ts` 现在验证真实链上 check-in receipt 提交
+- 已完成 purchased NFT 自动化与公共读链修复：
+  - `apps/e2e/phase94/src/nft-purchase.ts`
+  - `apps/e2e/phase94/tests/core/buy-nft.spec.ts`
+  - `apps/dapp/src/hooks/use-promotion-contract-state.ts`
+  - `apps/dapp/src/components/pages/nft-page.tsx`
+  - `apps/e2e/phase94/src/runtime.ts`
+- 已完成 UAT runner 自动补资接入：
+  - `apps/e2e/phase94/package.json`
+  - `scripts/promotion-env/prepare-wallet-fixtures.mjs`
+- 已完成前端公共 RPC 派生与 wagmi transport 修复：
+  - `apps/dapp/src/lib/wagmi-config.tsx`
+  - `apps/admin/src/lib/wagmi-config.tsx`
+  - `scripts/promotion-env/lib.mjs`
+- 已完成本地 UAT 数据库基线修复：
+  - 使用 Prisma diff SQL 对齐 schema
+  - 使用 `migrate resolve --applied` 标记仓库已有 migrations
+- 已完成跨环境 Prisma 前置审计：
+  - `uat-mockusdt` / `testnet-live` / `release` 的 manifest 与可运行性已核对
+  - 本机 `5433` 端口监听、Docker 容器状态、直接 TCP 访问结果已与 Prisma 失败信息交叉验证
+- 已完成 fork 周流程基座首轮落地：
+  - `scripts/uat/prepare-weekly-fork-db.mjs`
+  - `scripts/uat/reset-weekly-fork-db.mjs`
+  - `scripts/uat/weekly-fork-lib.mjs`（新增 fork schema lifecycle 与合法 Redis DB 默认值）
+  - `apps/e2e/phase94/tests/weekly-fork/fork-precheck.spec.ts`
+  - `apps/e2e/phase94/src/runtime.ts`（新增 `runtime.json` 读取）
+  - `apps/e2e/phase94/src/server-api.ts`（新增 weekly boundary / admin epoch preview helper）
+  - `apps/e2e/phase94/package.json`
+  - `package.json`
+- 已完成 fork-native wallet fixture 落地：
+  - `scripts/uat/weekly-fork-lib.mjs`（生成 deterministic anvil wallet fixtures）
+  - `scripts/promotion-env/prepare-wallet-fixtures.mjs`（fork 环境改用本地 funder，而不是 manifest owner）
+  - `config/promotion-envs/fork-anvil/wallets/*.json`
+  - `config/promotion-envs/fork-anvil/manifest.json`
+- 已完成本轮 NFT 页面与合约读修复：
+  - `apps/dapp/src/components/pages/nft-page.tsx`
+  - `apps/dapp/src/hooks/use-promotion-contract-state.ts`
+- 已完成 Prisma adapter schema 透传修复：
+  - `apps/server/src/db/prisma-pg-config.ts`
+  - `apps/server/src/db/prisma-pg-config.spec.ts`
+  - `apps/server/src/configuration/config.configuration.ts`
+  - `apps/server/src/configuration/config.types.ts`
+  - `apps/server/src/db/db.service.ts`
+  - `apps/server/prisma/seed.ts`
+  - `scripts/promotion-env/lib.mjs`
+- 已完成 fork service stack 编排：
+  - `scripts/uat/promotion-service-lib.mjs`
+  - `scripts/uat/start-promotion-services.mjs`
+  - `scripts/uat/stop-promotion-services.mjs`
+  - `apps/e2e/phase94/package.json`
+- 已完成 fork schema baseline enum 修复与重绑：
+  - `scripts/uat/weekly-fork-lib.mjs`
 
 ## Commands Run
 - `pnpm install`
+- `pnpm --dir apps/dapp run typecheck`
+- `pnpm --dir apps/admin run typecheck`
 - `pnpm --dir apps/e2e/phase94 run typecheck`
 - `pnpm --dir apps/e2e/phase94 exec playwright --version`
 - `pnpm --dir apps/e2e/phase94 exec playwright install chromium`
@@ -54,9 +193,69 @@ In progress.
 - `pnpm --dir apps/e2e/phase94 exec synpress wallet-setup -f`
 - `pnpm --dir apps/e2e/phase94 run wallets:build:serial`
 - `pnpm --dir apps/e2e/phase94 exec playwright test tests/smoke/dapp-referrer-login.spec.ts`
+- `curl -sS --max-time 8 -H 'content-type: application/json' -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' https://data-seed-prebsc-1-s1.binance.org:8545/`
+- `pnpm promotion-env:sync`
+- `pnpm --dir apps/admin run env:print`
+- `node ../../scripts/promotion-env/run-with-env.mjs --target admin --env uat-mockusdt -- pnpm exec next dev --webpack -p 3101`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 exec playwright test tests/smoke/admin-login.spec.ts`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 exec playwright test tests/smoke/dapp-referrer-login.spec.ts`
+- `pnpm --dir apps/e2e/phase94 run test:core`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 exec playwright test tests/core/referral-bind-placement.spec.ts`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 exec playwright test tests/core/checkin.spec.ts`
+- `node ../../scripts/promotion-env/run-with-env.mjs --target server --env uat-mockusdt -- pnpm exec prisma migrate status`
+- `node ../../scripts/promotion-env/run-with-env.mjs --target server --env uat-mockusdt -- pnpm exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script --output /tmp/uat_mockusdt_schema_diff.sql`
+- `node ../../scripts/promotion-env/run-with-env.mjs --target server --env uat-mockusdt -- pnpm exec prisma db execute --file /tmp/uat_mockusdt_schema_diff.sql`
+- `node ../../scripts/promotion-env/run-with-env.mjs --target server --env uat-mockusdt -- /bin/zsh -lc 'pnpm exec prisma migrate resolve --applied 20260311_phase2_checkin_pool_split_fact && pnpm exec prisma migrate resolve --applied 20260311_schema_model_alignment_hardening && pnpm exec prisma migrate resolve --applied 20260312_phase93_referral_nft_manual_approval'`
+- `node scripts/promotion-env/prepare-wallet-fixtures.mjs --env uat-mockusdt`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 run test:uat`
+- `PROMOTION_ENV=uat-mockusdt node -e '<readonly profile/eligibility/claims probe for referrer/userA/userB/userC>'`
+- `PROMOTION_ENV=uat-mockusdt node -e '<real userC approve + buyNFT on-chain probe>'`
+- `PROMOTION_ENV=uat-mockusdt node -e '<readonly post-purchase userC profile/eligibility/claims probe>'`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 run test:core`
+- `pnpm promotion-env:sync`
+- `lsof -nP -iTCP:3100 -sTCP:LISTEN`
+- `node scripts/promotion-env/run-with-env.mjs --target server --env uat-mockusdt -- pnpm --dir apps/server exec prisma migrate status`
+- `node scripts/promotion-env/run-with-env.mjs --target server --env testnet-live -- pnpm --dir apps/server exec prisma migrate status`
+- `node scripts/promotion-env/run-with-env.mjs --target server --env release -- pnpm --dir apps/server exec prisma migrate status`
+- `lsof -nP -iTCP:5433 -sTCP:LISTEN`
+- `docker ps -a --filter name=aura_postgres --format '{{.Names}}\t{{.Status}}\t{{.Ports}}'`
+- `nc -vz 127.0.0.1 5433`
 - `view_image` for failed smoke screenshots
+- `node scripts/promotion-env/run-with-env.mjs --target server --env fork-anvil -- pnpm --dir apps/server exec prisma migrate status`
+- `node scripts/uat/prepare-weekly-fork-db.mjs --env fork-anvil`
+- `pnpm --dir apps/e2e/phase94 run fork:start`
+- `node scripts/promotion-env/run-with-env.mjs --target server --env fork-anvil -- pnpm --dir apps/server exec nest start`
+- `curl -sS --max-time 5 http://127.0.0.1:3210/api/v1/health`
+- `curl -sS --max-time 5 -H 'content-type: application/json' -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' http://127.0.0.1:18545`
+- `pnpm --dir apps/e2e/phase94 run test:weekly-fork`
+- `lsof -nP -iTCP:3210 -sTCP:LISTEN`
+- `lsof -nP -iTCP:18545 -sTCP:LISTEN`
+- `kill -9 71910`
+- `kill -9 55241`
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run wallets:prepare`
+- `node scripts/promotion-env/run-with-env.mjs --target server --env fork-anvil -- pnpm --dir apps/server exec nest start`
+- `pnpm --dir apps/e2e/phase94 run test:weekly-fork`
+- `ps eww -p 90992`
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/core/buy-nft.spec.ts`
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:uat`
+- `pnpm --dir apps/server exec jest db/prisma-pg-config.spec.ts --runInBand`
+- `pnpm --dir apps/server run build`
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run stack:start`
+- `node scripts/uat/reset-weekly-fork-db.mjs --env fork-anvil`
+- `node scripts/promotion-env/run-with-env.mjs --target server --env fork-anvil -- pnpm exec node -e '<pg probe for enum types / enum columns / defaults>'`
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run stack:stop`
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run fork:stop`
+- `ps eww -p 60349,60482,60826`
+- `lsof -i :3210`
+- `lsof -i :3200`
+- `lsof -i :3201`
+- `lsof -i :18545`
 
 ## Verification Results
+- `pnpm --dir apps/dapp run typecheck`
+  - 通过。
+- `pnpm --dir apps/admin run typecheck`
+  - 通过。
 - `pnpm --dir apps/e2e/phase94 run typecheck`
   - 通过。
 - `pnpm --dir apps/e2e/phase94 run test:precheck`
@@ -83,19 +282,406 @@ In progress.
     - MetaMask 已打开并切到 `Account 2 / BSC Testnet`
     - dapp 的 RainbowKit modal 停在 `Opening MetaMask...`
     - 自动化上下文下没有出现 MetaMask notification page，因此 `connectToDapp()` 无法继续
+- `curl -sS --max-time 8 -H 'content-type: application/json' -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' https://data-seed-prebsc-1-s1.binance.org:8545/`
+  - 通过。
+  - 返回 `{"jsonrpc":"2.0","id":1,"result":"0x61"}`，确认当前 UAT RPC 可达，链 ID 为 `97`。
+- `pnpm promotion-env:sync`
+  - 通过。
+  - 已将 `uat-mockusdt` 的 `server/dapp/admin.public.env` 同步为 `127.0.0.1` 与最新 manifest 派生值。
+- `pnpm --dir apps/admin run env:print`
+  - 通过。
+  - 暴露出默认上下文仍是 `PROMOTION_ENV=testnet-live`，若不显式指定环境，admin 会回落到 `PORT=3001` 和 `http://localhost:3010`。
+- `node ../../scripts/promotion-env/run-with-env.mjs --target admin --env uat-mockusdt -- pnpm exec next dev --webpack -p 3101`
+  - 通过。
+  - `admin` dev server 已显式运行在 `uat-mockusdt` + `3101`。
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 exec playwright test tests/smoke/admin-login.spec.ts`
+  - 通过。
+  - 已验证：
+    - `admin` 侧 bootstrap 会话可稳定建立
+    - `/dashboard` 可正常渲染 `Authenticated admin session`
+    - `Promotion Overview` 成功展示
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 exec playwright test tests/smoke/dapp-referrer-login.spec.ts`
+  - 通过。
+  - 已验证：
+    - `referrer` 的 bootstrap 会话可稳定建立
+    - `/team` 页面可正常打开
+    - `team-invite-code` 不为 `-`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 exec playwright test tests/core/referral-bind-placement.spec.ts`
+  - 通过。
+  - 已验证：
+    - `userA` 可通过 dapp 页面完成 `bind inviter`
+    - `referrer` 可通过 dapp 页面完成 `placement`
+    - 服务端 profile 状态与 placement 结果一致
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 exec playwright test tests/core/checkin.spec.ts`
+  - 通过。
+  - 已验证：
+    - `userB` 可在 Node 侧完成真实 `3 USDT` MockUSDT 转账
+    - dapp `/checkin` 页面可在自动化环境下提交真实 txHash
+    - 服务端 `totalCheckinCount` 与 `totalCheckinUsdt` 发生预期增长
+- `node ../../scripts/promotion-env/run-with-env.mjs --target server --env uat-mockusdt -- pnpm exec prisma migrate status`
+  - 初次执行暴露问题。
+  - `uat-mockusdt` 数据库未应用仓库中 3 条 Prisma migrations。
+- `node ../../scripts/promotion-env/run-with-env.mjs --target server --env uat-mockusdt -- pnpm exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script --output /tmp/uat_mockusdt_schema_diff.sql`
+  - 通过。
+  - 生成了 148 行 schema diff，确认缺口包括 `PaymentPurpose` enum、`PoolSplitFact` 表及若干 Decimal/索引/外键修正。
+- `node ../../scripts/promotion-env/run-with-env.mjs --target server --env uat-mockusdt -- pnpm exec prisma db execute --file /tmp/uat_mockusdt_schema_diff.sql`
+  - 通过。
+  - 已将当前 UAT 数据库结构对齐到仓库 schema。
+- `node ../../scripts/promotion-env/run-with-env.mjs --target server --env uat-mockusdt -- /bin/zsh -lc 'pnpm exec prisma migrate resolve ...'`
+  - 通过。
+  - 已将 `20260311_phase2_checkin_pool_split_fact`、`20260311_schema_model_alignment_hardening`、`20260312_phase93_referral_nft_manual_approval` 标记为已应用。
+- `node scripts/promotion-env/prepare-wallet-fixtures.mjs --env uat-mockusdt`
+  - 通过。
+  - 已把 `userB` 的 `BNB/MockUSDT` 恢复到 precheck 阈值。
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 run test:uat`
+  - 通过。
+  - 执行顺序：
+    - `wallets:prepare`
+    - `test:precheck`
+    - `tests/smoke`
+    - `tests/core`
+  - 最终结果：
+    - `precheck` 1 passed
+    - `smoke/core` 6 passed
+- `PROMOTION_ENV=uat-mockusdt node -e '<readonly profile/eligibility/claims probe for referrer/userA/userB/userC>'`
+  - 通过。
+  - 已验证：
+    - `referrer/userA/userB/userC` 当前均无 `merkleClaims` / `nftSubsidyClaims`
+    - `userA` 当前 `eligibility.status=INELIGIBLE`
+    - `userB` 仅有签到累计数据，尚无 claim 数据
+- `PROMOTION_ENV=uat-mockusdt node -e '<real userC approve + buyNFT on-chain probe>'`
+  - 通过。
+  - 已验证：
+    - `userC` MockUSDT 从 `1000` 消耗到 `0`
+    - `purchasedRemaining` 从 `30` 降到 `29`
+    - `userC` 的 Founder NFT balance 从 `0` 增到 `1`
+    - 真实交易哈希为 `0x2261617545f60506a7d9c6a405fe0f5b225a909f67fcae8f6e0cbc5a90d360d9`
+- `PROMOTION_ENV=uat-mockusdt node -e '<readonly post-purchase userC profile/eligibility/claims probe>'`
+  - 通过。
+  - 已验证：
+    - buy 后 `server` 仍未同步出 `userC` 的购买结果
+    - `/api/v1/user/profile` 仍无 `profile`
+    - `/api/v1/claims/me` 仍为空
+    - `/api/v1/nft-eligibility/current` 仍为 `INELIGIBLE`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 run test:core`
+  - 首次失败。
+  - 根因不是购买逻辑，而是：
+    - 手工链上探针先行消耗了 `userC` 的 `1000 MockUSDT`
+    - 原有 runner 不会自动补资，只会检查资金阈值
+  - 修复后再次执行通过。
+  - 最终结果：
+    - `precheck` 1 passed
+    - `core` 3 passed
+- `pnpm promotion-env:sync`
+  - 通过。
+  - 已把 `dapp/admin.public.env` 补齐 `NEXT_PUBLIC_PROMOTION_RPC_URL`
+- `lsof -nP -iTCP:3100 -sTCP:LISTEN`
+  - 通过。
+  - 确认 `dapp` dev server 仍运行在 `127.0.0.1:3100`
+- `node scripts/promotion-env/run-with-env.mjs --target server --env uat-mockusdt -- pnpm --dir apps/server exec prisma migrate status`
+  - 失败，`P1001`。
+  - 当前失败不能直接解释为数据库宕机。
+  - 同轮交叉验证显示：
+    - `5433` 端口处于监听状态
+    - `aura_postgres` 容器状态为 `healthy`
+    - 直接 TCP 探测可成功连接
+  - 因此本次 `P1001` 应解释为当前受限命令执行环境对 `127.0.0.1:5433` 的访问限制。
+- `node scripts/promotion-env/run-with-env.mjs --target server --env testnet-live -- pnpm --dir apps/server exec prisma migrate status`
+  - 失败，`P1001`。
+  - 与 `uat-mockusdt` 相同，本轮失败更可能是当前执行环境的本地 TCP 访问限制，而不是独立的 `testnet-live` schema 结论。
+- `node scripts/promotion-env/run-with-env.mjs --target server --env release -- pnpm --dir apps/server exec prisma migrate status`
+  - 失败。
+  - 根因不是数据库连接，而是 promotion manifest 明确返回：
+    - `Environment "release" is not runnable. status=planned`
+- `lsof -nP -iTCP:5433 -sTCP:LISTEN`
+  - 通过。
+  - 显示 `OrbStack` 正在监听 `*:5433`。
+- `docker ps -a --filter name=aura_postgres --format '{{.Names}}\t{{.Status}}\t{{.Ports}}'`
+  - 通过。
+  - 显示 `aura_postgres` 处于 `Up ... (healthy)`，端口映射为 `0.0.0.0:5433->5432/tcp`。
+- `nc -vz 127.0.0.1 5433`
+  - 通过。
+  - 返回 `Connection to 127.0.0.1 port 5433 ... succeeded!`
+  - 该结果进一步说明：本机数据库端口是通的，Prisma 的本轮 `P1001` 不是“数据库没起来”这么简单。
+- `pnpm --dir packages/common build`
+  - 通过。
+  - 已将新增的 `PromotionPurchasedNftSyncRequestSchema` 与 `PromotionPurchasedNftSyncResult` 编译进 `packages/common/dist`，供 `apps/server` 与 `apps/e2e` 共同消费。
+- `pnpm --dir apps/server test -- purchased-nft-sync.service.spec.ts`
+  - 通过。
+  - 已验证：
+    - 新增 `syncPurchaseForUser(txHash)` 单测通过
+    - 既有 `syncStateForUser()` 投影单测未回归
+- `pnpm --dir apps/server exec tsc -p tsconfig.json --noEmit`
+  - 通过。
+- `pnpm --dir apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit`
+  - 通过。
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 exec playwright test tests/core/buy-nft.spec.ts`
+  - 首次失败。
+  - 根因不是 `txHash` 同步实现，而是 `userC` 当时 `MockUSDT balance=0`，无法发起购买交易。
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 run wallets:prepare`
+  - 通过。
+  - 已把 `userC` 恢复到：
+    - `BNB=0.1`
+    - `MockUSDT=1000`
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 exec playwright test tests/core/buy-nft.spec.ts`
+  - 通过。
+  - 已验证完整链路：
+    - `userC` 链上 `approve + buyNFT` 成功
+    - dapp `/nft` 页面供给回读正常
+    - `POST /api/v1/claims/purchased-nft/sync` 使用 `txHash` 成功把购买结果同步进后端
+    - 随后 `GET /api/v1/user/profile` 可稳定读到 `hasPurchasedNft=true`
+    - 随后 `GET /api/v1/claims/me` 可稳定返回 `200`，不再依赖读接口内的历史 `getLogs` 懒同步
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 run test:core`
+  - 通过。
+  - 最终结果：
+    - `precheck` 1 passed
+    - `core` 3 passed
+  - 本轮结果说明：
+    - `referral-bind-placement`
+    - `check-in`
+    - `buy-nft + txHash backend sync`
+    均与新的读接口行为兼容。
+- `PROMOTION_ENV=uat-mockusdt pnpm --dir apps/e2e/phase94 run test:uat`
+  - 通过。
+  - 最终结果：
+    - `precheck` 1 passed
+    - `smoke/core` 6 passed
+  - 本轮结果说明：
+    - `smoke shell`
+    - `smoke dapp login`
+    - `smoke admin login`
+    - `referral-bind-placement`
+    - `check-in`
+    - `buy-nft + txHash backend sync`
+    已全部兼容当前实现。
+- `pnpm --dir apps/e2e/phase94 run typecheck`
+  - 本轮新增 weekly-fork 相关改动后再次通过。
+- `node scripts/uat/prepare-weekly-fork-db.mjs --env fork-anvil`
+  - 通过。
+  - 已验证：
+    - `fork_anvil` schema 可被自动创建/复用
+    - `prisma migrate deploy` 在 fork schema 下无 pending migrations
+    - `prisma migrate status` 返回 `Database schema is up to date!`
+- `pnpm --dir apps/e2e/phase94 run fork:start`
+  - 在受限沙箱内首次失败。
+  - 根因不是 anvil 参数，而是脚本自检 `fetch http://127.0.0.1:18545` 受当前执行环境限制。
+  - 在有本机端口权限的上下文中重跑后通过。
+- `node scripts/promotion-env/run-with-env.mjs --target server --env fork-anvil -- pnpm --dir apps/server exec nest start`
+  - 首次验证暴露问题。
+  - 真实根因是 `fork-anvil` manifest 派生出的 Redis DB 为 `21/22`，超出本机 Redis 默认 DB 范围，服务启动后报 `ERR DB index is out of range`。
+  - 将 fork 默认 Redis DB 调整为 `13/14` 后，`/api/v1/health` 返回 `200`。
+- `pnpm --dir apps/e2e/phase94 run test:weekly-fork`
+  - 首次失败。
+  - 真实根因不是 weekly smoke 本身，而是 runner 过早复用 `wallets:prepare`：
+    - 当前 public BSC testnet RPC 在 anvil fork 场景下，对现网测试钱包返回 `missing trie node`
+    - 失败点发生在 `eth_getBalance`
+  - 将当前 fork smoke runner 与 `wallets:prepare` 解耦后再次执行通过。
+  - 最终结果：
+    - `weekly-fork/fork-precheck.spec.ts` 1 passed
+  - 已验证：
+    - fork RPC 返回 `chainId=0x61`
+    - `/api/v1/epoch/boundary?referenceAt=2026-03-18T00:00:00.000Z` 可正常投影
+    - admin `epochs/sync/preview` 可在 fork 环境下返回 `200`
+    - `uat-report.json` 已记录 `weekly-fork-precheck` 成功证据
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run wallets:prepare`
+  - 通过。
+  - 已验证：
+    - fork 环境资金账户已切换为本地 anvil admin 地址 `0xf39f...2266`
+    - `admin/referrer/userA/userB/userC` 5 个本地 fork 钱包均可直接在 anvil 上读取余额
+    - `MockUSDT` 可通过公开 `mint()` 在本地 fork 上完成补资，不再依赖 public testnet 钱包状态
+- `pnpm --dir apps/e2e/phase94 run test:weekly-fork`
+  - 在切换为 deterministic anvil wallets 并恢复 `wallets:prepare` 后再次通过。
+  - 最终结果：
+    - `wallets:prepare` 通过
+    - `weekly-fork/fork-precheck.spec.ts` 1 passed
+  - 本轮结果说明：
+    - fork-native wallet strategy
+    - fork schema prepare
+    - admin allowlist 注入
+    - `HEADLESS` weekly smoke
+    已形成一条可重复执行的本地 fork 基座链路。
+- `ps eww -p 90992`
+  - 通过。
+  - 已确认运行中的 dapp child process 确实使用：
+    - `PROMOTION_ENV=fork-anvil`
+    - `NEXT_PUBLIC_PROMOTION_RPC_URL=http://127.0.0.1:18545`
+    - 本地 redeploy 后的 `NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS / NEXT_PUBLIC_NFT_SALE_ADDRESS / NEXT_PUBLIC_SETTLEMENT_ADDRESS`
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/core/buy-nft.spec.ts`
+  - 通过。
+  - 已验证：
+    - `userC` 链上 `approve + buyNFT` 成功
+    - `/nft` 页面回读 `purchase price=1000 USDT`
+    - `/nft` 页面回读 `purchasedRemaining=28`
+    - `/nft` 页面回读 `referralRemaining=70`
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:uat`
+  - 通过。
+  - 最终结果：
+    - `wallets:prepare` 通过
+    - `precheck` 1 passed
+    - `smoke/core` 6 passed
+  - 本轮结果说明：
+    - `fork-anvil` local-deploy 基座
+    - NFT 页面只读链状态
+    - `referral-bind-placement`
+    - `check-in`
+    - `buy-nft`
+    已可在同一套本地 anvil 环境下重复执行。
+- `pnpm --dir apps/server exec jest db/prisma-pg-config.spec.ts --runInBand`
+  - 通过。
+  - 最终结果：
+    - `5 passed`
+  - 已验证：
+    - `DATABASE_SCHEMA` 可被解析
+    - `DATABASE_URL` query 中的 `schema` 可被解析
+    - adapter option 会在显式配置优先级下返回正确 schema
+- `pnpm --dir apps/server run build`
+  - 通过。
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run stack:start`
+  - 在带本机权限的上下文中通过。
+  - 已验证：
+    - `server/dapp/admin` 可由统一 stack manager 拉起
+    - `services.runtime.json` 与日志目录会被写入到 `config/promotion-envs/fork-anvil/`
+- `node scripts/uat/reset-weekly-fork-db.mjs --env fork-anvil`
+  - 在带本机权限的上下文中通过。
+  - 已验证：
+    - `fork_anvil` schema 可从 `public` 重新克隆为 clean baseline
+    - `_prisma_migrations`、业务表、enum type 均会进入目标 schema
+- `node scripts/promotion-env/run-with-env.mjs --target server --env fork-anvil -- pnpm exec node -e '<pg probe for enum types / enum columns / defaults>'`
+  - 在带本机权限的上下文中通过。
+  - 已验证：
+    - `fork_anvil` 下共有 `17` 个 enum type 与 `22` 张表
+    - enum 列的 `udt_schema` 均已改为 `fork_anvil`
+    - enum 默认值形如 `'ACTIVE'::fork_anvil."UserStatus"`，不再回指 `public`
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:weekly-fork`
+  - 在 Prisma schema 透传与 enum clone 修复后，从 clean state 再次通过。
+  - 最终结果：
+    - `weekly-fork/fork-precheck.spec.ts` 1 passed
+    - `weekly-fork/subsidy-claim.spec.ts` 1 passed
+    - 全套 `2 passed`
+  - 本轮结果说明：
+    - weekly fork suite 已真正运行在隔离 `fork_anvil` schema
+    - `publish/sync/claim` 前的基线与读路径不再误用 `public`
+- `ps eww -p 60349,60482,60826`
+  - 通过。
+  - 已确认：
+    - 运行中的 server 进程环境包含 `PROMOTION_ENV=fork-anvil`
+    - 运行中的 server 进程环境包含 `PNPM_PACKAGE_NAME=3u-aura-server`
+    - 不能再依赖 `PWD=/apps/server` 识别复用，因此已调整服务标记逻辑
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:uat`
+  - 在 service reuse 修复后再次通过。
+  - 最终结果：
+    - `precheck` 1 passed
+    - `smoke/core` 6 passed
+  - 本轮结果说明：
+    - `server/dapp/admin` 可被 runner 正确复用
+    - weekly schema/runtime 修复未回归既有 `buy-nft / referral / check-in` 链路
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run stack:stop`
+  - 在带本机权限的上下文中通过。
+  - 已验证：
+    - `server/dapp/admin` 均可被 stop 脚本自动发现并停止
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run fork:stop`
+  - 在带本机权限的上下文中通过。
+  - 已验证：
+    - anvil 进程可被正确停止
+- `lsof -i :3210`
+  - 通过。
+  - stop 后未发现 `server` 监听。
+- `lsof -i :3200`
+  - 通过。
+  - stop 后未发现 `dapp` 监听。
+- `lsof -i :3201`
+  - 通过。
+  - stop 后未发现 `admin` 监听。
+- `lsof -i :18545`
+  - 通过。
+  - stop 后未发现 `anvil` 监听。
 
 ## Deviations From Original Plan
 - 原计划的 `Synpress wallet cache` 作为 Milestone 1 基础能力先行；实际执行时被 Synpress CLI 对扩展加载页的 `5s` 硬编码超时阻塞。
 - 为避免停在第三方 CLI 内部实现，本次新增了 `src/metamask-session.ts`，改为 `Playwright persistent context + Synpress MetaMask API` 直连扩展。
-- 即使绕过 CLI 缓存后，`RainbowKit/wagmi` 的 `MetaMask` 连接在自动化上下文下仍未弹出扩展通知页，因此登录 smoke 目前记为 `blocked by connector/runtime interaction`。
+- 即使绕过 CLI 缓存后，`RainbowKit/wagmi` 的 `MetaMask` 连接在自动化上下文下仍未弹出扩展通知页，因此实际执行改为：
+  - 保留 env-gated injected wallet / connector 适配，仅用于自动化上下文
+  - 将 UAT 登录主路径切换为 Node 侧签名 + 页面 bootstrap 会话
+  - 把“扩展连接稳定性”从主里程碑通过条件下调为已知限制，而非 UAT 阻塞项
+- `admin` 环境启动方式也发生偏移：
+  - 若直接运行 `apps/admin` 的 `env:dev`，会使用默认 `testnet-live`
+  - 实际 UAT 验证必须显式指定 `--env uat-mockusdt` 或等价环境变量
+- `precheck` 不再适合作为 broad suite 中的普通同级测试：
+  - 因为 `check-in` 等真实业务流会消耗 BNB/MockUSDT，若 `precheck` 排在其后会产生伪失败
+  - 因此新增 `wallets:prepare`，并将 `test:core/test:uat` 调整为先补资、再 precheck、最后跑花费型用例
+- `buy NFT` 的最终自动化路径没有走浏览器钱包写链：
+  - 链上交易改为 Node 侧私钥直接 `approve + buyNFT`
+  - dapp 侧只负责回读 `/nft` 页面上的公共合约状态
+- `/nft` 页面最初一直显示 `-`，根因不是链上购买失败，而是前端公共读链配置缺陷：
+  - `wagmi` 缺少显式 `transports`
+  - `useReadContract` 未显式指定 `promotionChainId`，在未连接钱包时默认落到错误链
+- `fork-anvil` local-deploy 下，NFT 页面问题又出现了一次更具体的偏移：
+  - 浏览器可以直接 `eth_chainId` / `eth_call` 命中本地 anvil 与 NFT sale 合约
+  - 但 `wagmi` 的 NFT 页面只读 hook 在该场景下长期 pending，不返回数据
+  - 实际收敛方案改为浏览器原生 `eth_call`，不再把 local-deploy 的只读展示绑死在 wagmi hook 状态机上
+- 当前 `claim` 仍不是“纯自动化缺口”，而是业务前置未满足：
+  - `NftSubsidyClaim` 尚未因购买行为自动生成
+  - `server` 也尚未同步购买型 NFT 持仓到用户画像
+- 购买型 NFT 的后端同步方案已发生明确调整：
+  - 不再在 `/api/v1/user/profile`、`/api/v1/claims/me` 读路径里做历史 `eth_getLogs` 懒同步
+  - 改为购买成功后由 dapp/e2e 显式提交 `txHash`
+  - server 再基于该 `txHash` 查询 receipt、验事件、落库更新购买持仓与补贴 claim 投影
+  - 这样既保留了产品层“即时体验”，又规避了当前 public RPC 对 `eth_getLogs` 的限制
+- 本地 UAT 库并非“干净数据库 + migrate deploy”模式：
+  - Prisma `migrate deploy` 因 `P3005` 拒绝直接接管非空库
+  - 实际修复路径改为 `migrate diff` + `db execute` + `migrate resolve`
+- 新增的跨环境 Prisma 审计发现一个执行环境限制：
+  - 在受限沙箱中直接访问 `127.0.0.1:5433` 会失败
+  - 因此后续凡是需要真实 DB 连通性的 Prisma 命令，都必须把“本机 TCP 可达性”当作前置条件单独验证
+- `release` 目前不属于“schema 未对齐待修复”，而属于“环境配置未进入 runnable 状态”
+- `fork/anvil` 基座的 Redis 与 wallet assumptions 发生了偏移：
+  - 原计划默认 `fork-anvil` 可直接复用更高的 Redis DB 编号；实际本机 Redis 仅支持默认 DB 范围，因此改为 `13/14`
+  - 原计划默认可直接复用 public UAT 的 `wallets:prepare`；实际在当前 public BSC testnet RPC 上，anvil fork 对这些现网测试钱包会命中 `missing trie node`
+  - 因此实际实现改为：fork 基座使用 deterministic anvil wallets，本地补资由 fork funder 账户负责；不再把 public UAT 钱包地址强绑定进 fork runner
+- weekly fork runner 的执行形态也做了收敛：
+  - 为避免无 GUI 上下文卡死，`test:weekly-fork` 现固定 `HEADLESS=true`
+- `fork-anvil` 的 Prisma 隔离策略也发生了关键校正：
+  - 原先以为“同库不同 schema”已经生效
+  - 实际运行时由于 Prisma PG adapter 未收到 `schema` 参数，查询仍落到 `public`
+  - 实际收敛方案改为显式派生 `DATABASE_SCHEMA` / `schema`，并将其透传到 adapter
+- `fork-anvil` baseline clone 的实现也发生了偏移：
+  - 原计划只复制表结构与 migration 记录
+  - 实际 Prisma 运行在独立 schema 后，enum type 也必须被完整复制并重绑默认值
+- service stack 的 server 启动方式也做了偏移：
+  - 原先使用 `nest start`
+  - 实际会与 `run-with-env` 的 `dist/generated` watcher 产生目录竞争并触发 `ENOTEMPTY`
+  - 实际收敛方案改为：必要时先 `pnpm --dir apps/server run build`，再以 `node dist/src/main.js` 启动
+- 当前命令执行环境对本机资源也存在一个额外限制：
+  - 在受限沙箱中，本地端口监听与部分 `127.0.0.1` DB 访问会被拒绝
+  - 因此本轮 anvil / Next / Nest / Postgres 相关验证，需要切换到带本机权限的上下文执行，不能把沙箱内的 `EPERM` 误判成应用 bug
 
 ## Next Required Actions
-- 继续定位 `RainbowKit/wagmi + MetaMask` 连接器在自动化上下文下不生成 notification page 的原因。
-- 若短期内无法稳定弹出连接通知页，补一个后备路径：
-  - 用测试钱包私钥在 Node 侧完成签名登录
-  - 通过 localStorage/session bootstrap 驱动 `dapp/admin` 的已登录 UI 流程
-  - 把链上动作与 UI/API 断言拆开执行
-- 在连接器阻塞解除后，再推进：
-  - `admin` 登录 smoke
-  - `referrer -> userA` bind/placement
-  - check-in / buy NFT / claim 自动化
+- 基于已打通的 bootstrap 登录链路，继续推进剩余业务烟测：
+  - claim
+  - 如有需要，补 admin 侧与 NFT/claim 相关的二次断言页
+- 基于新的 `txHash` 同步入口，继续推进 `claim` 自动化：
+  - 先区分“server 已能同步 purchased NFT”与“链上 subsidy epoch 尚未发布”两个问题
+  - 若 public UAT 仍无 `published subsidy epoch`，则将 `claim` 主验证迁移到 `fork + anvil + 可控 referenceAt` 测试层
+- 为后续 UAT 命令统一显式注入 `PROMOTION_ENV=uat-mockusdt`，避免回落到 `testnet-live`。
+- 将当前已知限制保留在文档中：
+  - 浏览器扩展 notification page 在自动化上下文下仍不稳定
+  - 该限制不再阻塞 UAT 登录 smoke，但仍不适合作为主自动化路径
+- 为抽奖、团队激励、每周 purchased NFT 补贴等“周维度”流程新增独立自动化层：
+  - 使用 `fork + anvil` 控制链上时间
+  - 使用 server 侧 `referenceAt` 驱动周结算/资格逻辑
+  - 不把这些时间敏感流程强压到公共 testnet UAT 上
+- 为 fork 周流程补下一步关键前置：
+  - 基于已落地的 fork-native/anvil 钱包，继续把 `publishSubsidyEpoch -> sync -> claimPurchasedSubsidy` 接进 weekly suite
+  - 为 `owner / settlementPublisher / rootPublisher` 增加 fork impersonation 或 role bridge helper，打通真正的周流程写链步骤
+- 在当前基座稳定后，下一步优先级已收敛为：
+  - 补 `owner / settlementPublisher / rootPublisher` 的 fork role bridge / impersonation
+  - 在 weekly suite 内推进真正的 `publishSubsidyEpoch -> sync -> claimPurchasedSubsidy`
+  - 不再把时间花在 schema/runtime/stack 启停这类基础设施问题上
+- 若后续要把 local anvil 从“伪装成 chain 97”进一步收敛为真正独立本地链：
+  - 单独更新 plan
+  - 将 dapp/admin/wallet 侧链定义改成显式 local chain
+  - 再补自动切链 / 添加链能力
+- 待你批准后，再进入跨环境 Prisma 实施阶段：
+  - 对 `uat-mockusdt` 复核当前 schema / baseline 状态
+  - 对 `testnet-live` 在可访问上下文下执行同样的非破坏性对齐
+  - 对 `release` 先确认是否要将 manifest 变为 runnable；若不变更，则只能记录为阻塞，不能声称“已修复”

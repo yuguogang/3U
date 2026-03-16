@@ -9,6 +9,9 @@ export class NftSubsidyClaimRepository {
 
   async listClaimsForUser(
     userId: string,
+    options: {
+      tokenIds?: bigint[];
+    } = {},
     executor: DbExecutor = this.db,
   ): Promise<
     Array<
@@ -34,6 +37,15 @@ export class NftSubsidyClaimRepository {
   > {
     return executor.nftSubsidyClaim.findMany({
       where: {
+        ...(options.tokenIds
+          ? {
+              nftHolding: {
+                tokenId: {
+                  in: options.tokenIds,
+                },
+              },
+            }
+          : {}),
         userId,
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -58,6 +70,90 @@ export class NftSubsidyClaimRepository {
         },
       },
     });
+  }
+
+  async upsertProjectedClaim(
+    data: {
+      amountUsdt: Prisma.Decimal;
+      chainId: number;
+      contractAddress: string;
+      epochId: string;
+      nftHoldingId: string;
+      status: ClaimStatus;
+      userId: string;
+    },
+    executor: DbExecutor = this.db,
+  ): Promise<{ created: boolean; claim: NftSubsidyClaim; updated: boolean }> {
+    const existing = await executor.nftSubsidyClaim.findUnique({
+      where: {
+        nftHoldingId_epochId: {
+          epochId: data.epochId,
+          nftHoldingId: data.nftHoldingId,
+        },
+      },
+    });
+
+    if (!existing) {
+      const claim = await executor.nftSubsidyClaim.create({
+        data: {
+          amountUsdt: data.amountUsdt,
+          chainId: data.chainId,
+          contractAddress: data.contractAddress,
+          epochId: data.epochId,
+          nftHoldingId: data.nftHoldingId,
+          status: data.status,
+          userId: data.userId,
+        },
+      });
+
+      return {
+        claim,
+        created: true,
+        updated: false,
+      };
+    }
+
+    const updateData: Prisma.NftSubsidyClaimUpdateInput = {};
+
+    if (existing.amountUsdt.toFixed(0) !== data.amountUsdt.toFixed(0)) {
+      updateData.amountUsdt = data.amountUsdt;
+    }
+    if (existing.chainId !== data.chainId) {
+      updateData.chainId = data.chainId;
+    }
+    if (existing.contractAddress !== data.contractAddress) {
+      updateData.contractAddress = data.contractAddress;
+    }
+    if (
+      existing.status !== ClaimStatus.CLAIMED &&
+      existing.status !== data.status
+    ) {
+      updateData.status = data.status;
+    }
+    if (existing.status !== ClaimStatus.CLAIMED && existing.userId !== data.userId) {
+      updateData.user = {
+        connect: { id: data.userId },
+      };
+    }
+
+    if (!Object.keys(updateData).length) {
+      return {
+        claim: existing,
+        created: false,
+        updated: false,
+      };
+    }
+
+    const claim = await executor.nftSubsidyClaim.update({
+      where: { id: existing.id },
+      data: updateData,
+    });
+
+    return {
+      claim,
+      created: false,
+      updated: true,
+    };
   }
 
   async findClaimForSync(
