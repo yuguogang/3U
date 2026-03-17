@@ -23,7 +23,10 @@ type WeeklyForkEpochRecord = {
 export async function seedThresholdMetFixtures(params: {
   observerWallet: `0x${string}`;
   observerUserId: string;
+  poolContributorCount?: number;
+  qualifiedRankingCount?: number;
   referenceAt: string;
+  syntheticParticipantCount?: number;
   targetEndAt: string;
   targetEpochNo: number;
   targetStartAt: string;
@@ -38,8 +41,17 @@ export async function seedThresholdMetFixtures(params: {
     params.observerWallet,
     "--observer-user-id",
     params.observerUserId,
+    ...(params.poolContributorCount
+      ? ["--pool-contributor-count", String(params.poolContributorCount)]
+      : []),
+    ...(params.qualifiedRankingCount
+      ? ["--qualified-ranking-count", String(params.qualifiedRankingCount)]
+      : []),
     "--reference-at",
     params.referenceAt,
+    ...(params.syntheticParticipantCount
+      ? ["--synthetic-participant-count", String(params.syntheticParticipantCount)]
+      : []),
     "--target-epoch-no",
     String(params.targetEpochNo),
     "--target-start-at",
