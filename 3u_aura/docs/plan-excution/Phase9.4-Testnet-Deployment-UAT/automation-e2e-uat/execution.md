@@ -140,6 +140,14 @@ In progress.
   - 本轮还暴露并解决了一项真实环境问题：
     - 当前 fork-anvil runtime 一度存在 manifest 地址已写入但本地 anvil 上无 bytecode 的状态
     - 通过重新执行 `deploy-contract-suite.mjs --env fork-anvil --force` 并重启 `stack:start` 后恢复
+- 已补一层环境自检收尾：
+  - `apps/e2e/phase94/tests/weekly-fork/fork-precheck.spec.ts` 现在会显式校验以下合约地址在本地 anvil 上存在 bytecode：
+    - payment token
+    - founder NFT
+    - NFT sale
+    - settlement
+    - merkle distributor
+  - 这样可在 weekly suite 起跑前更早暴露“manifest 有地址但本地未部署”的环境漂移
 - 已确认一项执行环境限制：
   - 当前 Codex 受限沙箱会阻止本机监听端口与部分 `127.0.0.1` DB 访问
   - 因此涉及 anvil、Next/Nest dev server、本机 Postgres 的最终验证需在带本机权限的上下文中执行
@@ -330,6 +338,8 @@ In progress.
 - `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 run stack:start`
 - `pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit`
 - `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec playwright test tests/weekly-fork/merkle-claim.spec.ts`
+- `pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit`
+- `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec playwright test tests/weekly-fork/fork-precheck.spec.ts`
 - `curl -sS --max-time 5 http://127.0.0.1:3210/api/v1/health`
 - `curl -sS --max-time 5 -H 'content-type: application/json' -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' http://127.0.0.1:18545`
 - `pnpm --dir apps/e2e/phase94 run test:weekly-fork`

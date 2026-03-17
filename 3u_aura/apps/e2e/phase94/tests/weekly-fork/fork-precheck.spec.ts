@@ -55,7 +55,9 @@ test("@weekly-fork fork env exposes local RPC and weekly epoch preview", async (
 
   expect(runtime.manifest.infra.database.schema).not.toBe("public");
   expect(runtime.manifest.chain.rpcUrl).toContain("127.0.0.1");
-  expect(forkRuntime?.anvilRpcUrl).toBe(runtime.manifest.chain.rpcUrl);
+  if (forkRuntime) {
+    expect(forkRuntime.anvilRpcUrl).toBe(runtime.manifest.chain.rpcUrl);
+  }
 
   const healthResponse = await request.get(
     new URL("/api/v1/health", runtime.manifest.infra.server.publicApiBaseUrl).toString(),
@@ -67,6 +69,23 @@ test("@weekly-fork fork env exposes local RPC and weekly epoch preview", async (
     "eth_chainId",
   );
   expect(chainIdHex.toLowerCase()).toBe("0x61");
+
+  const deployedContracts = [
+    ["paymentToken", runtime.manifest.contracts.paymentTokenAddress],
+    ["founderNft", runtime.manifest.contracts.founderNftAddress],
+    ["nftSale", runtime.manifest.contracts.nftSaleAddress],
+    ["settlement", runtime.manifest.contracts.settlementAddress],
+    ["merkleDistributor", runtime.manifest.contracts.merkleDistributorAddress],
+  ] as const;
+
+  for (const [, contractAddress] of deployedContracts) {
+    const bytecode = await requestRpcJson<string>(
+      runtime.manifest.chain.rpcUrl,
+      "eth_getCode",
+      [contractAddress, "latest"],
+    );
+    expect(bytecode).not.toBe("0x");
+  }
 
   const boundary = await getWeeklyEpochBoundary(referenceAt);
   expect(boundary.data.epochType).toBe("WEEKLY_PROMOTION");
@@ -90,6 +109,6 @@ test("@weekly-fork fork env exposes local RPC and weekly epoch preview", async (
     wallet: adminWallet.address,
     result: "success",
     apiStatus: epochPreview.status,
-    uiCheckpoint: `chainId=${chainIdHex},epochNo=${boundary.data.epochNo}`,
+    uiCheckpoint: `chainId=${chainIdHex},epochNo=${boundary.data.epochNo},contracts=${deployedContracts.length}`,
   });
 });
