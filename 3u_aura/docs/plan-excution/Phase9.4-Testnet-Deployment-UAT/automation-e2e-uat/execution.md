@@ -773,6 +773,38 @@ In progress.
 - 当前命令执行环境对本机资源也存在一个额外限制：
   - 在受限沙箱中，本地端口监听与部分 `127.0.0.1` DB 访问会被拒绝
   - 因此本轮 anvil / Next / Nest / Postgres 相关验证，需要切换到带本机权限的上下文执行，不能把沙箱内的 `EPERM` 误判成应用 bug
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:weekly-pack`
+  - 首次顺序 pack 失败，定位到 `subsidy-claim` 复用了旧 `server` runtime，`/api/v1/claims/purchased-nft/sync` 返回 `Purchased NFT transaction target contract does not match`。
+  - 修复：
+    - `scripts/uat/promotion-service-lib.mjs`
+      - 为 `stopPromotionServices()` 增加 fallback：当 `ps` / owner 识别失败但 runtime 记录为 `managed` 且端口仍被占用时，仍按记录 PID 停止整个 process group。
+    - `apps/e2e/phase94/package.json`
+      - `test:weekly-pack` / `test:weekly-fork` 统一在启动前执行 `stack:stop || true`，强制刷新 weekly fork 服务栈。
+  - 二次验证：
+    - `HEADLESS=true PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/subsidy-claim.spec.ts`
+      - 通过。
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:weekly-pack`
+  - 第二次顺序 pack 失败，定位到 `lottery.spec.ts` 直接假定 `referrer` 一定命中 `LOTTERY_USDT`，顺序执行后该假设不稳定。
+  - 修复：
+    - `apps/e2e/phase94/tests/weekly-fork/lottery.spec.ts`
+      - 先用稳定的 `userB` 完成 threshold-met seeding。
+      - 再在 `userB/referrer/userA/userC/admin` 中动态寻找实际拿到 `LOTTERY_USDT` 的真实钱包做 API/UI 断言，避免把特定钱包硬编码成中奖者。
+  - 二次验证：
+    - `HEADLESS=true PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/lottery.spec.ts`
+      - 通过。
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:weekly-pack`
+  - 最终顺序 pack 通过。
+  - 实测顺序：
+    - `fork-precheck`
+    - `subsidy-claim`
+    - `rollover`
+    - `threshold-met`
+    - `lottery`
+    - `ranking`
+    - `merkle-claim`
+- `pnpm --dir apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit`
+  - 通过。
+  - 已确认本轮 `lottery.spec.ts` 改动未引入新的 TS 错误。
 
 ## Next Required Actions
 - 基于已打通的 bootstrap 登录链路，继续推进剩余业务烟测：

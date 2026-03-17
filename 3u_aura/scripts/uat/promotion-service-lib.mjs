@@ -413,7 +413,14 @@ export async function stopPromotionServices({
     }
 
     const spec = resolveServiceSpec(envName, loadManifest(envName), serviceName);
-    if (!resolveServiceOwnerPid(spec, record.pid)) {
+    const ownerPid = resolveServiceOwnerPid(spec, record.pid);
+    const canFallbackStop =
+      record.managed &&
+      !ownerPid &&
+      isProcessAlive(record.pid) &&
+      listListeningPids(spec.port).length > 0;
+
+    if (!ownerPid && !canFallbackStop) {
       continue;
     }
 

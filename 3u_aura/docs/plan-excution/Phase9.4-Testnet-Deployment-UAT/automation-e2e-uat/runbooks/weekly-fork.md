@@ -16,6 +16,7 @@
    - `node scripts/uat/prepare-weekly-fork-db.mjs --env fork-anvil`
    - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run fork:start`
 3. 启动服务栈
+   - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run stack:stop`
    - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run stack:start`
 4. 准备钱包与 precheck
    - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run wallets:prepare`
@@ -25,10 +26,13 @@
 1. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/fork-precheck.spec.ts`
 2. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/subsidy-claim.spec.ts`
 3. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/rollover.spec.ts`
-4. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/lottery.spec.ts`
-5. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/ranking.spec.ts`
-6. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/merkle-claim.spec.ts`
-7. 需要全量跑时再执行：`PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:weekly-fork`
+4. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/threshold-met.spec.ts`
+5. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/lottery.spec.ts`
+6. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/ranking.spec.ts`
+7. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/merkle-claim.spec.ts`
+8. 需要按推荐顺序跑完整 pack 时执行：`PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:weekly-pack`
+   - `test:weekly-pack` / `test:weekly-fork` 现会先执行 `stack:stop`，避免复用旧 server runtime 导致 `purchased-nft/sync` 或后续 weekly draft 断言漂移
+9. 需要全量跑目录时再执行：`PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:weekly-fork`
 
 ## Preferred orchestration per wave
 - Wave 1 — rollover
@@ -51,9 +55,10 @@
   - 最后从 dapp `/claims` 页面发起 claim，并执行 sync-back
 
 ## Remaining helper gaps
-- 还缺 weekly synthetic fixture seeding helper
-- 还缺 `settle-weekly-epoch-rewards.ts` 的轻量封装
-- 还缺 `MerkleClaim.depositRewards()` / `publishRoot()` 的链上 helper
+- 目前主缺口已从 helper 缺失转为稳定性收尾
+- 若后续继续增强，优先项是：
+  - 将本地 bytecode 自检前置到更靠近 `fork:start` 的阶段
+  - 修复 `/rewards` 页面 client-side exception 后补回 UI 断言
 
 ## Evidence to capture
 - `referenceAt`
