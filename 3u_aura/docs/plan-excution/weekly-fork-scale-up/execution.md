@@ -1,7 +1,7 @@
 # Execution
 
 ## Status
-In progress.
+Completed.
 
 ## Summary
 - Task: Extend seed-weekly-fork-fixtures.mjs to support 20+ eligible participants for lottery full-bucket coverage
@@ -49,8 +49,12 @@ In progress.
 - `git checkout feature/weekly-fork-scale-up`
 - `node scripts/uat/seed-weekly-fork-fixtures.mjs --help` - script runs correctly
 - `pnpm --dir apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit` - TypeScript compiles
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/lottery.spec.ts` - PASSED (4.7s)
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/ranking.spec.ts` - PASSED (4.5s)
 
 ## Verification
 - Script modifications completed
 - TypeScript compiles without errors
-- Fork environment setup and test execution requires local environment (anvil, server, dapp, database)
+- Lottery E2E test: PASSED
+- Ranking E2E test: PASSED
+- Full bucket achieved (20+ participants → 10 winners, 0 rollover)
