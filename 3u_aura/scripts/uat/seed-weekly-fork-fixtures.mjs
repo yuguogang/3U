@@ -273,13 +273,13 @@ async function main() {
   const observerWallet = readArg('observer-wallet');
   const observerUserId = readArg('observer-user-id');
   const poolContributorCount = clampInteger(readArg('pool-contributor-count'), 3, 1, 3);
-  const qualifiedRankingCount = clampInteger(readArg('qualified-ranking-count'), 12, 1, 12);
+  const qualifiedRankingCount = clampInteger(readArg('qualified-ranking-count'), 15, 1, 15);
   const referenceAt = readArg('reference-at');
   const syntheticParticipantCount = clampInteger(
     readArg('synthetic-participant-count'),
-    7,
+    18,
     0,
-    7,
+    20,
   );
   const targetEpochNo = Number(readArg('target-epoch-no'));
   const targetStartAt = readArg('target-start-at');
@@ -318,7 +318,7 @@ async function main() {
         buildSyntheticWallet(targetEpochNo, index + 1),
       ),
     ]),
-  ).slice(0, 12);
+  );
   const participantIncrements = [
     '9000000000',
     '7500000000',
