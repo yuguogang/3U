@@ -773,6 +773,31 @@ In progress.
 - 当前命令执行环境对本机资源也存在一个额外限制：
   - 在受限沙箱中，本地端口监听与部分 `127.0.0.1` DB 访问会被拒绝
   - 因此本轮 anvil / Next / Nest / Postgres 相关验证，需要切换到带本机权限的上下文执行，不能把沙箱内的 `EPERM` 误判成应用 bug
+- `pnpm --dir apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit`
+  - 通过。
+  - 已确认新增 weekly blocked specs 与 fixture 参数扩展未引入 TS 错误。
+- `HEADLESS=true PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/lottery-blocked.spec.ts tests/weekly-fork/ranking-blocked.spec.ts`
+  - 通过。
+  - 新增 blocked 覆盖：
+    - `lottery-blocked.spec.ts`
+      - 在仅有 minimal threshold-met 规模时，明确记录 `participantCount < 20`，因此 full-bucket coverage 视为 `blocked`，而不是误判为失败。
+    - `ranking-blocked.spec.ts`
+      - 在仅有 minimal threshold-met 规模时，明确记录 `participantCount < 20`，因此 full-top10 coverage 视为 `blocked`，而不是误判为失败。
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:weekly-pack`
+  - 通过。
+  - 更新后的顺序 pack 现在包含：
+    - `fork-precheck`
+    - `subsidy-claim`
+    - `rollover`
+    - `threshold-met`
+    - `lottery-blocked`
+    - `lottery`
+    - `ranking-blocked`
+    - `ranking`
+    - `merkle-claim`
+  - 说明：
+    - full-bucket / full-top10 的“规模不足”现在已经被自动化显式建模为 `blocked`
+    - partial happy path 与链上 happy path 仍保持通过，不受新增 blocked 用例影响
 
 ## Next Required Actions
 - 基于已打通的 bootstrap 登录链路，继续推进剩余业务烟测：

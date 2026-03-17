@@ -16,6 +16,7 @@
    - `node scripts/uat/prepare-weekly-fork-db.mjs --env fork-anvil`
    - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run fork:start`
 3. 启动服务栈
+   - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run stack:stop`
    - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run stack:start`
 4. 准备钱包与 precheck
    - `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run wallets:prepare`
@@ -25,10 +26,14 @@
 1. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/fork-precheck.spec.ts`
 2. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/subsidy-claim.spec.ts`
 3. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/rollover.spec.ts`
-4. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/lottery.spec.ts`
-5. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/ranking.spec.ts`
-6. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/merkle-claim.spec.ts`
-7. 需要全量跑时再执行：`PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:weekly-fork`
+4. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/threshold-met.spec.ts`
+5. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/lottery-blocked.spec.ts`
+6. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/lottery.spec.ts`
+7. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/ranking-blocked.spec.ts`
+8. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/ranking.spec.ts`
+9. `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/merkle-claim.spec.ts`
+10. 需要按推荐顺序跑完整 pack 时执行：`PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:weekly-pack`
+11. 需要全量跑目录时再执行：`PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:weekly-fork`
 
 ## Preferred orchestration per wave
 - Wave 1 — rollover
@@ -51,9 +56,11 @@
   - 最后从 dapp `/claims` 页面发起 claim，并执行 sync-back
 
 ## Remaining helper gaps
-- 还缺 weekly synthetic fixture seeding helper
-- 还缺 `settle-weekly-epoch-rewards.ts` 的轻量封装
-- 还缺 `MerkleClaim.depositRewards()` / `publishRoot()` 的链上 helper
+- 当前主缺口已从 seeding / draft helper 转为更大规模 fixture 控制
+- 若后续继续增强，优先项是：
+  - 增加 `20+` eligible participants 的 deterministic full-bucket / full-top10 fixture profile
+  - 将 bytecode 自检前置到更靠近 `fork:start` 的阶段
+  - 修复 `/rewards` 页面 client-side exception 后补回 UI 断言
 
 ## Evidence to capture
 - `referenceAt`

@@ -39,6 +39,19 @@ function buildSyntheticWallet(epochNo, index) {
   return `0x${suffix}`;
 }
 
+function clampInteger(value, fallback, minimum, maximum) {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+
+  return Math.min(maximum, Math.max(minimum, Math.trunc(parsed)));
+}
+
 function toDateKey(date, timeZone) {
   const formatter = new Intl.DateTimeFormat('en-CA', {
     day: '2-digit',
@@ -259,7 +272,15 @@ async function main() {
   const envName = readArg('env') ?? process.env.PROMOTION_ENV ?? 'fork-anvil';
   const observerWallet = readArg('observer-wallet');
   const observerUserId = readArg('observer-user-id');
+  const poolContributorCount = clampInteger(readArg('pool-contributor-count'), 3, 1, 3);
+  const qualifiedRankingCount = clampInteger(readArg('qualified-ranking-count'), 12, 1, 12);
   const referenceAt = readArg('reference-at');
+  const syntheticParticipantCount = clampInteger(
+    readArg('synthetic-participant-count'),
+    7,
+    0,
+    7,
+  );
   const targetEpochNo = Number(readArg('target-epoch-no'));
   const targetStartAt = readArg('target-start-at');
   const targetEndAt = readArg('target-end-at');
@@ -293,7 +314,7 @@ async function main() {
       '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
       '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
       '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',
-      ...Array.from({ length: 7 }, (_, index) =>
+      ...Array.from({ length: syntheticParticipantCount }, (_, index) =>
         buildSyntheticWallet(targetEpochNo, index + 1),
       ),
     ]),
@@ -311,7 +332,7 @@ async function main() {
     '3600000000',
     '3400000000',
     '3200000000',
-  ];
+  ].map((value, index) => (index < qualifiedRankingCount ? value : '100000000'));
   const poolSeeds = [
     {
       contributorWallet: participantWallets[0],
@@ -331,7 +352,7 @@ async function main() {
       totalAmountUsdt: '30000000',
       treasuryAmountUsdt: '0',
     },
-  ];
+  ].slice(0, poolContributorCount);
 
   await client.connect();
 

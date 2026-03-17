@@ -59,6 +59,11 @@ export async function findThresholdMetWindow(accessToken: string) {
 export async function prepareThresholdMetEpoch(params: {
   observerWalletName: "referrer" | "userA" | "userB" | "userC";
   page: Page;
+  seedOptions?: {
+    poolContributorCount?: number;
+    qualifiedRankingCount?: number;
+    syntheticParticipantCount?: number;
+  };
 }) {
   const runtime = loadRuntimeConfig();
   const adminWallet = loadWalletFixture("admin", runtime.environment);
@@ -73,7 +78,10 @@ export async function prepareThresholdMetEpoch(params: {
   const seeded = await seedThresholdMetFixtures({
     observerUserId: observerProfile.id,
     observerWallet: observerWallet.address,
+    poolContributorCount: params.seedOptions?.poolContributorCount,
+    qualifiedRankingCount: params.seedOptions?.qualifiedRankingCount,
     referenceAt: window.referenceAt,
+    syntheticParticipantCount: params.seedOptions?.syntheticParticipantCount,
     targetEndAt: window.targetEndAt,
     targetEpochNo: window.targetEpochNo,
     targetStartAt: window.targetStartAt,
