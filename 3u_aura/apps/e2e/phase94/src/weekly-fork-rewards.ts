@@ -25,6 +25,16 @@ type DraftWeeklyRewardsResult = {
   };
 };
 
+type PublishWeeklyRewardsResult = {
+  claimCount: number;
+  epochId: string;
+  epochNo: number;
+  merkleRoot: string;
+  mode: "publish";
+  rewardJsonUri: string;
+  totalAmount: string;
+};
+
 export async function materializeWeeklyRewardsDraft(epochId: string) {
   const runtime = loadRuntimeConfig();
   const scriptPath = `${runtime.repoRoot}/scripts/uat/materialize-weekly-fork-draft.mjs`;
@@ -44,4 +54,22 @@ export async function materializeWeeklyRewardsDraft(epochId: string) {
   }
 
   return JSON.parse(stdout) as DraftWeeklyRewardsResult;
+}
+
+export async function publishWeeklyRewards(epochId: string) {
+  const runtime = loadRuntimeConfig();
+  const scriptPath = `${runtime.repoRoot}/scripts/uat/publish-weekly-fork-claims.mjs`;
+  const { stdout, stderr } = await execFileAsync(process.execPath, [
+    scriptPath,
+    "--env",
+    runtime.environment,
+    "--epoch-id",
+    epochId,
+  ]);
+
+  if (stderr.trim()) {
+    throw new Error(`weekly reward publish stderr: ${stderr.trim()}`);
+  }
+
+  return JSON.parse(stdout) as PublishWeeklyRewardsResult;
 }

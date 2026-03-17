@@ -123,6 +123,23 @@ In progress.
     - lottery partial-bucket path：在未满配 bucket 下仍成功出奖，同时 `lotteryRolloverUsdt > 0`
     - ranking success path：观察钱包能看到 deterministic `RANK_1` + `MERKLE_RANKING`
     - ranking top10 path：`draftRewardCount = 10`、`rankingRolloverUsdt = 0`
+- 已完成 Wave 4 首轮落地并真实通过：
+  - 已新增 weekly publish / on-chain bridge：
+    - `scripts/uat/publish-weekly-fork-claims.mjs`
+    - `apps/e2e/phase94/src/weekly-fork-rewards.ts`（新增 `publishWeeklyRewards()`）
+    - `apps/e2e/phase94/src/weekly-fork-chain.ts`（新增 `publishMerkleRootOnFork()`、`claimMerkleRewardOnFork()`）
+  - 已新增 Wave 4 spec：
+    - `apps/e2e/phase94/tests/weekly-fork/merkle-claim.spec.ts`
+  - 已确认最小 E2E 闭环：
+    - threshold-met draft rewards
+    - DB publish -> claimable rows / ROOT_POSTED
+    - 链上 `depositRewards()` + `publishRoot()`
+    - 用户链上 `claim()`
+    - `syncMyClaim()` 回写
+    - `/claims` 页显示 `CLAIMED`
+  - 本轮还暴露并解决了一项真实环境问题：
+    - 当前 fork-anvil runtime 一度存在 manifest 地址已写入但本地 anvil 上无 bytecode 的状态
+    - 通过重新执行 `deploy-contract-suite.mjs --env fork-anvil --force` 并重启 `stack:start` 后恢复
 - 已确认一项执行环境限制：
   - 当前 Codex 受限沙箱会阻止本机监听端口与部分 `127.0.0.1` DB 访问
   - 因此涉及 anvil、Next/Nest dev server、本机 Postgres 的最终验证需在带本机权限的上下文中执行
@@ -147,6 +164,9 @@ In progress.
   - `apps/e2e/phase94/tests/weekly-fork/lottery.spec.ts`
   - `apps/e2e/phase94/tests/weekly-fork/ranking.spec.ts`
   - 已确认两条独立 spec 都能在 fork-anvil 上快速稳定通过
+- Wave 4 真实回归：
+  - `apps/e2e/phase94/tests/weekly-fork/merkle-claim.spec.ts`
+  - 已确认 publish / deposit / publishRoot / claim / sync-back 全链路通过
 
 - 新增 E2E 项目目录与配置：
   - `apps/e2e/phase94/package.json`
@@ -305,6 +325,11 @@ In progress.
 - `pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit`
 - `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec playwright test tests/weekly-fork/lottery.spec.ts`
 - `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec playwright test tests/weekly-fork/ranking.spec.ts`
+- `PRIVATE_KEY=$(jq -r '.privateKey' /Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/fork-anvil/wallets/admin.json | sed 's/^0x//') node /Users/ygg/vs/ai/3U/3u_aura/scripts/promotion-env/deploy-contract-suite.mjs --env fork-anvil --force`
+- `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 run stack:stop`
+- `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 run stack:start`
+- `pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit`
+- `PROMOTION_ENV=fork-anvil pnpm --dir /Users/ygg/vs/ai/3U/3u_aura/apps/e2e/phase94 exec playwright test tests/weekly-fork/merkle-claim.spec.ts`
 - `curl -sS --max-time 5 http://127.0.0.1:3210/api/v1/health`
 - `curl -sS --max-time 5 -H 'content-type: application/json' -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' http://127.0.0.1:18545`
 - `pnpm --dir apps/e2e/phase94 run test:weekly-fork`
@@ -752,6 +777,9 @@ In progress.
 - 继续推进 Wave 4：
   - 基于现有 draft / claim row 基座补 publish / deposit / publishRoot bridge
   - 把 weekly merkle claim 从 read-model happy path 推进到真实链上 claim happy path
+- 后续可继续收敛：
+  - 将 fork-anvil contract bytecode 自检前置到 weekly runner，避免再次出现“manifest 有地址但本地无合约”的隐性环境漂移
+  - 若要恢复 `/rewards` 页面断言，需单独修 dapp 侧 client-side exception
 - 基于新的 `txHash` 同步入口，继续推进 `claim` 自动化：
   - 先区分“server 已能同步 purchased NFT”与“链上 subsidy epoch 尚未发布”两个问题
   - 若 public UAT 仍无 `published subsidy epoch`，则将 `claim` 主验证迁移到 `fork + anvil + 可控 referenceAt` 测试层

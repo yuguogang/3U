@@ -36,6 +36,48 @@ const founderNftReadAbi = [
   },
 ] as const;
 
+const merkleClaimAbi = [
+  {
+    inputs: [
+      { name: "amount", type: "uint256" },
+    ],
+    name: "depositRewards",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { name: "epochId", type: "uint256" },
+      { name: "merkleRoot", type: "bytes32" },
+    ],
+    name: "publishRoot",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { name: "epochId", type: "uint256" },
+      { name: "index", type: "uint256" },
+      { name: "rewardTypeCode", type: "uint8" },
+      { name: "amount", type: "uint256" },
+      { name: "merkleProof", type: "bytes32[]" },
+    ],
+    name: "claim",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [{ name: "epochId", type: "uint256" }, { name: "index", type: "uint256" }],
+    name: "isClaimed",
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "view",
+    type: "function",
+  },
+] as const;
+
 const settlementAbi = [
   {
     inputs: [],
@@ -100,6 +142,15 @@ export type PublishedSubsidyEpochResult = {
   publisherAddress: `0x${string}`;
   purchasedSupply: bigint;
   subsidyAmountAtomic: string;
+};
+
+export type PublishedMerkleRootResult = {
+  depositHash: `0x${string}`;
+  epochNo: number;
+  merkleRoot: `0x${string}`;
+  publishHash: `0x${string}`;
+  publisherAddress: `0x${string}`;
+  totalAmount: string;
 };
 
 type MintMockUsdtParams = {
@@ -272,6 +323,130 @@ export async function publishSubsidyEpochOnFork({
       address: publisher,
     });
   }
+}
+
+export async function publishMerkleRootOnFork(params: {
+  epochNo: number;
+  merkleRoot: `0x${string}`;
+  publisherAddress?: `0x${string}`;
+  totalAmount: string;
+}): Promise<PublishedMerkleRootResult> {
+  const runtime = loadRuntimeConfig();
+  const publicClient = createForkPublicClient();
+  const testClient = createForkTestClient();
+  const publisher = getAddress(
+    params.publisherAddress ??
+      runtime.manifest.roles.rootPublisher ??
+      runtime.manifest.roles.owner,
+  ) as `0x${string}`;
+  const amount = BigInt(params.totalAmount);
+
+  await mintMockUsdtToAddress({
+    amount,
+    recipient: publisher,
+  });
+  await testClient.setBalance({
+    address: publisher,
+    value: parseEther("10"),
+  });
+  await testClient.impersonateAccount({
+    address: publisher,
+  });
+
+  try {
+    const publisherWalletClient = createWalletClient({
+      account: parseAccount(publisher),
+      chain: bscTestnet,
+      transport: http(runtime.manifest.chain.rpcUrl),
+    });
+    const merkleAddress = runtime.manifest.contracts.merkleDistributorAddress;
+    const paymentTokenAddress = runtime.manifest.contracts.paymentTokenAddress;
+    const allowance = await publicClient.readContract({
+      abi: erc20Abi,
+      address: paymentTokenAddress,
+      args: [publisher, merkleAddress],
+      functionName: "allowance",
+    });
+
+    if (allowance < amount) {
+      const approveHash = await publisherWalletClient.writeContract({
+        abi: erc20Abi,
+        address: paymentTokenAddress,
+        args: [merkleAddress, amount],
+        functionName: "approve",
+      });
+      await publicClient.waitForTransactionReceipt({ hash: approveHash });
+    }
+
+    const depositHash = await publisherWalletClient.writeContract({
+      abi: merkleClaimAbi,
+      address: merkleAddress,
+      args: [amount],
+      functionName: "depositRewards",
+    });
+    await publicClient.waitForTransactionReceipt({ hash: depositHash });
+
+    const publishHash = await publisherWalletClient.writeContract({
+      abi: merkleClaimAbi,
+      address: merkleAddress,
+      args: [BigInt(params.epochNo), params.merkleRoot],
+      functionName: "publishRoot",
+    });
+    await publicClient.waitForTransactionReceipt({ hash: publishHash });
+
+    return {
+      depositHash,
+      epochNo: params.epochNo,
+      merkleRoot: params.merkleRoot,
+      publishHash,
+      publisherAddress: publisher,
+      totalAmount: params.totalAmount,
+    };
+  } finally {
+    await testClient.stopImpersonatingAccount({
+      address: publisher,
+    });
+  }
+}
+
+export async function claimMerkleRewardOnFork(params: {
+  amount: string;
+  claimRecordId: string;
+  epochNo: number;
+  merkleIndex: number;
+  merkleProof: `0x${string}`[];
+  rewardTypeCode: number;
+  wallet: WalletFixture;
+}) {
+  const runtime = loadRuntimeConfig();
+  const publicClient = createForkPublicClient();
+  const walletClient = createWalletClientForFixture(params.wallet);
+  const hash = await walletClient.writeContract({
+    abi: merkleClaimAbi,
+    address: runtime.manifest.contracts.merkleDistributorAddress,
+    args: [
+      BigInt(params.epochNo),
+      BigInt(params.merkleIndex),
+      params.rewardTypeCode,
+      BigInt(params.amount),
+      params.merkleProof,
+    ],
+    functionName: "claim",
+  });
+
+  await publicClient.waitForTransactionReceipt({ hash });
+  const claimed = await publicClient.readContract({
+    abi: merkleClaimAbi,
+    address: runtime.manifest.contracts.merkleDistributorAddress,
+    args: [BigInt(params.epochNo), BigInt(params.merkleIndex)],
+    functionName: "isClaimed",
+  });
+
+  return {
+    claimRecordId: params.claimRecordId,
+    claimed,
+    txHash: hash,
+  };
 }
 
 export async function claimPurchasedSubsidyOnFork({

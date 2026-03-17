@@ -11,6 +11,7 @@ export type PromotionManifest = {
   };
   contracts: {
     founderNftAddress: `0x${string}`;
+    merkleDistributorAddress: `0x${string}`;
     nftSaleAddress: `0x${string}`;
     paymentTokenAddress: `0x${string}`;
     settlementAddress: `0x${string}`;
