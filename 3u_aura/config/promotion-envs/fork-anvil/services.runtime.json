@@ -1,33 +1,5 @@
 {
   "envName": "fork-anvil",
-  "services": {
-    "server": {
-      "logPath": "/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/fork-anvil/logs/server.log",
-      "managed": true,
-      "pid": 59203,
-      "port": 3210,
-      "readyUrl": "http://127.0.0.1:3210/api/v1/health",
-      "reused": false,
-      "startedAt": "2026-03-17T07:43:29.075Z"
-    },
-    "dapp": {
-      "logPath": "/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/fork-anvil/logs/dapp.log",
-      "managed": true,
-      "pid": 59278,
-      "port": 3200,
-      "readyUrl": "http://127.0.0.1:3200",
-      "reused": false,
-      "startedAt": "2026-03-17T07:43:49.466Z"
-    },
-    "admin": {
-      "logPath": "/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/fork-anvil/logs/admin.log",
-      "managed": true,
-      "pid": 59439,
-      "port": 3201,
-      "readyUrl": "http://127.0.0.1:3201",
-      "reused": false,
-      "startedAt": "2026-03-17T07:44:32.853Z"
-    }
-  },
-  "updatedAt": "2026-03-17T07:44:32.853Z"
+  "services": {},
+  "updatedAt": "2026-03-18T06:15:00.197Z"
 }

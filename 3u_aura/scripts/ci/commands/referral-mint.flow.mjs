@@ -1,7 +1,7 @@
 import { loadWalletFixture, loadManifest } from '../lib/manifest.mjs';
 import { createWalletClientForFixture, createPublicClientForFork, createTestClientForFork, parseUnits } from '../lib/contracts.mjs';
 import { getAccessToken, getMyProfile } from '../lib/server.mjs';
-import * as Anvil from '../lib/anvil.mjs';
+import { cleanupHarness, prepareHarness } from '../lib/harness.mjs';
 
 const ENV = 'fork-anvil';
 
@@ -79,14 +79,12 @@ main().catch(console.error);
 async function run() {
   console.log('\n========== Referral Mint Flow Test ==========\n');
 
-  console.log('1. Starting anvil...');
-  await Anvil.startAnvil(ENV);
-
-  console.log('2. Deploying fresh contracts...');
-  await Anvil.ensureFreshContracts(ENV);
-
-  console.log('3. Resetting DB...');
-  await Anvil.resetDb(ENV);
+  await prepareHarness({
+    deployFreshContracts: true,
+    envName: ENV,
+    resetDb: true,
+    startServices: ['server'],
+  });
 
   const userC = loadWalletFixture('userC', ENV);
   const userB = loadWalletFixture('userB', ENV);
@@ -221,8 +219,11 @@ async function run() {
     }
 
     // Cleanup
-    console.log('\n11. Stopping anvil...');
-    await Anvil.stopAnvil(ENV);
+    console.log('\n11. Cleaning up harness...');
+    await cleanupHarness({
+      envName: ENV,
+      stopServices: ['server'],
+    });
 
     console.log('\n✅ Referral Mint flow completed successfully!\n');
     return { success: true };
@@ -235,7 +236,10 @@ async function run() {
 run().catch(async (error) => {
   console.error('\n❌ Error:', error.message);
   try {
-    await Anvil.stopAnvil(ENV);
+    await cleanupHarness({
+      envName: ENV,
+      stopServices: ['server'],
+    });
   } catch {}
   process.exit(1);
 });

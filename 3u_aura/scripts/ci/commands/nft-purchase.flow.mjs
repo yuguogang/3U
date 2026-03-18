@@ -1,7 +1,7 @@
 import { loadWalletFixture, loadManifest } from '../lib/manifest.mjs';
 import { createWalletClientForFixture, createPublicClientForFork, createTestClientForFork, mintUsdt, parseUnits, approveUsdt, getNftBalance, nftSaleAbi } from '../lib/contracts.mjs';
 import { syncPurchasedNft, getAccessToken } from '../lib/server.mjs';
-import * as Anvil from '../lib/anvil.mjs';
+import { cleanupHarness, prepareHarness } from '../lib/harness.mjs';
 
 const ENV = 'fork-anvil';
 
@@ -9,14 +9,12 @@ async function run() {
   console.log('\n========== NFT Purchase Flow Test ==========\n');
 
   // Setup
-  console.log('1. Starting anvil...');
-  await Anvil.startAnvil(ENV);
-  
-  console.log('2. Deploying fresh contracts...');
-  await Anvil.ensureFreshContracts(ENV);
-  
-  console.log('3. Resetting DB...');
-  await Anvil.resetDb(ENV);
+  await prepareHarness({
+    deployFreshContracts: true,
+    envName: ENV,
+    resetDb: true,
+    startServices: ['server'],
+  });
 
   // Get wallets and manifest
   const userC = loadWalletFixture('userC', ENV);
@@ -116,19 +114,32 @@ async function run() {
         const loginResult = await getAccessToken(userC.address, userC.privateKey, ENV);
         const syncResult = await syncPurchasedNft(loginResult.accessToken, hash, ENV);
         console.log(`   Sync result: ${JSON.stringify(syncResult)}`);
+
+        console.log('8. Verifying duplicate purchased NFT sync is idempotent...');
+        const duplicateSyncResult = await syncPurchasedNft(loginResult.accessToken, hash, ENV);
+        console.log(`   Duplicate sync result: ${JSON.stringify(duplicateSyncResult)}`);
+
+        if (duplicateSyncResult.tokenId !== syncResult.tokenId || duplicateSyncResult.txHash !== syncResult.txHash) {
+          throw new Error(
+            `Expected duplicate purchased NFT sync to preserve tokenId/txHash, got ${JSON.stringify(duplicateSyncResult)}`,
+          );
+        }
       } catch (syncError) {
         console.log(`   ⚠️  Sync failed (server may need restart): ${syncError.message}`);
       }
 
       // Verify NFT balance
-      console.log('8. Verifying NFT balance...');
+      console.log('9. Verifying NFT balance...');
       const nftBalance = await getNftBalance(userC.address, ENV);
       console.log(`   NFT balance: ${nftBalance}`);
     }
 
     // Cleanup
-    console.log('\n9. Stopping anvil...');
-    await Anvil.stopAnvil(ENV);
+    console.log('\n10. Cleaning up harness...');
+    await cleanupHarness({
+      envName: ENV,
+      stopServices: ['server'],
+    });
 
     if (receipt.status === 'success') {
       console.log('\n✅ NFT Purchase flow completed successfully!\n');
@@ -146,7 +157,10 @@ async function run() {
 run().catch(async (error) => {
   console.error('\n❌ NFT Purchase flow failed:', error.message);
   try {
-    await Anvil.stopAnvil(ENV);
+    await cleanupHarness({
+      envName: ENV,
+      stopServices: ['server'],
+    });
   } catch {}
   process.exit(1);
 });

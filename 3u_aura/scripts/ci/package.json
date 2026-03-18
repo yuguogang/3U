@@ -4,18 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "run": "tsx run.ts",
-    "checkin": "tsx commands/checkin.flow.ts",
-    "nft-purchase": "tsx commands/nft-purchase.flow.ts",
-    "referral-approval": "tsx commands/referral-approval.flow.ts",
-    "subsidy-claim": "tsx commands/subsidy-claim.flow.ts",
-    "weekly-rollover": "tsx commands/weekly-rollover.flow.ts",
-    "weekly-threshold": "tsx commands/weekly-threshold.flow.ts",
-    "lottery": "tsx commands/lottery.flow.ts",
-    "ranking": "tsx commands/ranking.flow.ts",
-    "merkle-claim": "tsx commands/merkle-claim.flow.ts",
-    "all": "tsx run-all.ts",
-    "all:no-reset": "tsx run-all.ts --no-reset"
+    "run": "node run.mjs",
+    "checkin": "node commands/checkin.flow.mjs",
+    "login": "node commands/login.flow.mjs",
+    "inviter-bind": "node commands/referral-inviter-bind.flow.mjs",
+    "tree-placement": "node commands/tree-placement.flow.mjs",
+    "nft-purchase": "node commands/nft-purchase.flow.mjs",
+    "referral-approval": "node commands/referral-mint.flow.mjs",
+    "all": "node run-all.mjs",
+    "all:no-reset": "node run-all.mjs --no-reset"
   },
   "dependencies": {
     "viem": "^2.21.0"

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadCiManifest } from './runtime.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '../../..');
@@ -10,6 +11,11 @@ function readJsonFile(filePath) {
 }
 
 export function loadManifest(envName = 'fork-anvil') {
+  const ciManifest = loadCiManifest(envName);
+  if (ciManifest) {
+    return ciManifest;
+  }
+
   return readJsonFile(
     path.join(REPO_ROOT, 'config', 'promotion-envs', envName, 'manifest.json'),
   );

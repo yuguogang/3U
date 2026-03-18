@@ -1,17 +1,17 @@
 import { loadWalletFixture, loadManifest } from '../lib/manifest.mjs';
 import { getAccessToken, getMyProfile } from '../lib/server.mjs';
-import * as Anvil from '../lib/anvil.mjs';
+import { cleanupHarness, prepareHarness } from '../lib/harness.mjs';
 
 const ENV = 'fork-anvil';
 
 async function run() {
   console.log('\n========== Referral Inviter Bind Flow Test ==========\n');
 
-  console.log('1. Starting anvil...');
-  await Anvil.startAnvil(ENV);
-
-  console.log('2. Resetting DB...');
-  await Anvil.resetDb(ENV);
+  await prepareHarness({
+    envName: ENV,
+    resetDb: true,
+    startServices: ['server'],
+  });
 
   const userC = loadWalletFixture('userC', ENV);
   const userB = loadWalletFixture('userB', ENV);
@@ -57,9 +57,40 @@ async function run() {
   const bindResult = await bindResponse.json();
   console.log(`   Bind result: ${JSON.stringify(bindResult)}`);
 
+  console.log('7. Verifying duplicate inviter bind is idempotent...');
+  const duplicateBindResponse = await fetch(`${serverUrl}/api/v1/referral/inviter/bind`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${userCLogin.accessToken}`,
+    },
+    body: JSON.stringify({
+      inviteCode: userBProfile.inviteCode,
+    }),
+  });
+
+  if (!duplicateBindResponse.ok) {
+    const duplicateError = await duplicateBindResponse.text();
+    throw new Error(
+      `Expected duplicate inviter bind to be safely idempotent, but it failed: ${duplicateBindResponse.status} ${duplicateError}`,
+    );
+  }
+
+  const duplicateResult = await duplicateBindResponse.json();
+  if (duplicateResult.inviterId !== bindResult.inviterId || duplicateResult.userId !== bindResult.userId) {
+    throw new Error(
+      `Expected duplicate inviter bind to return the same binding, got ${JSON.stringify(duplicateResult)}`,
+    );
+  }
+
+  console.log(`   Duplicate bind returned same binding as expected: ${JSON.stringify(duplicateResult)}`);
+
   // Cleanup
-  console.log('\n7. Stopping anvil...');
-  await Anvil.stopAnvil(ENV);
+  console.log('\n8. Cleaning up harness...');
+  await cleanupHarness({
+    envName: ENV,
+    stopServices: ['server'],
+  });
 
   console.log('\n✅ Referral Inviter Bind completed successfully!\n');
   return { success: true };
@@ -68,7 +99,10 @@ async function run() {
 run().catch(async (error) => {
   console.error('\n❌ Error:', error.message);
   try {
-    await Anvil.stopAnvil(ENV);
+    await cleanupHarness({
+      envName: ENV,
+      stopServices: ['server'],
+    });
   } catch {}
   process.exit(1);
 });

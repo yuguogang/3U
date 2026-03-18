@@ -3,13 +3,27 @@ import { promisify } from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  archiveBroadcastFile,
+  getCiRuntimePath,
+  writeCiManifest,
+  writeCiRuntime,
+} from './runtime.mjs';
 
 const execAsync = promisify(exec);
 
-const RUNTIME_FILE = '.weekly-fork-runtime.json';
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 export async function startAnvil(envName = 'fork-anvil') {
+  const manifestPath = path.join(REPO_ROOT, 'config', 'promotion-envs', envName, 'manifest.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+  const rpcUrl = manifest.chain.rpcUrl;
+
+  if (await isAnvilReady(rpcUrl, manifest.chain.id)) {
+    console.log(`✓ Reusing running anvil at ${rpcUrl}`);
+    return;
+  }
+
   console.log('REPO_ROOT:', REPO_ROOT);
   const { stdout } = await execAsync(
     `node scripts/uat/start-weekly-fork.mjs --env ${envName}`,
@@ -39,7 +53,8 @@ export async function ensureFreshContracts(envName = 'fork-anvil') {
   const broadcastDir = path.join(REPO_ROOT, 'apps/contracts/broadcast/DeployMockUSDT.s.sol/97');
   const files = fs.readdirSync(broadcastDir).filter(f => f.startsWith('run-') && f.endsWith('.json'));
   const latestFile = files.sort().pop();
-  const mockUsdtData = JSON.parse(fs.readFileSync(path.join(broadcastDir, latestFile), 'utf-8'));
+  const mockUsdtSourcePath = path.join(broadcastDir, latestFile);
+  const mockUsdtData = JSON.parse(fs.readFileSync(mockUsdtSourcePath, 'utf-8'));
   const mockUsdtAddr = mockUsdtData.transactions[mockUsdtData.transactions.length - 1].contractAddress;
   console.log(`    MockUSDT: ${mockUsdtAddr}`);
   
@@ -52,7 +67,8 @@ export async function ensureFreshContracts(envName = 'fork-anvil') {
   
   const nftCoreFiles = fs.readdirSync(path.join(REPO_ROOT, 'apps/contracts/broadcast/DeployNFTCore.s.sol/97')).filter(f => f.startsWith('run-') && f.endsWith('.json'));
   const nftCoreLatest = nftCoreFiles.sort().pop();
-  const nftCoreData = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'apps/contracts/broadcast/DeployNFTCore.s.sol/97', nftCoreLatest), 'utf-8'));
+  const nftCoreSourcePath = path.join(REPO_ROOT, 'apps/contracts/broadcast/DeployNFTCore.s.sol/97', nftCoreLatest);
+  const nftCoreData = JSON.parse(fs.readFileSync(nftCoreSourcePath, 'utf-8'));
   const founderNftAddr = nftCoreData.transactions.find(t => t.contractName === 'FounderNFT')?.contractAddress;
   const nftSaleAddr = nftCoreData.transactions.find(t => t.contractName === 'NFTSale')?.contractAddress;
   console.log(`    FounderNFT: ${founderNftAddr}`);
@@ -67,7 +83,8 @@ export async function ensureFreshContracts(envName = 'fork-anvil') {
   
   const settlementFiles = fs.readdirSync(path.join(REPO_ROOT, 'apps/contracts/broadcast/DeploySettlementClaim.s.sol/97')).filter(f => f.startsWith('run-') && f.endsWith('.json'));
   const settlementLatest = settlementFiles.sort().pop();
-  const settlementData = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'apps/contracts/broadcast/DeploySettlementClaim.s.sol/97', settlementLatest), 'utf-8'));
+  const settlementSourcePath = path.join(REPO_ROOT, 'apps/contracts/broadcast/DeploySettlementClaim.s.sol/97', settlementLatest);
+  const settlementData = JSON.parse(fs.readFileSync(settlementSourcePath, 'utf-8'));
   const settlementAddr = settlementData.transactions.find(t => t.contractName === 'Settlement')?.contractAddress || settlementData.transactions.find(t => t.contractName === 'Settlement' && t.transactionType === 'CREATE')?.contractAddress;
   const merkleAddr = settlementData.transactions.find(t => t.contractName === 'MerkleClaim')?.contractAddress || settlementData.transactions.find(t => t.contractName === 'MerkleClaim' && t.transactionType === 'CREATE')?.contractAddress;
   console.log(`    Settlement: ${settlementAddr}`);
@@ -82,6 +99,25 @@ export async function ensureFreshContracts(envName = 'fork-anvil') {
   manifest.infra.server.promotionMerkleDistributorAddress = merkleAddr;
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
   console.log('  Manifest updated');
+
+  const archivedBroadcasts = {
+    deployMockUsdtBroadcast: archiveBroadcastFile(envName, mockUsdtSourcePath, 'DeployMockUSDT.s.sol'),
+    deployCoreBroadcast: archiveBroadcastFile(envName, nftCoreSourcePath, 'DeployNFTCore.s.sol'),
+    deploySettlementBroadcast: archiveBroadcastFile(envName, settlementSourcePath, 'DeploySettlementClaim.s.sol'),
+  };
+
+  manifest.artifacts = {
+    ...(manifest.artifacts ?? {}),
+    ...archivedBroadcasts,
+  };
+  writeCiManifest(envName, manifest);
+  writeCiRuntime(envName, {
+    archivedBroadcasts,
+    envName,
+    latestContractDeploymentAt: new Date().toISOString(),
+    manifest,
+    runtimePath: getCiRuntimePath(envName),
+  });
   
   // Set saleContract on FounderNFT
   console.log('  Setting saleContract...');
@@ -90,7 +126,14 @@ export async function ensureFreshContracts(envName = 'fork-anvil') {
   );
   console.log('  Done!');
   
-  return { mockUsdtAddr, founderNftAddr, nftSaleAddr, settlementAddr, merkleAddr };
+  return {
+    archivedBroadcasts,
+    founderNftAddr,
+    merkleAddr,
+    mockUsdtAddr,
+    nftSaleAddr,
+    settlementAddr,
+  };
 }
 
 export async function stopAnvil(envName = 'fork-anvil') {
@@ -102,6 +145,32 @@ export async function stopAnvil(envName = 'fork-anvil') {
     console.log(`✓ Anvil stopped: ${stdout.trim()}`);
   } catch (e) {
     console.log('Anvil stop: no running instance or already stopped');
+  }
+}
+
+async function isAnvilReady(rpcUrl, chainId) {
+  try {
+    const response = await fetch(rpcUrl, {
+      body: JSON.stringify({
+        id: 1,
+        jsonrpc: '2.0',
+        method: 'eth_chainId',
+        params: [],
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    });
+    if (!response.ok) {
+      return false;
+    }
+
+    const payload = await response.json();
+    const currentChainId = Number.parseInt(payload.result, 16);
+    return currentChainId === Number(chainId);
+  } catch {
+    return false;
   }
 }
 
@@ -122,7 +191,7 @@ export async function advanceTime(seconds, envName = 'fork-anvil') {
 }
 
 export function getRuntimePath(envName) {
-  return path.join(REPO_ROOT, '.cache', envName, RUNTIME_FILE);
+  return getCiRuntimePath(envName);
 }
 
 export function getRuntime(envName) {
