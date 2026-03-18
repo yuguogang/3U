@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/ygg/vs/ai/3U/3u_aura diff main..feature/weekly-fork-scale-up --name-only)",
+      "Bash(git -C /Users/ygg/vs/ai/3U/3u_aura log --oneline -5)",
+      "Bash(git -C /Users/ygg/vs/ai/3U/3u_aura status)",
+      "Bash(git -C /Users/ygg/vs/ai/3U/3u_aura push origin main)"
+    ]
+  }
+}
