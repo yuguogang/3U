@@ -1,0 +1,134 @@
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const execAsync = promisify(exec);
+
+const RUNTIME_FILE = '.weekly-fork-runtime.json';
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+
+export async function startAnvil(envName = 'fork-anvil') {
+  console.log('REPO_ROOT:', REPO_ROOT);
+  const { stdout } = await execAsync(
+    `node scripts/uat/start-weekly-fork.mjs --env ${envName}`,
+    { cwd: REPO_ROOT },
+  );
+  console.log(`✓ Anvil started: ${stdout.trim()}`);
+}
+
+export async function ensureFreshContracts(envName = 'fork-anvil') {
+  console.log('Ensuring fresh contracts...');
+  
+  const manifestPath = path.join(REPO_ROOT, 'config', 'promotion-envs', envName, 'manifest.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+  
+  const rpcUrl = manifest.chain.rpcUrl;
+  const adminPk = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+  const owner = manifest.roles.owner || '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+  
+  // Deploy MockUSDT
+  console.log('  Deploying MockUSDT...');
+  let result = await execAsync(
+    `PRIVATE_KEY=${adminPk} OWNER=${owner} forge script DeployMockUSDT --rpc-url ${rpcUrl} --broadcast 2>&1 | tail -20`,
+    { cwd: path.join(REPO_ROOT, 'apps/contracts') },
+  );
+  
+  // Get MockUSDT address from broadcast
+  const broadcastDir = path.join(REPO_ROOT, 'apps/contracts/broadcast/DeployMockUSDT.s.sol/97');
+  const files = fs.readdirSync(broadcastDir).filter(f => f.startsWith('run-') && f.endsWith('.json'));
+  const latestFile = files.sort().pop();
+  const mockUsdtData = JSON.parse(fs.readFileSync(path.join(broadcastDir, latestFile), 'utf-8'));
+  const mockUsdtAddr = mockUsdtData.transactions[mockUsdtData.transactions.length - 1].contractAddress;
+  console.log(`    MockUSDT: ${mockUsdtAddr}`);
+  
+  // Deploy NFTSale (FounderNFT + NFTSale)
+  console.log('  Deploying NFTSale...');
+  result = await execAsync(
+    `PRIVATE_KEY=${adminPk} OWNER=${owner} USDT_ADDRESS=${mockUsdtAddr} FINANCE_WALLET=${owner} REFERRAL_SIGNER_ADDRESS=${owner} forge script DeployNFTCore --rpc-url ${rpcUrl} --broadcast 2>&1 | tail -20`,
+    { cwd: path.join(REPO_ROOT, 'apps/contracts') },
+  );
+  
+  const nftCoreFiles = fs.readdirSync(path.join(REPO_ROOT, 'apps/contracts/broadcast/DeployNFTCore.s.sol/97')).filter(f => f.startsWith('run-') && f.endsWith('.json'));
+  const nftCoreLatest = nftCoreFiles.sort().pop();
+  const nftCoreData = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'apps/contracts/broadcast/DeployNFTCore.s.sol/97', nftCoreLatest), 'utf-8'));
+  const founderNftAddr = nftCoreData.transactions.find(t => t.contractName === 'FounderNFT')?.contractAddress;
+  const nftSaleAddr = nftCoreData.transactions.find(t => t.contractName === 'NFTSale')?.contractAddress;
+  console.log(`    FounderNFT: ${founderNftAddr}`);
+  console.log(`    NFTSale: ${nftSaleAddr}`);
+  
+  // Deploy Settlement
+  console.log('  Deploying Settlement...');
+  result = await execAsync(
+    `PRIVATE_KEY=${adminPk} OWNER=${owner} SETTLEMENT_PUBLISHER=${owner} forge script DeploySettlementClaim --rpc-url ${rpcUrl} --broadcast 2>&1 | tail -20`,
+    { cwd: path.join(REPO_ROOT, 'apps/contracts') },
+  );
+  
+  const settlementFiles = fs.readdirSync(path.join(REPO_ROOT, 'apps/contracts/broadcast/DeploySettlementClaim.s.sol/97')).filter(f => f.startsWith('run-') && f.endsWith('.json'));
+  const settlementLatest = settlementFiles.sort().pop();
+  const settlementData = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'apps/contracts/broadcast/DeploySettlementClaim.s.sol/97', settlementLatest), 'utf-8'));
+  const settlementAddr = settlementData.transactions.find(t => t.contractName === 'Settlement')?.contractAddress || settlementData.transactions.find(t => t.contractName === 'Settlement' && t.transactionType === 'CREATE')?.contractAddress;
+  const merkleAddr = settlementData.transactions.find(t => t.contractName === 'MerkleClaim')?.contractAddress || settlementData.transactions.find(t => t.contractName === 'MerkleClaim' && t.transactionType === 'CREATE')?.contractAddress;
+  console.log(`    Settlement: ${settlementAddr}`);
+  console.log(`    MerkleDistributor: ${merkleAddr}`);
+  
+  // Update manifest
+  manifest.contracts.paymentTokenAddress = mockUsdtAddr;
+  manifest.contracts.founderNftAddress = founderNftAddr;
+  manifest.contracts.nftSaleAddress = nftSaleAddr;
+  manifest.contracts.settlementAddress = settlementAddr;
+  manifest.contracts.merkleDistributorAddress = merkleAddr;
+  manifest.infra.server.promotionMerkleDistributorAddress = merkleAddr;
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  console.log('  Manifest updated');
+  
+  // Set saleContract on FounderNFT
+  console.log('  Setting saleContract...');
+  await execAsync(
+    `cast send ${founderNftAddr} "setSaleContract(address)" ${nftSaleAddr} --private-key ${adminPk} --rpc-url ${rpcUrl} 2>&1`,
+  );
+  console.log('  Done!');
+  
+  return { mockUsdtAddr, founderNftAddr, nftSaleAddr, settlementAddr, merkleAddr };
+}
+
+export async function stopAnvil(envName = 'fork-anvil') {
+  try {
+    const { stdout } = await execAsync(
+      `node scripts/uat/stop-weekly-fork.mjs --env ${envName}`,
+      { cwd: REPO_ROOT },
+    );
+    console.log(`✓ Anvil stopped: ${stdout.trim()}`);
+  } catch (e) {
+    console.log('Anvil stop: no running instance or already stopped');
+  }
+}
+
+export async function resetDb(envName = 'fork-anvil') {
+  const { stdout } = await execAsync(
+    `node scripts/uat/reset-weekly-fork-db.mjs --env ${envName}`,
+    { cwd: REPO_ROOT },
+  );
+  console.log(`✓ DB reset: ${stdout.trim()}`);
+}
+
+export async function advanceTime(seconds, envName = 'fork-anvil') {
+  const { stdout } = await execAsync(
+    `node scripts/uat/advance-weekly-fork-time.mjs --env ${envName} --seconds ${seconds}`,
+    { cwd: REPO_ROOT },
+  );
+  console.log(`✓ Time advanced: ${stdout.trim()}`);
+}
+
+export function getRuntimePath(envName) {
+  return path.join(REPO_ROOT, '.cache', envName, RUNTIME_FILE);
+}
+
+export function getRuntime(envName) {
+  const runtimePath = getRuntimePath(envName);
+  if (fs.existsSync(runtimePath)) {
+    return JSON.parse(fs.readFileSync(runtimePath, 'utf-8'));
+  }
+  return null;
+}
