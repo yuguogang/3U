@@ -335,14 +335,18 @@ async function run() {
   return { success: true };
 }
 
-run().catch(async (error) => {
-  console.error('\n❌ Derived referral flow failed:', error.message);
-  console.error(error.stack);
-  try {
-    await cleanupHarness({
-      envName: ENV,
-      stopServices: ['server'],
-    });
-  } catch {}
-  process.exit(1);
-});
+run()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch(async (error) => {
+    console.error('\n❌ Derived referral flow failed:', error.message);
+    console.error(error.stack);
+    try {
+      await cleanupHarness({
+        envName: ENV,
+        stopServices: ['server'],
+      });
+    } catch {}
+    process.exit(1);
+  });

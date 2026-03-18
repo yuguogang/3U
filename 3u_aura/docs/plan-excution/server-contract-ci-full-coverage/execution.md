@@ -1,10 +1,10 @@
 # Execution: Server + Contract CI Full Coverage
 
 ## Status
-In progress. `Milestone 1-6` 已有真实 flow 验证支撑，weekly ranking / lottery merkle claim 闭环均已打通；fork-anvil 在当前沙箱中仍需要提权运行 anvil，后续 weekly failure-path 与更多 settlement 扩展流仍待继续推进。
+In progress. `Milestone 1-6` 已有真实 flow 验证支撑，当前已实现 flow 的 grouped runner (`run-all`) 串行全量回归已通过；fork-anvil 在当前沙箱中仍需要提权运行 anvil，后续 weekly failure-path 与更多 settlement 扩展流仍待继续推进。
 
 ## Last Updated
-2026-03-18 17:57:00 +0800
+2026-03-18 18:42:00 +0800
 
 ## Summary
 - 本任务由原 `ci-contract-tests` 过继并重命名而来。
@@ -147,6 +147,16 @@ In progress. `Milestone 1-6` 已有真实 flow 验证支撑，weekly ranking / l
   - `scripts/ci/commands/merkle-claim.flow.mjs` 现显式验证 `MERKLE_RANKING`
   - `scripts/ci/commands/merkle-lottery-claim.flow.mjs` 新增并验证 `MERKLE_LOTTERY`
   - `scripts/ci/run-all.mjs` 已将已通过的 claims / weekly flow 纳入串行分组回归
+- 已修复 grouped runner 的退出阻塞问题：
+  - `scripts/ci/commands/referral-mint-derived.flow.mjs` 在成功完成后显式 `process.exit(0)`
+  - 修复前症状是单 flow 虽打印成功，但子进程未退出，导致 `run-all` 被 `referral-derived` 卡住
+  - 修复后 `run-all` 已可串行穿过 `referral` / `claims` / `weekly` 组直到完成
+- 已完成一次真实 `run-all` 串行全量回归：
+  - `payment` 组通过：`checkin`、`nft-purchase`
+  - `topology` 组通过：`login`、`inviter-bind`、`tree-placement`
+  - `referral` 组通过：`referral-approval`、`referral-derived`
+  - `claims` 组通过：`subsidy-claim`
+  - `weekly` 组通过：`merkle-claim`、`merkle-lottery-claim`
 
 ## Open Items
 - 继续完成 `Milestone 2`：
@@ -226,6 +236,19 @@ In progress. `Milestone 1-6` 已有真实 flow 验证支撑，weekly ranking / l
 - `node scripts/ci/run.mjs subsidy-claim` (escalated, multiple reruns during diagnosis)
 - `node scripts/ci/run.mjs merkle-claim` (escalated)
 - `node scripts/ci/run.mjs merkle-lottery-claim` (escalated)
+- `node scripts/ci/run.mjs merkle-claim` (escalated, post-shared-flow-refactor rerun)
+- `node scripts/ci/run.mjs referral-derived` (escalated, post-exit-fix rerun)
+- `node scripts/ci/run-all.mjs` (escalated, first grouped-runner run exposed referral-derived exit hang)
+- `kill -9 38108`
+- `kill -9 36803`
+- `kill -9 26987`
+- `kill -9 27061`
+- `kill -9 27078`
+- `kill -9 27307`
+- `kill -9 90896`
+- `kill -9 97014`
+- `kill -9 97016`
+- `node scripts/ci/run-all.mjs` (escalated, rerun after referral-derived exit fix and orphan cleanup)
 
 ## Verification Results
 - `node scripts/ci/run.mjs --help` passed
@@ -303,6 +326,17 @@ In progress. `Milestone 1-6` 已有真实 flow 验证支撑，weekly ranking / l
   - duplicate on-chain lottery merkle claim reverted as expected
   - `claims/sync` marked lottery merkle claim `CLAIMED`
   - duplicate sync remained idempotent
+- `node scripts/ci/run.mjs merkle-claim` passed outside sandbox after shared weekly-flow refactor
+  - ranking flow also adopted dynamic claimant resolution
+  - duplicate on-chain ranking merkle claim reverted as expected
+  - no regression was introduced by shared weekly merkle flow extraction
+- `node scripts/ci/run.mjs referral-derived` passed outside sandbox after explicit success-exit fix
+  - success path still passed
+  - process exited with code `0` after completion instead of lingering with open handles
+- `node scripts/ci/run-all.mjs` passed outside sandbox after referral-derived exit fix and orphan cleanup
+  - grouped runner completed all configured groups serially
+  - `payment`, `topology`, `referral`, `claims`, and `weekly` groups all passed in one run
+  - validated that the previous `referral-derived` child-process hang was resolved
 
 ## Open Findings
 - `scripts/uat/start-weekly-fork.mjs` currently depends on a fork environment that is not reliably reproducible in the present sandbox
@@ -316,6 +350,7 @@ In progress. `Milestone 1-6` 已有真实 flow 验证支撑，weekly ranking / l
 - duplicate weekly merkle claim sync is idempotent, preserving the same `claimRecordId` / `txHash` with stable `CLAIMED` status
 - weekly claims view may expose both `MERKLE_RANKING` and `MERKLE_LOTTERY`; CI 现在已显式按 `claimType` 选择，避免“拿到任意一条 claim 就算通过”的误判
 - lottery reward ownership is not stable on a fixed wallet across runs; CI 现在会在已知测试钱包中动态定位 claimant，而不再把 `userB` 写死
+- grouped runner 曾暴露 `referral-derived` 成功后子进程不退出的问题；当前已通过显式 success exit 修复，并已由完整 `run-all` 通过验证
 - running multiple flows in parallel against the same `fork-anvil` / server runtime is unsafe today because one flow's cleanup can stop shared processes used by another flow
 - 新加的 runtime env override 已解决 `referral-mint` 的 signer mismatch 阻塞
 - fork 场景本轮仍会在 `apps/contracts/broadcast/*/97/` 生成原始 broadcast 文件；当前策略仍是复制隔离到 `scripts/ci/.runtime`，尚未自动删除原件
