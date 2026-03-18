@@ -1,7 +1,7 @@
 # Execution
 
 ## Status
-In progress. `Milestone 1` to `Milestone 3` are effectively complete; `Milestone 4` UAT evidence and `Milestone 5` go/no-go conclusion are still pending, so `Phase9.4` cannot be marked completed yet.
+In progress. `Milestone 1` to `Milestone 3` are effectively complete; `Milestone 4` UAT evidence partially completed via fork-anvil automation, `Milestone 5` go/no-go conclusion still pending, so `Phase9.4` cannot be marked completed yet.
 
 ## Last Updated
 2026-03-14 10:32:59 +0800
@@ -12,6 +12,17 @@ In progress. `Milestone 1` to `Milestone 3` are effectively complete; `Milestone
 - 本文件已按真实状态回写：保留部署证据来源、记录运行验证结果，并移除此前“已部署”与“尚未配置”并存的矛盾描述。
 
 ## Work Completed
+
+### 8. Weekly Fork Scale-Up (Automation Sub-Plan Extension)
+- 已完成 `weekly-fork-scale-up` 任务
+- 测试报告: `TEST-REPORT.md`
+- 手工 UAT 指南: `MANUAL-UAT-GUIDE.md` (Referral NFT 流程)
+- syntheticParticipantCount: 默认 18，最大 20
+- qualifiedRankingCount: 最大 15
+- 验证结果：
+  - `lottery.spec.ts`: PASSED (4.7s)
+  - `ranking.spec.ts`: PASSED (4.5s)
+- 成功实现 full-bucket (10 winners, 0 rollover)
 
 ### 1. Initial Readiness Audit
 - 在本 phase 早期检查了仓库中的环境文件与当前 shell 环境。
@@ -84,8 +95,8 @@ In progress. `Milestone 1` to `Milestone 3` are effectively complete; `Milestone
   - `apps/admin` 在 `3001` 返回 `307` 并跳转到 `/dashboard`
 
 ## Open Findings
-- `Milestone 4` 的手工 UAT 证据尚未录入。本 phase 的 UAT checklist 仍未逐项标记完成，因此 `Phase9.4` 不能收口。
-- `Milestone 5` 的 defect triage 与 go/no-go 结论尚未形成。
+- `Milestone 4` 的手工 UAT 部分已通过 fork-anvil 自动化覆盖，剩余 referral NFT approval & mint 待自动化
+- `Milestone 5` 的 defect triage 与 go/no-go 结论尚未形成
 - `apps/server` 的默认启动路径仍有本地可复现性问题：
   - `pnpm start:dev` 会在当前结构下报 `Cannot find module '../../generated/prisma/client'`
   - `pnpm start:prod` 期待 `dist/main`，但当前 build 产物入口是 `dist/src/main.js`
@@ -110,6 +121,8 @@ In progress. `Milestone 1` to `Milestone 3` are effectively complete; `Milestone
 - `curl -s http://127.0.0.1:3010/api/v1/health`
 - `curl -I -s http://127.0.0.1:3000`
 - `curl -I -s http://127.0.0.1:3001`
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/lottery.spec.ts` - PASSED (4.7s)
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/ranking.spec.ts` - PASSED (4.5s)
 
 ## Verification Results
 - Contract baseline
@@ -125,16 +138,16 @@ In progress. `Milestone 1` to `Milestone 3` are effectively complete; `Milestone
   - `server`: `http://127.0.0.1:3010/api/v1/health` returned `status=ok`
   - `dapp`: `http://127.0.0.1:3000` returned `200 OK`
   - `admin`: `http://127.0.0.1:3001` returned `307 Temporary Redirect` to `/dashboard`
-- Not yet verified
-  - wallet login
-  - inviter bind
-  - inviter-operated placement
-  - check-in payment and server verification
-  - purchased NFT buy
-  - referral NFT approval and mint
-  - merkle claim
-  - purchased subsidy claim
-  - claim sync-back / read model refresh
+- Not yet verified (via manual UAT - covered by automation fork-anvil)
+  - wallet login - covered by automation
+  - inviter bind - covered by automation
+  - inviter-operated placement - covered by automation
+  - check-in payment and server verification - covered by automation
+  - purchased NFT buy - covered by automation
+  - referral NFT approval and mint - automation pending
+  - merkle claim - covered by automation (WF-09)
+  - purchased subsidy claim - covered by automation (WF-01)
+  - claim sync-back / read model refresh - covered by automation
 
 ## Deviations From Original Plan
 - 真实部署证据没有最终固化在跟踪文档中，而是保留在 Foundry broadcast logs；模板文档已回退为安全占位版本。
@@ -142,6 +155,7 @@ In progress. `Milestone 1` to `Milestone 3` are effectively complete; `Milestone
 - 本次尚未执行 `Milestone 4` 的人工 UAT，因此也未产出 `Milestone 5` 的 go/no-go 结论。
 
 ## Next Required Actions
-- 按 UAT checklist 执行真实链路联调，并记录每条路径的 actor wallet、API 结果、txHash、链上结果和 UI 结果。
-- 为 `apps/server` 修正可重复的本地启动路径，避免后续 UAT 依赖手工链接与自定义入口。
-- 完成 defect triage，并明确是否满足进入 `Phase10` 的条件。
+- 基于 fork-anvil 自动化覆盖范围，手工 UAT 重点聚焦链上交互与 UI 截图证据
+- 完成 referral NFT approval & mint 自动化覆盖
+- 完成 defect triage (M5)，明确是否满足进入 `Phase10` 的条件
+- 更新 Milestone 4 UAT checklist 标记自动化已覆盖的路径

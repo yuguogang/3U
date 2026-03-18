@@ -3,7 +3,16 @@
 ## Goal
 在 `fork-anvil` 上把 subsidy、lottery、ranking、weekly merkle claim 的正常路径、人数不足路径、以及 blocked 条件拆清楚，并把结果语义固定下来。
 
-## Status Snapshot
+## Status
+**COMPLETED** (2026-03-17)
+
+All Wave 1-4 implementation complete:
+- WF-01: subsidy happy path ✅
+- WF-02: below-threshold rollover ✅
+- WF-03: threshold-met minimal ✅
+- WF-04/WF-05: lottery partial + full-bucket ✅
+- WF-06/WF-07: ranking partial + full-top10 ✅
+- WF-08/WF-09: merkle DB publish + full happy path ✅
 - 已完成：`publishSubsidyEpoch -> sync -> claimPurchasedSubsidy` 的 fork 自动化主路径
 - 已落地 Wave 1 的首批代码骨架：
   - `executeAdminEpochSync()` helper 已补到 E2E server API 层

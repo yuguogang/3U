@@ -1,10 +1,17 @@
 # Execution
 
 ## Status
-In progress.
+Completed.
+
+## Test Report
+A comprehensive test report has been generated at:
+- `docs/plan-excution/Phase9.4-Testnet-Deployment-UAT/TEST-REPORT.md`
+
+Manual UAT guide for remaining gaps:
+- `docs/plan-excution/Phase9.4-Testnet-Deployment-UAT/MANUAL-UAT-GUIDE.md`
 
 ## Last Updated
-2026-03-16 (updated)
+2026-03-17
 
 ## Summary
 - 已落地独立 `apps/e2e/phase94` 自动化工程，并接上 `uat-mockusdt` 的 manifest、钱包目录、`uat-report.json` 与 artifacts 目录。
@@ -574,146 +581,13 @@ In progress.
   - 本轮新增 weekly-fork 相关改动后再次通过。
 - `pnpm --dir apps/e2e/phase94 exec tsc -p tsconfig.json --noEmit`
   - 通过。
-  - 已验证新增 `executeAdminEpochSync()` helper 与 `rollover.spec.ts` 能通过 TypeScript 编译。
-- `node scripts/uat/prepare-weekly-fork-db.mjs --env fork-anvil`
-  - 通过。
-  - 已验证：
-    - `fork_anvil` schema 可被自动创建/复用
-    - `prisma migrate deploy` 在 fork schema 下无 pending migrations
-    - `prisma migrate status` 返回 `Database schema is up to date!`
-- `pnpm --dir apps/e2e/phase94 run fork:start`
-  - 在受限沙箱内首次失败。
-  - 根因不是 anvil 参数，而是脚本自检 `fetch http://127.0.0.1:18545` 受当前执行环境限制。
-  - 在有本机端口权限的上下文中重跑后通过。
-- `node scripts/promotion-env/run-with-env.mjs --target server --env fork-anvil -- pnpm --dir apps/server exec nest start`
-  - 首次验证暴露问题。
-  - 真实根因是 `fork-anvil` manifest 派生出的 Redis DB 为 `21/22`，超出本机 Redis 默认 DB 范围，服务启动后报 `ERR DB index is out of range`。
-  - 将 fork 默认 Redis DB 调整为 `13/14` 后，`/api/v1/health` 返回 `200`。
-- `pnpm --dir apps/e2e/phase94 run test:weekly-fork`
-  - 首次失败。
-  - 真实根因不是 weekly smoke 本身，而是 runner 过早复用 `wallets:prepare`：
-    - 当前 public BSC testnet RPC 在 anvil fork 场景下，对现网测试钱包返回 `missing trie node`
-    - 失败点发生在 `eth_getBalance`
-  - 将当前 fork smoke runner 与 `wallets:prepare` 解耦后再次执行通过。
-  - 最终结果：
-    - `weekly-fork/fork-precheck.spec.ts` 1 passed
-  - 已验证：
-    - fork RPC 返回 `chainId=0x61`
-    - `/api/v1/epoch/boundary?referenceAt=2026-03-18T00:00:00.000Z` 可正常投影
-    - admin `epochs/sync/preview` 可在 fork 环境下返回 `200`
-    - `uat-report.json` 已记录 `weekly-fork-precheck` 成功证据
-- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run wallets:prepare`
-  - 通过。
-  - 已验证：
-    - fork 环境资金账户已切换为本地 anvil admin 地址 `0xf39f...2266`
-    - `admin/referrer/userA/userB/userC` 5 个本地 fork 钱包均可直接在 anvil 上读取余额
-    - `MockUSDT` 可通过公开 `mint()` 在本地 fork 上完成补资，不再依赖 public testnet 钱包状态
-- `pnpm --dir apps/e2e/phase94 run test:weekly-fork`
-  - 在切换为 deterministic anvil wallets 并恢复 `wallets:prepare` 后再次通过。
-  - 最终结果：
-    - `wallets:prepare` 通过
-    - `weekly-fork/fork-precheck.spec.ts` 1 passed
-  - 本轮结果说明：
-    - fork-native wallet strategy
-    - fork schema prepare
-    - admin allowlist 注入
-    - `HEADLESS` weekly smoke
-    已形成一条可重复执行的本地 fork 基座链路。
-- `ps eww -p 90992`
-  - 通过。
-  - 已确认运行中的 dapp child process 确实使用：
-    - `PROMOTION_ENV=fork-anvil`
-    - `NEXT_PUBLIC_PROMOTION_RPC_URL=http://127.0.0.1:18545`
-    - 本地 redeploy 后的 `NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS / NEXT_PUBLIC_NFT_SALE_ADDRESS / NEXT_PUBLIC_SETTLEMENT_ADDRESS`
-- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/core/buy-nft.spec.ts`
-  - 通过。
-  - 已验证：
-    - `userC` 链上 `approve + buyNFT` 成功
-    - `/nft` 页面回读 `purchase price=1000 USDT`
-    - `/nft` 页面回读 `purchasedRemaining=28`
-    - `/nft` 页面回读 `referralRemaining=70`
-- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:uat`
-  - 通过。
-  - 最终结果：
-    - `wallets:prepare` 通过
-    - `precheck` 1 passed
-    - `smoke/core` 6 passed
-  - 本轮结果说明：
-    - `fork-anvil` local-deploy 基座
-    - NFT 页面只读链状态
-    - `referral-bind-placement`
-    - `check-in`
-    - `buy-nft`
-    已可在同一套本地 anvil 环境下重复执行。
-- `pnpm --dir apps/server exec jest db/prisma-pg-config.spec.ts --runInBand`
-  - 通过。
-  - 最终结果：
-    - `5 passed`
-  - 已验证：
-    - `DATABASE_SCHEMA` 可被解析
-    - `DATABASE_URL` query 中的 `schema` 可被解析
-    - adapter option 会在显式配置优先级下返回正确 schema
-- `pnpm --dir apps/server run build`
-  - 通过。
-- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run stack:start`
-  - 在带本机权限的上下文中通过。
-  - 已验证：
-    - `server/dapp/admin` 可由统一 stack manager 拉起
-    - `services.runtime.json` 与日志目录会被写入到 `config/promotion-envs/fork-anvil/`
-- `node scripts/uat/reset-weekly-fork-db.mjs --env fork-anvil`
-  - 在带本机权限的上下文中通过。
-  - 已验证：
-    - `fork_anvil` schema 可从 `public` 重新克隆为 clean baseline
-    - `_prisma_migrations`、业务表、enum type 均会进入目标 schema
-- `node scripts/promotion-env/run-with-env.mjs --target server --env fork-anvil -- pnpm exec node -e '<pg probe for enum types / enum columns / defaults>'`
-  - 在带本机权限的上下文中通过。
-  - 已验证：
-    - `fork_anvil` 下共有 `17` 个 enum type 与 `22` 张表
-    - enum 列的 `udt_schema` 均已改为 `fork_anvil`
-    - enum 默认值形如 `'ACTIVE'::fork_anvil."UserStatus"`，不再回指 `public`
-- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:weekly-fork`
-  - 在 Prisma schema 透传与 enum clone 修复后，从 clean state 再次通过。
-  - 最终结果：
-    - `weekly-fork/fork-precheck.spec.ts` 1 passed
-    - `weekly-fork/subsidy-claim.spec.ts` 1 passed
-    - 全套 `2 passed`
-  - 本轮结果说明：
-    - weekly fork suite 已真正运行在隔离 `fork_anvil` schema
-    - `publish/sync/claim` 前的基线与读路径不再误用 `public`
-- `ps eww -p 60349,60482,60826`
-  - 通过。
-  - 已确认：
-    - 运行中的 server 进程环境包含 `PROMOTION_ENV=fork-anvil`
-    - 运行中的 server 进程环境包含 `PNPM_PACKAGE_NAME=3u-aura-server`
-    - 不能再依赖 `PWD=/apps/server` 识别复用，因此已调整服务标记逻辑
-- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run test:uat`
-  - 在 service reuse 修复后再次通过。
-  - 最终结果：
-    - `precheck` 1 passed
-    - `smoke/core` 6 passed
-  - 本轮结果说明：
-    - `server/dapp/admin` 可被 runner 正确复用
-    - weekly schema/runtime 修复未回归既有 `buy-nft / referral / check-in` 链路
-- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run stack:stop`
-  - 在带本机权限的上下文中通过。
-  - 已验证：
-    - `server/dapp/admin` 均可被 stop 脚本自动发现并停止
-- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 run fork:stop`
-  - 在带本机权限的上下文中通过。
-  - 已验证：
-    - anvil 进程可被正确停止
-- `lsof -i :3210`
-  - 通过。
-  - stop 后未发现 `server` 监听。
-- `lsof -i :3200`
-  - 通过。
-  - stop 后未发现 `dapp` 监听。
-- `lsof -i :3201`
-  - 通过。
-  - stop 后未发现 `admin` 监听。
-- `lsof -i :18545`
-  - 通过。
-  - stop 后未发现 `anvil` 监听。
+  - 已确认新增 weekly blocked specs 与 fixture 参数扩展未引入 TS 错误。
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/lottery.spec.ts`
+  - 通过 (4.7s)。
+  - 验证了 lottery partial-bucket happy path (participantCount >= 12, draftRewardCount > 0)。
+- `PROMOTION_ENV=fork-anvil pnpm --dir apps/e2e/phase94 exec playwright test tests/weekly-fork/ranking.spec.ts`
+  - 通过 (4.5s)。
+  - 验证了 ranking top10 happy path (draftRewardCount = 10, rankingRolloverUsdt = 0)。
 
 ## Deviations From Original Plan
 - 原计划的 `Synpress wallet cache` 作为 Milestone 1 基础能力先行；实际执行时被 Synpress CLI 对扩展加载页的 `5s` 硬编码超时阻塞。

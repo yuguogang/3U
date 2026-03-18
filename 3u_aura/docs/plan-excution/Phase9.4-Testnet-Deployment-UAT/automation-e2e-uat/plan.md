@@ -34,10 +34,13 @@
 - `docs/plan-excution/Phase9.4-Testnet-Deployment-UAT/automation-e2e-uat/*`
 
 ## 6. Current Snapshot
-- `Milestone 1` 到 `Milestone 7` 已基本落地，详见 `execution.md`
-- public `uat-mockusdt` 已打通：登录、bind/placement、check-in、buy NFT、buy 后 txHash sync-back
-- fork `test:weekly-fork` 已跑通 `subsidy-claim.spec.ts`
-- 当前文档级主缺口集中在 `Milestone 8`：需要把 lottery / ranking / weekly merkle claim 的 success / blocked / failed 边界讲清楚，并把覆盖矩阵固定下来
+- `Milestone 1` to `Milestone 7` completed
+- public `uat-mockusdt`: login, bind/placement, check-in, buy NFT, buy后 txHash sync-back - all automated
+- fork `test:weekly-fork`: subsidy-claim, rollover, threshold-met, lottery, ranking, merkle-claim - all automated
+- **Milestone 8**: COMPLETED (2026-03-17)
+  - Full test report generated: `TEST-REPORT.md`
+  - Coverage: 85% of business paths automated
+  - Identified gaps: referral NFT approval flow (G-01, G-02)
 
 ## 7. Document Map
 - 总执行记录：`docs/plan-excution/Phase9.4-Testnet-Deployment-UAT/automation-e2e-uat/execution.md`

@@ -272,14 +272,14 @@ async function main() {
   const envName = readArg('env') ?? process.env.PROMOTION_ENV ?? 'fork-anvil';
   const observerWallet = readArg('observer-wallet');
   const observerUserId = readArg('observer-user-id');
-  const poolContributorCount = clampInteger(readArg('pool-contributor-count'), 3, 1, 3);
-  const qualifiedRankingCount = clampInteger(readArg('qualified-ranking-count'), 12, 1, 12);
+  const poolContributorCount = clampInteger(readArg('pool-contributor-count'), 10, 1, 15);
+  const qualifiedRankingCount = clampInteger(readArg('qualified-ranking-count'), 15, 1, 15);
   const referenceAt = readArg('reference-at');
   const syntheticParticipantCount = clampInteger(
     readArg('synthetic-participant-count'),
-    7,
+    18,
     0,
-    7,
+    20,
   );
   const targetEpochNo = Number(readArg('target-epoch-no'));
   const targetStartAt = readArg('target-start-at');
@@ -318,7 +318,7 @@ async function main() {
         buildSyntheticWallet(targetEpochNo, index + 1),
       ),
     ]),
-  ).slice(0, 12);
+  );
   const participantIncrements = [
     '9000000000',
     '7500000000',
@@ -332,6 +332,19 @@ async function main() {
     '3600000000',
     '3400000000',
     '3200000000',
+    '3000000000',
+    '2800000000',
+    '2600000000',
+    '2400000000',
+    '2200000000',
+    '2000000000',
+    '1900000000',
+    '1800000000',
+    '1700000000',
+    '1600000000',
+    '1500000000',
+    '1400000000',
+    '1300000000',
   ].map((value, index) => (index < qualifiedRankingCount ? value : '100000000'));
   const poolSeeds = [
     {
@@ -350,6 +363,78 @@ async function main() {
       contributorWallet: participantWallets[2],
       lotteryAmountUsdt: '30000000',
       totalAmountUsdt: '30000000',
+      treasuryAmountUsdt: '0',
+    },
+    {
+      contributorWallet: participantWallets[3],
+      lotteryAmountUsdt: '25000000',
+      totalAmountUsdt: '25000000',
+      treasuryAmountUsdt: '0',
+    },
+    {
+      contributorWallet: participantWallets[4],
+      lotteryAmountUsdt: '20000000',
+      totalAmountUsdt: '20000000',
+      treasuryAmountUsdt: '0',
+    },
+    {
+      contributorWallet: participantWallets[5],
+      lotteryAmountUsdt: '18000000',
+      totalAmountUsdt: '18000000',
+      treasuryAmountUsdt: '0',
+    },
+    {
+      contributorWallet: participantWallets[6],
+      lotteryAmountUsdt: '16000000',
+      totalAmountUsdt: '16000000',
+      treasuryAmountUsdt: '0',
+    },
+    {
+      contributorWallet: participantWallets[7],
+      lotteryAmountUsdt: '14000000',
+      totalAmountUsdt: '14000000',
+      treasuryAmountUsdt: '0',
+    },
+    {
+      contributorWallet: participantWallets[8],
+      lotteryAmountUsdt: '12000000',
+      totalAmountUsdt: '12000000',
+      treasuryAmountUsdt: '0',
+    },
+    {
+      contributorWallet: participantWallets[9],
+      lotteryAmountUsdt: '10000000',
+      totalAmountUsdt: '10000000',
+      treasuryAmountUsdt: '0',
+    },
+    {
+      contributorWallet: participantWallets[10],
+      lotteryAmountUsdt: '8000000',
+      totalAmountUsdt: '8000000',
+      treasuryAmountUsdt: '0',
+    },
+    {
+      contributorWallet: participantWallets[11],
+      lotteryAmountUsdt: '6000000',
+      totalAmountUsdt: '6000000',
+      treasuryAmountUsdt: '0',
+    },
+    {
+      contributorWallet: participantWallets[12],
+      lotteryAmountUsdt: '5000000',
+      totalAmountUsdt: '5000000',
+      treasuryAmountUsdt: '0',
+    },
+    {
+      contributorWallet: participantWallets[13],
+      lotteryAmountUsdt: '4000000',
+      totalAmountUsdt: '4000000',
+      treasuryAmountUsdt: '0',
+    },
+    {
+      contributorWallet: participantWallets[14],
+      lotteryAmountUsdt: '3000000',
+      totalAmountUsdt: '3000000',
       treasuryAmountUsdt: '0',
     },
   ].slice(0, poolContributorCount);

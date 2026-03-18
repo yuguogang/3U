@@ -1,0 +1,28 @@
+{
+  "name": "@3u-aura/ci-contracts",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "run": "tsx run.ts",
+    "checkin": "tsx commands/checkin.flow.ts",
+    "nft-purchase": "tsx commands/nft-purchase.flow.ts",
+    "referral-approval": "tsx commands/referral-approval.flow.ts",
+    "subsidy-claim": "tsx commands/subsidy-claim.flow.ts",
+    "weekly-rollover": "tsx commands/weekly-rollover.flow.ts",
+    "weekly-threshold": "tsx commands/weekly-threshold.flow.ts",
+    "lottery": "tsx commands/lottery.flow.ts",
+    "ranking": "tsx commands/ranking.flow.ts",
+    "merkle-claim": "tsx commands/merkle-claim.flow.ts",
+    "all": "tsx run-all.ts",
+    "all:no-reset": "tsx run-all.ts --no-reset"
+  },
+  "dependencies": {
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "environment": "fork-anvil",
+  "status": "active",
+  "chain": {
+    "id": 97,
+    "rpcUrl": "http://127.0.0.1:18545",
+    "referralRpcUrl": "http://127.0.0.1:18545"
+  },
+  "promotion": {
+    "startAt": "2026-03-11T00:00:00+08:00",
+    "timezone": "Asia/Shanghai",
+    "epochLengthDays": 7,
+    "ticketStreakDays": 7,
+    "minimumParticipants": 12,
+    "referralSignatureTtlSeconds": 900
+  },
+  "contracts": {
+    "paymentTokenAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "paymentTokenKind": "mockusdt",
+    "paymentTokenSymbol": "USDT",
+    "founderNftAddress": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "nftSaleAddress": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "merkleDistributorAddress": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "settlementAddress": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "nftName": "3U AURA Founder NFT",
+    "nftSymbol": "3UAURA",
+    "baseUri": "",
+    "maxSubsidyEpochs": 12
+  },
+  "roles": {
+    "owner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "financeWallet": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "checkinReceiverAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "referralSignerAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "settlementPublisher": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "rootPublisher": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "adminAllowlistWallets": [
+      "0x4Af8649c22063c95F50862d7ad2a64014de36483",
+      "0x951f5f74f8a5b480DC42aA41c04522C8eCED6d64",
+      "0xDB45228dA324fb9A832c2a1C8Edf08D6820Ccc9C",
+      "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    ]
+  },
+  "infra": {
+    "server": {
+      "host": "http://127.0.0.1:3210",
+      "port": 3210,
+      "publicApiBaseUrl": "http://127.0.0.1:3210"
+    },
+    "dapp": {
+      "baseUrl": "http://127.0.0.1:3200"
+    },
+    "admin": {
+      "baseUrl": "http://127.0.0.1:3201"
+    },
+    "database": {
+      "host": "127.0.0.1",
+      "port": 5433,
+      "name": "3u_aura_uat_mockusdt",
+      "schema": "fork_anvil"
+    },
+    "redis": {
+      "cacheUrl": "redis://127.0.0.1:6379/13",
+      "throttlerUrl": "redis://127.0.0.1:6379/14",
+      "bullHost": "127.0.0.1",
+      "bullPort": 6379,
+      "bullPrefix": "3u_aura:uat-mockusdt:fork-anvil",
+      "instanceId": "fork_anvil_01"
+    }
+  },
+  "frontend": {
+    "e2eInjectedWallet": true,
+    "walletConnectProjectId": ""
+  },
+  "artifacts": {
+    "deployMockUsdtBroadcast": "apps/contracts/broadcast/DeployMockUSDT.s.sol/97/run-1773473115.json",
+    "deployCoreBroadcast": "apps/contracts/broadcast/DeployNFTCore.s.sol/97/run-1773473145.json",
+    "deploySettlementBroadcast": "apps/contracts/broadcast/DeploySettlementClaim.s.sol/97/run-1773473174.json"
+  },
+  "fork": {
+    "anvilHost": "127.0.0.1",
+    "anvilPort": 18545,
+    "createdAt": "2026-03-17T11:48:14.126Z",
+    "deploymentMode": "local-deploy",
+    "forkBlockNumber": null,
+    "sourceEnvironment": "uat-mockusdt",
+    "sourceRpcUrl": "https://data-seed-prebsc-1-s1.binance.org:8545/"
+  }
+}
