@@ -212,6 +212,36 @@ export function createWalletClientForFixture(fixture, envName = 'fork-anvil') {
   });
 }
 
+export async function increaseForkTime(seconds, envName = 'fork-anvil') {
+  const manifest = loadManifest(envName);
+  const response = await fetch(manifest.chain.rpcUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      id: Date.now(),
+      jsonrpc: '2.0',
+      method: 'evm_increaseTime',
+      params: [Number(seconds)],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to increase fork time: ${response.status} ${response.statusText}`);
+  }
+
+  const payload = await response.json();
+  if (payload.error) {
+    throw new Error(`Failed to increase fork time: ${payload.error.message}`);
+  }
+
+  const testClient = createTestClientForFork(envName);
+  await testClient.mine({ blocks: 1 });
+
+  return payload.result;
+}
+
 export async function mintUsdt(to, amount, envName = 'fork-anvil') {
   const manifest = loadManifest(envName);
   const adminFixture = loadWalletFixture('admin', envName);

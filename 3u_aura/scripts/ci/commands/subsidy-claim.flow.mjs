@@ -131,6 +131,18 @@ async function run() {
     throw new Error('Expected subsidy claim to be marked claimed on-chain');
   }
 
+  console.log('12b. Verifying duplicate on-chain subsidy claim is rejected...');
+  let duplicateClaimRejected = false;
+  try {
+    await claimSubsidy(userB, pendingClaim.epochNo, pendingClaim.tokenId, ENV);
+  } catch (error) {
+    duplicateClaimRejected = true;
+    console.log(`   Duplicate on-chain subsidy claim rejected: ${error.message}`);
+  }
+  if (!duplicateClaimRejected) {
+    throw new Error('Expected duplicate on-chain subsidy claim to be rejected');
+  }
+
   console.log('13. Syncing subsidy claim back to server...');
   const claimSyncResult = await syncClaim(
     loginResult.accessToken,

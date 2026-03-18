@@ -10,6 +10,7 @@ const FLOW_ALIASES = new Map([
   ['merkle-ranking-claim', 'merkle-claim.flow.mjs'],
   ['merkle-lottery-claim', 'merkle-lottery-claim.flow.mjs'],
   ['referral-approval', 'referral-mint.flow.mjs'],
+  ['referral-expired-signature', 'referral-expired-signature.flow.mjs'],
   ['referral-mint', 'referral-mint.flow.mjs'],
   ['referral-derived', 'referral-mint-derived.flow.mjs'],
   ['referral-mint-derived', 'referral-mint-derived.flow.mjs'],

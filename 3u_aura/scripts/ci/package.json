@@ -15,6 +15,7 @@
     "merkle-ranking-claim": "node commands/merkle-claim.flow.mjs",
     "merkle-lottery-claim": "node commands/merkle-lottery-claim.flow.mjs",
     "referral-approval": "node commands/referral-mint.flow.mjs",
+    "referral-expired-signature": "node commands/referral-expired-signature.flow.mjs",
     "referral-derived": "node commands/referral-mint-derived.flow.mjs",
     "all": "node run-all.mjs",
     "all:no-reset": "node run-all.mjs --no-reset"

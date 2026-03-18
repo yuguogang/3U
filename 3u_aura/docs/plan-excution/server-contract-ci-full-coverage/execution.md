@@ -116,6 +116,7 @@ In progress. `Milestone 1-6` 已有真实 flow 验证支撑，当前已实现 fl
   - on-chain subsidy epoch publish 成功
   - purchased NFT 二次 sync 成功投影出 NFT_SUBSIDY claim
   - 用户链上 `claimPurchasedSubsidy` 成功
+  - duplicate on-chain subsidy claim 被链上拒绝
   - server `claims/sync` 成功回写 `CLAIMED`
   - duplicate subsidy sync 保持幂等成功
 - 已完成一次真实 `merkle-claim` 闭环验证：
@@ -151,6 +152,11 @@ In progress. `Milestone 1-6` 已有真实 flow 验证支撑，当前已实现 fl
   - `scripts/ci/commands/referral-mint-derived.flow.mjs` 在成功完成后显式 `process.exit(0)`
   - 修复前症状是单 flow 虽打印成功，但子进程未退出，导致 `run-all` 被 `referral-derived` 卡住
   - 修复后 `run-all` 已可串行穿过 `referral` / `claims` / `weekly` 组直到完成
+- 已新增 referral 签名过期 failure-path flow：
+  - `scripts/ci/lib/contracts.mjs` 新增 `increaseForkTime(...)`
+  - `scripts/ci/commands/referral-expired-signature.flow.mjs` 新增独立 expiry flow
+  - 该 flow 会推进 fork 时间超过签名过期时间，并验证链上 `mintNFTByReferral` 因 `SignatureExpired` 类错误拒绝
+  - 该 flow 结束时会主动停止 anvil，避免“链上时间被推进”污染后续 happy-path flow
 - 已完成一次真实 `run-all` 串行全量回归：
   - `payment` 组通过：`checkin`、`nft-purchase`
   - `topology` 组通过：`login`、`inviter-bind`、`tree-placement`
@@ -249,6 +255,9 @@ In progress. `Milestone 1-6` 已有真实 flow 验证支撑，当前已实现 fl
 - `kill -9 97014`
 - `kill -9 97016`
 - `node scripts/ci/run-all.mjs` (escalated, rerun after referral-derived exit fix and orphan cleanup)
+- `node scripts/ci/run.mjs subsidy-claim` (escalated, post-failure-path assertion rerun)
+- `node scripts/ci/run.mjs referral-approval` (escalated, isolated rerun after expiry-flow experiments)
+- `node scripts/ci/run.mjs referral-expired-signature` (escalated)
 
 ## Verification Results
 - `node scripts/ci/run.mjs --help` passed
@@ -337,6 +346,18 @@ In progress. `Milestone 1-6` 已有真实 flow 验证支撑，当前已实现 fl
   - grouped runner completed all configured groups serially
   - `payment`, `topology`, `referral`, `claims`, and `weekly` groups all passed in one run
   - validated that the previous `referral-derived` child-process hang was resolved
+- `node scripts/ci/run.mjs subsidy-claim` passed outside sandbox after duplicate on-chain claim assertion was added
+  - subsidy happy path still passed
+  - duplicate on-chain `claimPurchasedSubsidy` reverted as expected
+  - sync-back and duplicate sync remained idempotent
+- `node scripts/ci/run.mjs referral-approval` passed outside sandbox after expiry flow was isolated
+  - referral happy path remained healthy from a clean anvil baseline
+  - replay mint rejection and sync-back idempotency still passed
+- `node scripts/ci/run.mjs referral-expired-signature` passed outside sandbox
+  - approved eligibility seed succeeded
+  - fork time was advanced beyond signature expiry
+  - on-chain referral mint reverted with `0xf88f0490` (`SignatureExpired(uint256,uint256)`)
+  - cleanup stopped anvil to avoid propagating advanced chain time into later flows
 
 ## Open Findings
 - `scripts/uat/start-weekly-fork.mjs` currently depends on a fork environment that is not reliably reproducible in the present sandbox
@@ -351,6 +372,9 @@ In progress. `Milestone 1-6` 已有真实 flow 验证支撑，当前已实现 fl
 - weekly claims view may expose both `MERKLE_RANKING` and `MERKLE_LOTTERY`; CI 现在已显式按 `claimType` 选择，避免“拿到任意一条 claim 就算通过”的误判
 - lottery reward ownership is not stable on a fixed wallet across runs; CI 现在会在已知测试钱包中动态定位 claimant，而不再把 `userB` 写死
 - grouped runner 曾暴露 `referral-derived` 成功后子进程不退出的问题；当前已通过显式 success exit 修复，并已由完整 `run-all` 通过验证
+- duplicate on-chain purchased subsidy claim is now explicitly verified to revert; CI no longer relies only on sync-back idempotency for this flow
+- referral signature expiry is now explicitly verified in an isolated flow; CI no longer relies only on `forge test` for this expiry path
+- advancing chain time on the shared fork can invalidate later signature-based happy-path flows; the isolated referral expiry flow now stops anvil during cleanup to contain that side effect
 - running multiple flows in parallel against the same `fork-anvil` / server runtime is unsafe today because one flow's cleanup can stop shared processes used by another flow
 - 新加的 runtime env override 已解决 `referral-mint` 的 signer mismatch 阻塞
 - fork 场景本轮仍会在 `apps/contracts/broadcast/*/97/` 生成原始 broadcast 文件；当前策略仍是复制隔离到 `scripts/ci/.runtime`，尚未自动删除原件

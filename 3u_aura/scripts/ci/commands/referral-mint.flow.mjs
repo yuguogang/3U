@@ -143,6 +143,9 @@ async function run() {
 
   const userC = loadWalletFixture('userC', ENV);
   const manifest = loadManifest(ENV);
+  const publicClient = createPublicClientForFork(ENV);
+  const walletClient = createWalletClientForFixture(userC, ENV);
+  const testClient = createTestClientForFork(ENV);
 
   console.log(`4. UserC: ${userC.address}`);
 
@@ -187,10 +190,6 @@ async function run() {
   // Call contract to mint
   console.log('8. Minting NFT via contract...');
   
-  const publicClient = createPublicClientForFork(ENV);
-  const walletClient = createWalletClientForFixture(userC, ENV);
-  const testClient = createTestClientForFork(ENV);
-
   const nftSaleAbi = [
     {
       inputs: [
