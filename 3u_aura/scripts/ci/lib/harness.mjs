@@ -26,9 +26,28 @@ export async function prepareHarness({
 } = {}) {
   await Anvil.startAnvil(envName);
 
+  if (deployFreshContracts && startServices.length > 0) {
+    await stopPromotionServices({
+      envName,
+      services: startServices,
+    });
+  }
+
   let deployedContracts = null;
   if (deployFreshContracts) {
     deployedContracts = await Anvil.ensureFreshContracts(envName);
+  }
+
+  const serviceEnvOverrides = {};
+  if (startServices.includes('server') && deployedContracts?.nftSaleAddr) {
+    serviceEnvOverrides.server = {
+      PROMOTION_NFT_SALE_ADDRESS: deployedContracts.nftSaleAddr,
+      PROMOTION_PAYMENT_TOKEN_ADDRESS: deployedContracts.mockUsdtAddr,
+      PROMOTION_MERKLE_DISTRIBUTOR_ADDRESS: deployedContracts.merkleAddr,
+      PROMOTION_SETTLEMENT_ADDRESS: deployedContracts.settlementAddr,
+      PROMOTION_REFERRAL_SIGNER_PRIVATE_KEY:
+        deployedContracts.referralSignerPrivateKey,
+    };
   }
 
   if (resetDb) {
@@ -38,6 +57,7 @@ export async function prepareHarness({
   const servicesRuntime = await startPromotionServices({
     envName,
     services: startServices,
+    serviceEnvOverrides,
   });
 
   const manifest = loadManifest(envName);
@@ -46,6 +66,7 @@ export async function prepareHarness({
     harness: {
       deployFreshContracts,
       resetDb,
+      serviceEnvOverrides,
       startServices,
     },
     manifest,

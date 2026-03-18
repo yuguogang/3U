@@ -41,6 +41,8 @@ export async function ensureFreshContracts(envName = 'fork-anvil') {
   const rpcUrl = manifest.chain.rpcUrl;
   const adminPk = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
   const owner = manifest.roles.owner || '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+  const referralSignerPrivateKey = adminPk;
+  const referralSignerAddress = owner;
   
   // Deploy MockUSDT
   console.log('  Deploying MockUSDT...');
@@ -61,7 +63,7 @@ export async function ensureFreshContracts(envName = 'fork-anvil') {
   // Deploy NFTSale (FounderNFT + NFTSale)
   console.log('  Deploying NFTSale...');
   result = await execAsync(
-    `PRIVATE_KEY=${adminPk} OWNER=${owner} USDT_ADDRESS=${mockUsdtAddr} FINANCE_WALLET=${owner} REFERRAL_SIGNER_ADDRESS=${owner} forge script DeployNFTCore --rpc-url ${rpcUrl} --broadcast 2>&1 | tail -20`,
+    `PRIVATE_KEY=${adminPk} OWNER=${owner} USDT_ADDRESS=${mockUsdtAddr} FINANCE_WALLET=${owner} REFERRAL_SIGNER_ADDRESS=${referralSignerAddress} forge script DeployNFTCore --rpc-url ${rpcUrl} --broadcast 2>&1 | tail -20`,
     { cwd: path.join(REPO_ROOT, 'apps/contracts') },
   );
   
@@ -77,7 +79,7 @@ export async function ensureFreshContracts(envName = 'fork-anvil') {
   // Deploy Settlement
   console.log('  Deploying Settlement...');
   result = await execAsync(
-    `PRIVATE_KEY=${adminPk} OWNER=${owner} SETTLEMENT_PUBLISHER=${owner} forge script DeploySettlementClaim --rpc-url ${rpcUrl} --broadcast 2>&1 | tail -20`,
+    `PRIVATE_KEY=${adminPk} OWNER=${owner} FOUNDER_NFT_ADDRESS=${founderNftAddr} USDT_ADDRESS=${mockUsdtAddr} SETTLEMENT_PUBLISHER=${owner} ROOT_PUBLISHER=${owner} forge script DeploySettlementClaim --rpc-url ${rpcUrl} --broadcast 2>&1 | tail -20`,
     { cwd: path.join(REPO_ROOT, 'apps/contracts') },
   );
   
@@ -97,6 +99,7 @@ export async function ensureFreshContracts(envName = 'fork-anvil') {
   manifest.contracts.settlementAddress = settlementAddr;
   manifest.contracts.merkleDistributorAddress = merkleAddr;
   manifest.infra.server.promotionMerkleDistributorAddress = merkleAddr;
+  manifest.roles.referralSignerAddress = referralSignerAddress;
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
   console.log('  Manifest updated');
 
@@ -114,6 +117,12 @@ export async function ensureFreshContracts(envName = 'fork-anvil') {
   writeCiRuntime(envName, {
     archivedBroadcasts,
     envName,
+    latestContractConfig: {
+      nftSaleAddress: nftSaleAddr,
+      paymentTokenAddress: mockUsdtAddr,
+      referralSignerAddress,
+      referralSignerPrivateKey,
+    },
     latestContractDeploymentAt: new Date().toISOString(),
     manifest,
     runtimePath: getCiRuntimePath(envName),
@@ -132,6 +141,8 @@ export async function ensureFreshContracts(envName = 'fork-anvil') {
     merkleAddr,
     mockUsdtAddr,
     nftSaleAddr,
+    referralSignerAddress,
+    referralSignerPrivateKey,
     settlementAddr,
   };
 }

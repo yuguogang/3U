@@ -75,7 +75,7 @@ export async function syncPurchasedNft(accessToken, txHash, envName) {
 }
 
 export async function getMyClaims(accessToken, envName) {
-  return apiRequest('/api/v1/claims', { accessToken, envName });
+  return apiRequest('/api/v1/claims/me', { accessToken, envName });
 }
 
 export async function syncClaim(accessToken, params, envName) {

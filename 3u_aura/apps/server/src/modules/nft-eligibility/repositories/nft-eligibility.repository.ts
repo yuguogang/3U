@@ -1,6 +1,7 @@
 import {
   DbService,
   NftEligibilityStatus as DbNftEligibilityStatus,
+  NftReferralEligibility,
   Prisma,
 } from '@/db';
 import { Injectable } from '@nestjs/common';
@@ -146,5 +147,77 @@ export class NftEligibilityRepository {
         status: NftEligibilityStatus.SIGNED,
       },
     });
+  }
+
+  async markMinted(
+    data: {
+      chainId: number;
+      mintedAt: Date;
+      mintedTokenId: bigint;
+      mintedTxHash: string;
+      userId: string;
+    },
+    executor: DbExecutor = this.db,
+  ): Promise<{ changed: boolean; eligibility: NftReferralEligibility }> {
+    const existing = await executor.nftReferralEligibility.findUnique({
+      where: { userId: data.userId },
+    });
+    const nextTxHashKey = this.toTxHashKey(data.chainId, data.mintedTxHash);
+
+    if (!existing) {
+      const eligibility = await executor.nftReferralEligibility.create({
+        data: {
+          mintedAt: data.mintedAt,
+          mintedTokenId: data.mintedTokenId,
+          mintedTxHash: data.mintedTxHash,
+          mintedTxHashKey: nextTxHashKey,
+          status: NftEligibilityStatus.MINTED as unknown as DbNftEligibilityStatus,
+          userId: data.userId,
+        },
+      });
+
+      return {
+        changed: true,
+        eligibility,
+      };
+    }
+
+    const updateData: Prisma.NftReferralEligibilityUpdateInput = {};
+
+    if (existing.status !== DbNftEligibilityStatus.MINTED) {
+      updateData.status =
+        NftEligibilityStatus.MINTED as unknown as DbNftEligibilityStatus;
+    }
+    if (existing.mintedTokenId !== data.mintedTokenId) {
+      updateData.mintedTokenId = data.mintedTokenId;
+    }
+    if (existing.mintedTxHash !== data.mintedTxHash) {
+      updateData.mintedTxHash = data.mintedTxHash;
+      updateData.mintedTxHashKey = nextTxHashKey;
+    }
+    if (!existing.mintedAt || existing.mintedAt.getTime() !== data.mintedAt.getTime()) {
+      updateData.mintedAt = data.mintedAt;
+    }
+
+    if (!Object.keys(updateData).length) {
+      return {
+        changed: false,
+        eligibility: existing,
+      };
+    }
+
+    const eligibility = await executor.nftReferralEligibility.update({
+      where: { userId: data.userId },
+      data: updateData,
+    });
+
+    return {
+      changed: true,
+      eligibility,
+    };
+  }
+
+  private toTxHashKey(chainId: number, txHash: string): string {
+    return `${chainId}:${txHash.toLowerCase()}`;
   }
 }

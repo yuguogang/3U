@@ -7,6 +7,9 @@
 - 重构并收敛 `scripts/ci`，使其真正成为可执行、可组合、可在 CI 运行的测试入口
 - 统一 `anvil/fork` 启停、数据库重置、server 启动探活、时间推进、钱包/manifest 装载
 - 为 fork/anvil 场景建立独立 runtime manifest，并定义 Foundry broadcast 的保留与清理策略
+- 明确区分两类 CI flow：
+  - `seeded`：直接准备数据库/运行时状态，用于验证资格满足后的 server + contract 业务编排
+  - `derived`：通过真实业务事件或 domain/job 重算推进状态，用于验证资格、累计值和读模型推导逻辑
 - 对高风险资金、资格、claim、settlement 流程，明确覆盖 happy path、duplicate/retry path、failure/recovery path 中适用的场景
 - 覆盖 promotion 关键业务流程的 server + contract 测试：
   - 登录 / 签名换 token
@@ -62,6 +65,7 @@
 ## 6. Target State
 - `server + contract CI` 成为 promotion 的主业务回归层
 - 每条关键业务路径都可在不启动浏览器的情况下执行并验证
+- `seeded` 与 `derived` flow 的职责边界清晰，避免为了速度而误把资格推导测试降级成纯 DB 造数
 - 所有 flow 统一通过 harness 管理的非交互式 server bootstrap 运行，并仅依赖 health probe 判断服务就绪
 - fork/anvil 运行时地址优先来自独立 runtime manifest，而不是混入正式 `broadcast/` 目录
 - 地址真相源优先级清晰且文档化：
@@ -198,6 +202,7 @@
   - fork/anvil 产物移动到独立目录、忽略提交，或在运行后自动清理
 - 区分规则不能只依赖 `chainId = 97`，必须结合环境名、RPC 或运行时上下文
 - 优先提高稳定性与可组合性，不做业务扩张。
+- 对 fresh deploy 场景，允许 harness 以 runtime env override 的方式向 server 注入本次 fork 合约地址与 signer 私钥，确保 signer 配置与链上部署一致，而不放宽 server 的 signer 校验逻辑。
 
 **Risks**
 - 若基础设施仍不稳定，后续每个 flow 都会携带自己的隐式前置步骤。
@@ -305,6 +310,9 @@
   - admin approval happy path
   - referral mint happy path
   - duplicate approval / replay / wrong signer / nonce misuse 中至少一条非 happy-path
+- 将本里程碑拆成两类 case：
+  - `seeded` case：直接准备 `UserProfile` / eligibility 阈值，用于验证审批、签名、mint、sync、replay rejection
+  - `derived` case：通过 check-in / tree / volume 或 domain/job 重算，验证资格确实能由真实事件推导出来
 - 对该链路明确职责边界：
   - server + contract CI 负责后台审批与业务编排
   - 低层 EIP712 回放 / signer / revert 细节继续由 `forge test` 深挖
@@ -441,6 +449,7 @@
 ## 11. Rollback / Recovery Notes
 - 若重构 `scripts/ci` 过程中方向错误，可回退到当前目录结构，只保留新任务文档
 - 任何对 server 的改动都应限制在最小可测试性修补，不借机改业务规则
+- 可以为了 `seeded` flow 直接准备 DB 状态，但不得用它替代 `derived` 资格推导测试
 - 若某个流程最终证明更适合 `forge` 或 E2E，应在 execution 中明确迁移结论，而不是强行塞进本层
 - 任何 broadcast 清理逻辑都必须以“保留真实测试网 / 主网证据”为前提，必要时先改为“搬移隔离”而不是删除
 
@@ -453,6 +462,7 @@
 - 覆盖矩阵中的核心流程均有可执行测试
 - 高风险 claim / settlement / approval 路径至少有一层稳定回归
 - 高风险 flow 已覆盖适用的 happy / duplicate-retry / failure-recovery 场景
+- `seeded` 与 `derived` flow 的边界已文档化，并在高风险资格流程中分别落地
 - fork/anvil runtime manifest 已落地并被 CI 使用
 - 地址真相源优先级已文档化并在实现中贯彻
 - 真实测试网 / 主网 broadcast 被保留，本地 fork 产物已隔离或自动清理

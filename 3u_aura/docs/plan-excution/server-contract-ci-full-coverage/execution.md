@@ -1,10 +1,10 @@
 # Execution: Server + Contract CI Full Coverage
 
 ## Status
-In progress. `Milestone 1` 已收敛为可执行的覆盖/运行契约，`Milestone 2` 已完成第一轮 harness 落地与入口修复；最小真实 flow (`login`) 已验证通过，但 fork-anvil 在当前沙箱中仍需要提权运行 anvil。
+In progress. `Milestone 1-6` 已有真实 flow 验证支撑，weekly ranking / lottery merkle claim 闭环均已打通；fork-anvil 在当前沙箱中仍需要提权运行 anvil，后续 weekly failure-path 与更多 settlement 扩展流仍待继续推进。
 
 ## Last Updated
-2026-03-18 14:35:00 +0800
+2026-03-18 17:57:00 +0800
 
 ## Summary
 - 本任务由原 `ci-contract-tests` 过继并重命名而来。
@@ -22,6 +22,10 @@ In progress. `Milestone 1` 已收敛为可执行的覆盖/运行契约，`Milest
   - runtime manifest 优先读取
   - fork/anvil 本地归档目录
 - 已确认 anvil 最小启动命令在提权环境下可正常运行，说明当前阻塞来自沙箱权限而非 CI harness 设计
+- 已补充 `seeded` / `derived` flow 分层约定：
+  - `seeded` 允许直接准备 DB 状态，用于验证资格满足后的后段业务编排
+  - `derived` 必须通过真实事件或 domain/job 重算验证资格推导逻辑
+- 已补充 referral NFT sync-back 的 shared schema、server service、controller route 和端到端回归
 
 ## Re-baseline Notes
 - 原目录：`docs/plan-excution/ci-contract-tests`
@@ -72,6 +76,77 @@ In progress. `Milestone 1` 已收敛为可执行的覆盖/运行契约，`Milest
   - 链上购买成功
   - purchased NFT sync 成功
   - duplicate sync 保持相同 `tokenId/txHash`，且 `holdingsCreated` 从 `1` 变为 `0`
+- 已更新 harness / service bootstrap：
+  - `scripts/uat/promotion-service-lib.mjs` 现支持按 service 注入 runtime env override
+  - `scripts/ci/lib/anvil.mjs` 会把 fresh deploy 产生的 `referralSignerAddress` / `referralSignerPrivateKey` 写入 runtime
+  - `scripts/ci/lib/harness.mjs` 会在 fresh deploy 后仅对 `server` 启动注入本次 fork 的合约地址与 signer 私钥，避免 signer 配置与链上部署漂移
+- 已完成一次真实 `referral-mint` flow 验证：
+  - 通过 seeded eligibility 状态推进到签名阶段
+  - backend referral mint signature 成功返回
+  - 链上 `mintNFTByReferral` 成功
+  - replay mint with identical nonce/signature 被链上拒绝
+- 已新增 referral NFT sync-back server 链路：
+  - `packages/common` 新增 referral sync request/result schema
+  - `apps/server` 新增 `ReferralNftChainRepository`
+  - `apps/server` 新增 `ReferralNftSyncService`
+  - `apps/server` 新增 `POST /api/v1/claims/referral-nft/sync`
+  - `NftHoldingRepository` 新增 referral holding upsert
+  - `NftEligibilityRepository` 新增 minted 状态回写
+  - `StatsRepository` 新增 `hasReferralNft` 标记回写
+- 已完成一次真实 `referral-mint` 闭环复验：
+  - referral sync-back 成功返回 `MINTED`
+  - duplicate referral sync 保持相同 `tokenId/txHash`
+  - duplicate referral sync 的 `holdingsCreated` 从 `1` 变为 `0`
+- 已完成一次真实 `referral-mint-derived` 闭环验证：
+  - 通过 30 次真实 check-in 生成 `personalCheckinCount = 30`
+  - 通过 volume domain service 对左右支线分别传播 `6000 USDT`
+  - `UserProfile.smallLegVolume` 与 eligibility `smallLegVolumeUsdt` 均达到 `6000000000`
+  - eligibility 在无 DB seeded 资格造数的前提下进入 `PENDING_APPROVAL`
+  - admin approve 成功
+  - referral mint signature 成功
+  - 链上 `mintNFTByReferral` 成功
+  - referral sync-back 成功返回 `MINTED`
+- 已修复 `derived` flow 的关键基础设施问题：
+  - `scripts/ci/lib/harness.mjs` 在 fresh contracts 场景下会先停止旧 server，避免复用旧配置进程
+  - `scripts/ci/lib/derived-volume.mjs` 改为读取 `apps/server/.env` 并加载 fork runtime override，避免 JWT / signer / contract env 漏配
+  - `scripts/ci/commands/referral-mint-derived.flow.mjs` 改为进程内调用 volume domain helper，不再依赖子进程执行 server 脚本
+- 已完成一次真实 `subsidy-claim` 闭环验证：
+  - purchased NFT 购买成功
+  - purchased NFT 首次 sync 成功创建 holding
+  - on-chain subsidy epoch publish 成功
+  - purchased NFT 二次 sync 成功投影出 NFT_SUBSIDY claim
+  - 用户链上 `claimPurchasedSubsidy` 成功
+  - server `claims/sync` 成功回写 `CLAIMED`
+  - duplicate subsidy sync 保持幂等成功
+- 已完成一次真实 `merkle-claim` 闭环验证：
+  - weekly fixture seed 成功写入 epoch 参与数据与奖池贡献
+  - admin epoch sync 成功创建并推进 weekly epoch
+  - weekly draft materialize 成功生成 ranking / lottery reward 与 merkle tree
+  - weekly claim publish 成功写入 DB claim 与 `merkleRoot`
+  - on-chain merkle distributor deposit 成功
+  - on-chain merkle root publish 成功
+  - 用户链上 merkle claim 成功
+  - server `claims/sync` 成功回写 `CLAIMED`
+  - duplicate merkle sync 保持幂等成功
+- 已完成一次真实 `merkle-lottery-claim` 闭环验证：
+  - 复用同一 weekly fixture / epoch 编排路径，显式选择 `MERKLE_LOTTERY`
+  - flow 会在已知测试钱包中动态选出持有 `MERKLE_LOTTERY` 的 claimant，避免 lottery 随机性导致误判
+  - 用户可从 claims view 中读取到 `MERKLE_LOTTERY` claim
+  - 用户链上 lottery merkle claim 成功
+  - duplicate on-chain lottery merkle claim 被链上拒绝
+  - server `claims/sync` 成功回写 `CLAIMED`
+  - duplicate lottery merkle sync 保持幂等成功
+- 已修复 supporting infra 问题以支撑 subsidy claim flow：
+  - `scripts/ci/lib/server.mjs` 的 claims 查询改为命中真实路由 `GET /api/v1/claims/me`
+  - `scripts/ci/lib/contracts.mjs` 的 `buyNft()` ABI 调整为当前无参 `buyNFT()`
+  - `scripts/ci/lib/anvil.mjs` 的 settlement deploy 改为显式注入 `FOUNDER_NFT_ADDRESS` / `USDT_ADDRESS` / `ROOT_PUBLISHER`
+  - `scripts/ci/commands/subsidy-claim.flow.mjs` 结尾 cleanup 改为仅停 server，不在 flow 里阻塞等待 stop anvil
+- 已补充 weekly merkle claim 支撑能力：
+  - `scripts/ci/lib/contracts.mjs` 新增 merkle distributor 的 deposit / publish root / claim helper
+  - `scripts/ci/lib/weekly-merkle-claim-flow.mjs` 抽出 shared weekly merkle claim flow，支持按 `claimType` 选择 ranking / lottery
+  - `scripts/ci/commands/merkle-claim.flow.mjs` 现显式验证 `MERKLE_RANKING`
+  - `scripts/ci/commands/merkle-lottery-claim.flow.mjs` 新增并验证 `MERKLE_LOTTERY`
+  - `scripts/ci/run-all.mjs` 已将已通过的 claims / weekly flow 纳入串行分组回归
 
 ## Open Items
 - 继续完成 `Milestone 2`：
@@ -80,6 +155,11 @@ In progress. `Milestone 1` 已收敛为可执行的覆盖/运行契约，`Milest
 - 继续推进 `Milestone 3+`：
   - 为 topology/payment/referral flow 增加更多非 happy-path 断言
   - 补齐 grouped runner 与更多 flow
+- 继续推进 `Milestone 5`：
+  - 在 `derived referral` 已打通后，继续扩展更多 derived / failure-recovery case
+- 继续推进 `Milestone 6+`：
+  - 补更多 subsidy failure / duplicate on-chain claim / deadline-expired case
+  - 在 ranking / lottery merkle claim 均打通后，继续扩展 weekly failure-path 与 rollover / settlement 专项流
 - 需要补一条 harness 约束：
   - 当前 flow 共享同一 `fork-anvil/server` 运行时，不应并行执行；并行时 cleanup 会互相影响
 - 当前需要先解决 fork-anvil 环境启动不稳定：
@@ -123,6 +203,29 @@ In progress. `Milestone 1` 已收敛为可执行的覆盖/运行契约，`Milest
 - `node scripts/ci/run.mjs tree-placement` (escalated)
 - `node scripts/ci/run.mjs checkin` (escalated)
 - `node scripts/ci/run.mjs nft-purchase` (escalated)
+- `sed -n '1,260p' scripts/ci/commands/referral-mint.flow.mjs`
+- `sed -n '1,260p' apps/server/src/modules/signing/services/signing.service.ts`
+- `sed -n '1,260p' scripts/uat/promotion-service-lib.mjs`
+- `sed -n '1,260p' scripts/promotion-env/lib.mjs`
+- `node scripts/ci/run.mjs referral-approval` (escalated)
+- `sed -n '1,220p' apps/server/src/modules/claims/services/purchased-nft-sync.service.ts`
+- `sed -n '1,220p' apps/server/src/modules/claims/repositories/purchased-nft-chain.repository.ts`
+- `sed -n '1,220p' apps/server/src/modules/claims/services/claim-sync.service.ts`
+- `sed -n '1,220p' apps/server/src/modules/claims/repositories/nft-holding.repository.ts`
+- `sed -n '1,220p' apps/server/src/modules/claims/controllers/claims.controller.ts`
+- `sed -n '1,220p' apps/server/src/modules/nft-eligibility/repositories/nft-eligibility.repository.ts`
+- `sed -n '1,220p' apps/server/src/modules/stats/repositories/stats.repository.ts`
+- `sed -n '1,220p' packages/common/src/models/promotion.ts`
+- `sed -n '1,180p' packages/common/src/validators/promotion.ts`
+- `pnpm --dir packages/common build`
+- `pnpm --dir apps/server test -- --runInBand modules/signing/services/signing.service.spec.ts`
+- `pnpm --dir apps/server test -- --runInBand modules/claims/services/referral-nft-sync.service.spec.ts`
+- `pnpm --dir apps/server build`
+- `node scripts/ci/run.mjs referral-approval` (escalated, post-sync-back implementation)
+- `node scripts/ci/run.mjs referral-derived` (escalated, multiple reruns during diagnosis)
+- `node scripts/ci/run.mjs subsidy-claim` (escalated, multiple reruns during diagnosis)
+- `node scripts/ci/run.mjs merkle-claim` (escalated)
+- `node scripts/ci/run.mjs merkle-lottery-claim` (escalated)
 
 ## Verification Results
 - `node scripts/ci/run.mjs --help` passed
@@ -161,6 +264,45 @@ In progress. `Milestone 1` 已收敛为可执行的覆盖/运行契约，`Milest
   - backend purchased NFT sync succeeded
   - duplicate sync preserved `tokenId` / `txHash`
   - duplicate sync changed `holdingsCreated` from `1` to `0`, confirming idempotent “no new insert” behavior
+- `pnpm --dir apps/server test -- --runInBand modules/signing/services/signing.service.spec.ts` passed
+  - signer 配置匹配与 mismatch 拒绝逻辑仍正常
+- `pnpm --dir apps/server test -- --runInBand modules/claims/services/referral-nft-sync.service.spec.ts` passed
+  - referral sync happy path 与 duplicate idempotency 覆盖通过
+- `pnpm --dir packages/common build` passed
+  - `3u-aura-common` 已导出新的 referral sync request/result schema
+- `pnpm --dir apps/server build` passed
+  - `dist/src/main.js` 已更新到包含 referral sync-back 路由
+- `node scripts/ci/run.mjs referral-approval` passed outside sandbox after server sync-back implementation
+  - backend referral mint signature succeeded
+  - on-chain mint succeeded
+  - referral sync-back succeeded
+  - duplicate sync remained idempotent
+- `node scripts/ci/run.mjs referral-derived` passed outside sandbox after derived helper and harness fixes
+  - 30 real check-ins for target user succeeded
+  - left/right branch volume propagation through `VolumePropagationService` succeeded
+  - derived `UserProfile` reached `smallLegVolume = 6000000000`
+  - eligibility reached `PENDING_APPROVAL` without DB seeded qualification state
+  - admin approval, referral signature, on-chain mint, and server sync-back all succeeded
+- `node scripts/ci/run.mjs subsidy-claim` passed outside sandbox after purchase helper and settlement deploy fixes
+  - purchased NFT buy + purchased sync succeeded
+  - on-chain subsidy epoch publish succeeded with fresh fork contracts
+  - re-sync projected 1 pending NFT subsidy claim
+  - on-chain purchased subsidy claim succeeded
+  - claim sync-back succeeded and duplicate sync stayed idempotent
+- `node scripts/ci/run.mjs merkle-claim` passed outside sandbox
+  - weekly fixture seeding succeeded for epoch 1
+  - admin epoch sync, draft materialize, and claim publish all succeeded
+  - merkle distributor deposit and root publish succeeded on-chain
+  - claimant on-chain merkle claim succeeded
+  - `claims/sync` marked weekly merkle claim `CLAIMED`
+  - duplicate sync remained idempotent
+- `node scripts/ci/run.mjs merkle-lottery-claim` passed outside sandbox
+  - weekly fixture seeding, epoch sync, materialize, and claim publish all succeeded
+  - flow dynamically selected the known wallet that actually held a `MERKLE_LOTTERY` row
+  - claimant on-chain lottery merkle claim succeeded
+  - duplicate on-chain lottery merkle claim reverted as expected
+  - `claims/sync` marked lottery merkle claim `CLAIMED`
+  - duplicate sync remained idempotent
 
 ## Open Findings
 - `scripts/uat/start-weekly-fork.mjs` currently depends on a fork environment that is not reliably reproducible in the present sandbox
@@ -170,7 +312,13 @@ In progress. `Milestone 1` 已收敛为可执行的覆盖/运行契约，`Milest
 - duplicate placement bind is also idempotent success for the same parent/slot/user combination
 - duplicate check-in submission is idempotent success for the same txHash and does not increase aggregate profile counts
 - duplicate purchased NFT sync is idempotent, but not byte-for-byte identical; repeated sync reports no new holding creation while preserving the same business identity
+- duplicate referral NFT sync is idempotent, preserving the same `tokenId` / `txHash` while changing `holdingsCreated` from `1` to `0`
+- duplicate weekly merkle claim sync is idempotent, preserving the same `claimRecordId` / `txHash` with stable `CLAIMED` status
+- weekly claims view may expose both `MERKLE_RANKING` and `MERKLE_LOTTERY`; CI 现在已显式按 `claimType` 选择，避免“拿到任意一条 claim 就算通过”的误判
+- lottery reward ownership is not stable on a fixed wallet across runs; CI 现在会在已知测试钱包中动态定位 claimant，而不再把 `userB` 写死
 - running multiple flows in parallel against the same `fork-anvil` / server runtime is unsafe today because one flow's cleanup can stop shared processes used by another flow
+- 新加的 runtime env override 已解决 `referral-mint` 的 signer mismatch 阻塞
+- fork 场景本轮仍会在 `apps/contracts/broadcast/*/97/` 生成原始 broadcast 文件；当前策略仍是复制隔离到 `scripts/ci/.runtime`，尚未自动删除原件
 
 ## Deviations From Original Task
 - 不再沿用原 `ci-contract-tests` 的“轻量 contract integration test”狭义目标

@@ -236,7 +236,7 @@ async function waitForUrl(rawUrl, timeoutMs = START_TIMEOUT_MS) {
   throw new Error(`Timed out waiting for ${rawUrl}${suffix}`);
 }
 
-function startManagedProcess(spec, envName) {
+function startManagedProcess(spec, envName, envOverrides = {}) {
   ensureServerBuildArtifact(spec);
   ensureDir(getLogsDir(envName));
   const logFd = fs.openSync(spec.logPath, 'a');
@@ -254,6 +254,10 @@ function startManagedProcess(spec, envName) {
     {
       cwd: REPO_ROOT,
       detached: true,
+      env: {
+        ...process.env,
+        ...envOverrides,
+      },
       stdio: ['ignore', logFd, logFd],
     },
   );
@@ -320,6 +324,7 @@ async function stopProcessGroup(pid) {
 export async function startPromotionServices({
   envName,
   services = SERVICE_NAMES,
+  serviceEnvOverrides = {},
 }) {
   const manifest = loadManifest(envName);
   const existingRuntime = readRuntime(envName);
@@ -362,7 +367,11 @@ export async function startPromotionServices({
       );
     }
 
-    const pid = startManagedProcess(spec, envName);
+    const pid = startManagedProcess(
+      spec,
+      envName,
+      serviceEnvOverrides[serviceName] ?? {},
+    );
 
     try {
       await waitForUrl(spec.readyUrl);

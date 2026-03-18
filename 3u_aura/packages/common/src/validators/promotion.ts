@@ -117,6 +117,14 @@ export type PromotionPurchasedNftSyncRequest = z.infer<
   typeof PromotionPurchasedNftSyncRequestSchema
 >;
 
+export const PromotionReferralNftSyncRequestSchema = z.object({
+  txHash: TxHashSchema,
+});
+
+export type PromotionReferralNftSyncRequest = z.infer<
+  typeof PromotionReferralNftSyncRequestSchema
+>;
+
 export const WeeklyEpochBoundaryQuerySchema = z.object({
   epochType: z.nativeEnum(EpochType).optional(),
   status: z.nativeEnum(EpochStatus).optional(),

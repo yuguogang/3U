@@ -270,6 +270,21 @@ export class StatsRepository {
     });
   }
 
+  async setReferralNftFlag(
+    data: {
+      hasReferralNft: boolean;
+      userId: string;
+    },
+    executor: DbExecutor = this.db,
+  ): Promise<UserProfile> {
+    return executor.userProfile.update({
+      where: { userId: data.userId },
+      data: {
+        hasReferralNft: data.hasReferralNft,
+      },
+    });
+  }
+
   async applyProfileConsolationProjection(
     data: {
       amountAura: Prisma.Decimal;

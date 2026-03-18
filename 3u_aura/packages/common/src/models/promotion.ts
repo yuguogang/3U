@@ -106,6 +106,16 @@ export interface PromotionPurchasedNftSyncResult {
   txHash: string;
 }
 
+export interface PromotionReferralNftSyncResult {
+  chainId: number;
+  hasReferralNft: boolean;
+  holdingsCreated: number;
+  mintedAt: Date;
+  status: NftEligibilityStatus;
+  tokenId: string;
+  txHash: string;
+}
+
 export interface WeeklyEpochBoundaryView {
   epochId?: string;
   epochNo?: number;

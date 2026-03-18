@@ -10,7 +10,12 @@
     "inviter-bind": "node commands/referral-inviter-bind.flow.mjs",
     "tree-placement": "node commands/tree-placement.flow.mjs",
     "nft-purchase": "node commands/nft-purchase.flow.mjs",
+    "subsidy-claim": "node commands/subsidy-claim.flow.mjs",
+    "merkle-claim": "node commands/merkle-claim.flow.mjs",
+    "merkle-ranking-claim": "node commands/merkle-claim.flow.mjs",
+    "merkle-lottery-claim": "node commands/merkle-lottery-claim.flow.mjs",
     "referral-approval": "node commands/referral-mint.flow.mjs",
+    "referral-derived": "node commands/referral-mint-derived.flow.mjs",
     "all": "node run-all.mjs",
     "all:no-reset": "node run-all.mjs --no-reset"
   },

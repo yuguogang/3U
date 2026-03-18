@@ -261,10 +261,13 @@ export async function buyNft(buyer, quantity = 1, envName = 'fork-anvil') {
   const walletClient = createWalletClientForFixture(buyer, envName);
   const testClient = createTestClientForFork(envName);
 
+  if (quantity !== 1) {
+    throw new Error(`buyNft only supports quantity=1, got ${quantity}`);
+  }
+
   const hash = await walletClient.writeContract({
     abi: nftSaleAbi,
     address: manifest.contracts.nftSaleAddress,
-    args: [BigInt(quantity)],
     functionName: 'buyNFT',
   });
 
@@ -315,6 +318,30 @@ export async function claimSubsidy(claimant, epochId, tokenId, envName = 'fork-a
   return hash;
 }
 
+export async function publishSubsidyEpoch(
+  publisher,
+  {
+    claimDeadline,
+    epochId,
+    subsidyAmount,
+  },
+  envName = 'fork-anvil',
+) {
+  const manifest = loadManifest(envName);
+  const publicClient = createPublicClientForFork(envName);
+  const walletClient = createWalletClientForFixture(publisher, envName);
+
+  const hash = await walletClient.writeContract({
+    abi: settlementAbi,
+    address: manifest.contracts.settlementAddress,
+    args: [BigInt(epochId), BigInt(subsidyAmount), BigInt(claimDeadline)],
+    functionName: 'publishSubsidyEpoch',
+  });
+
+  await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
+}
+
 export async function isSubsidyClaimed(epochId, tokenId, envName = 'fork-anvil') {
   const manifest = loadManifest(envName);
   const publicClient = createPublicClientForFork(envName);
@@ -323,6 +350,94 @@ export async function isSubsidyClaimed(epochId, tokenId, envName = 'fork-anvil')
     abi: settlementAbi,
     address: manifest.contracts.settlementAddress,
     args: [BigInt(epochId), BigInt(tokenId)],
+    functionName: 'isClaimed',
+  });
+}
+
+export async function getPublishedSubsidyEpoch(epochId, envName = 'fork-anvil') {
+  const manifest = loadManifest(envName);
+  const publicClient = createPublicClientForFork(envName);
+
+  return publicClient.readContract({
+    abi: settlementAbi,
+    address: manifest.contracts.settlementAddress,
+    args: [BigInt(epochId)],
+    functionName: 'subsidyEpochs',
+  });
+}
+
+export async function depositMerkleRewards(owner, amount, envName = 'fork-anvil') {
+  const manifest = loadManifest(envName);
+  const publicClient = createPublicClientForFork(envName);
+  const walletClient = createWalletClientForFixture(owner, envName);
+
+  const hash = await walletClient.writeContract({
+    abi: merkleAbi,
+    address: manifest.contracts.merkleDistributorAddress,
+    args: [BigInt(amount)],
+    functionName: 'depositRewards',
+  });
+
+  await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
+}
+
+export async function publishMerkleRoot(owner, epochId, merkleRoot, envName = 'fork-anvil') {
+  const manifest = loadManifest(envName);
+  const publicClient = createPublicClientForFork(envName);
+  const walletClient = createWalletClientForFixture(owner, envName);
+
+  const hash = await walletClient.writeContract({
+    abi: merkleAbi,
+    address: manifest.contracts.merkleDistributorAddress,
+    args: [BigInt(epochId), merkleRoot],
+    functionName: 'publishRoot',
+  });
+
+  await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
+}
+
+export async function claimMerkleReward(
+  claimant,
+  {
+    amount,
+    epochId,
+    index,
+    merkleProof,
+    rewardTypeCode,
+  },
+  envName = 'fork-anvil',
+) {
+  const manifest = loadManifest(envName);
+  const publicClient = createPublicClientForFork(envName);
+  const walletClient = createWalletClientForFixture(claimant, envName);
+
+  const hash = await walletClient.writeContract({
+    abi: merkleAbi,
+    address: manifest.contracts.merkleDistributorAddress,
+    args: [
+      BigInt(epochId),
+      BigInt(index),
+      rewardTypeCode,
+      BigInt(amount),
+      merkleProof,
+    ],
+    functionName: 'claim',
+  });
+
+  await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
+}
+
+export async function isMerkleClaimed(epochId, index, envName = 'fork-anvil') {
+  const manifest = loadManifest(envName);
+  const publicClient = createPublicClientForFork(envName);
+
+  return publicClient.readContract({
+    abi: merkleAbi,
+    address: manifest.contracts.merkleDistributorAddress,
+    args: [BigInt(epochId), BigInt(index)],
     functionName: 'isClaimed',
   });
 }
