@@ -201,6 +201,25 @@ export function usePromotionContractState(accountAddress?: EvmAddress) {
     ],
   });
 
+  const nftBalanceQuery = useQuery({
+    enabled: Boolean(address && promotionContracts.founderNftAddress),
+    queryFn: async () =>
+      decodeSingleUint256(
+        await ethCall(
+          promotionContracts.founderNftAddress ?? ZERO_ADDRESS,
+          encodeSingleAddressCall(BALANCE_OF_SELECTOR, address ?? ZERO_ADDRESS),
+        ),
+      ),
+    queryKey: [
+      "promotion",
+      "contracts",
+      "nft-balance",
+      promotionContracts.founderNftAddress,
+      address ?? null,
+      promotionRpcUrl,
+    ],
+  });
+
   const remainingSupply = remainingSupplyQuery.data;
 
   return {
@@ -210,7 +229,10 @@ export function usePromotionContractState(accountAddress?: EvmAddress) {
     purchasePrice: purchasePriceQuery.data,
     referralNonce: referralNonceQuery.data,
     refetchAllowance: allowanceQuery.refetch,
+    refetchNftBalance: nftBalanceQuery.refetch,
     refetchRemainingSupply: remainingSupplyQuery.refetch,
+    refetchUsdtBalance: usdtBalanceQuery.refetch,
+    nftBalance: nftBalanceQuery.data,
     remainingSupply: remainingSupply
       ? {
           purchasedRemaining: remainingSupply[0],

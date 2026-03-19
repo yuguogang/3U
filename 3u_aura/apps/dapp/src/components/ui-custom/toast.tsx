@@ -67,6 +67,9 @@ const Toast: React.FC<ToastProps> = ({
 
   return (
     <div
+      role={type === "error" || type === "warning" ? "alert" : "status"}
+      aria-live={type === "error" || type === "warning" ? "assertive" : "polite"}
+      aria-atomic="true"
       className={cn(
         "relative flex items-start gap-3 p-4 rounded-xl",
         "bg-[#141414] border backdrop-blur-xl",
@@ -80,6 +83,7 @@ const Toast: React.FC<ToastProps> = ({
         {message && <p className="mt-1 text-xs text-white/60">{message}</p>}
         {action && (
           <button
+            type="button"
             onClick={action.onClick}
             className="mt-2 text-xs font-medium text-aura-primary transition-colors hover:text-aura-primary-light"
           >
@@ -89,8 +93,10 @@ const Toast: React.FC<ToastProps> = ({
       </div>
       {dismissible && (
         <button
+          type="button"
           onClick={() => onDismiss?.(id)}
           className="shrink-0 text-white/40 transition-colors hover:text-white/70"
+          aria-label="Dismiss notification"
         >
           <X className="h-4 w-4" />
         </button>
@@ -124,7 +130,11 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({
   };
 
   return (
-    <div className={cn("fixed z-[100] flex flex-col gap-2 w-full max-w-sm px-4", getPositionClasses())}>
+    <div
+      className={cn("fixed z-[100] flex w-full max-w-sm flex-col gap-2 px-4", getPositionClasses())}
+      aria-live="polite"
+      aria-relevant="additions text"
+    >
       {toasts.map((toast) => (
         <Toast key={toast.id} {...toast} onDismiss={onDismiss} />
       ))}

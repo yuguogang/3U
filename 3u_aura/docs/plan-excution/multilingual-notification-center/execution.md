@@ -8,7 +8,12 @@
   - no admin notification publish API
   - no DApp inbox/message-center API
   - current DApp locales are `en`, `zh`, `zh-Hant`, `vi`, `ko`, `ja`
-- [ ] Implementation not started.
+- [x] Milestone 1 completed: first-version notification contract and delivery boundaries were locked.
+- [x] Milestone 2 completed: shared enums/DTOs plus Prisma persistence foundation were added.
+- [x] Milestone 3 completed: server notification APIs, services, and gate-level tests were added.
+- [x] Milestone 4 completed: admin notification list/editor route and client layer were added.
+- [x] Milestone 5 completed: DApp inbox lane is implemented and the previously unrelated DApp build blockers were cleared.
+- [x] Milestone 6 completed: fork-anvil schema prep was repaired and integrated admin-to-DApp smoke passed.
 
 ## Execution Log
 
@@ -48,6 +53,292 @@
     - realtime delivery
     - automatic event-generated notifications
 
+### Phase 2: Milestone 1 Gate - Domain Contract and Delivery Boundaries
+- **Commands run**:
+  - `sed -n '1,260p' docs/plan-excution/multilingual-notification-center/plan.md`
+  - `sed -n '1,260p' docs/prompts/phase-3-notification-center-high-reasoning-coordinator.md`
+  - `sed -n '1,220p' apps/dapp/src/i18n/constants.ts`
+  - `git status --short`
+- **Decisions locked**:
+  - First version is strictly admin-authored and persisted.
+  - Notification categories are:
+    - `PROJECT_ACTIVITY`
+    - `TEAM_ACTIVITY`
+    - `UPCOMING_LAUNCH`
+  - Notification statuses are:
+    - `DRAFT`
+    - `PUBLISHED`
+    - `ARCHIVED`
+  - Audience scope remains intentionally narrow for first version:
+    - `ALL_USERS`
+  - Localized payload shape is explicit and auditable:
+    - `title`
+    - `body`
+    - optional `ctaLabel`
+    - optional `ctaHref`
+  - Read state is modeled separately per user and must be idempotent.
+  - Locale fallback rule is deterministic:
+    - DApp locale match first
+    - otherwise notification `defaultLocale`
+    - otherwise a known fallback locale handled client-side in Milestone 5
+  - Archive behavior is soft-state only:
+    - archived items remain persisted
+    - archived items are not visible in the DApp user list
+- **Findings**:
+  - No contract work is needed for first version.
+  - Admin and DApp frontend lanes should stay closed until shared contracts and server APIs stabilize.
+
+### Phase 3: Milestone 2 Gate - Shared Model and Persistence Foundation
+- **Commands run**:
+  - `pnpm --dir packages/common build`
+  - `pnpm --dir apps/server db:generate`
+  - `pnpm --dir apps/server exec prisma validate`
+  - `rg -n "model Notification|enum Notification|notificationRead|notification\\b" apps/server/prisma/schema.prisma apps/server/generated/prisma apps/server/src/modules/notification packages/common/src -g '!**/node_modules/**'`
+- **Files added/updated**:
+  - `packages/common/src/enums/notification.ts`
+  - `packages/common/src/enums/index.ts`
+  - `packages/common/src/models/notification.ts`
+  - `packages/common/src/models/index.ts`
+  - `packages/common/src/validators/notification.ts`
+  - `packages/common/src/validators/index.ts`
+  - `apps/server/prisma/schema.prisma`
+  - `apps/server/prisma/migrations/20260319_multilingual_notification_center_foundation/migration.sql`
+- **Findings**:
+  - Shared notification enums, locale-aware DTOs, and read/list payloads now live in `packages/common`.
+  - Prisma schema now includes:
+    - `Notification`
+    - `NotificationRead`
+    - `NotificationCategory`
+    - `NotificationStatus`
+    - `NotificationAudienceScope`
+  - Prisma client generation and schema validation both passed.
+- **Deviations**:
+  - Locale fallback behavior was documented at the domain-contract level, but actual locale resolution helper remains deferred to Milestone 5 where the DApp locale runtime exists.
+
+### Phase 4: Milestone 3 Gate - Server API and Service Layer
+- **Commands run**:
+  - `pnpm --dir apps/server build`
+  - `pnpm --dir apps/server test -- --runInBand modules/notification/services/admin-notification.service.spec.ts modules/notification/services/notification-read.service.spec.ts`
+  - `sed -n '1,320p' apps/server/src/modules/notification/services/admin-notification.service.ts`
+  - `sed -n '1,320p' apps/server/src/modules/notification/services/notification-read.service.ts`
+  - `sed -n '1,300p' apps/server/src/modules/notification/controllers/admin-notifications.controller.ts`
+  - `sed -n '1,260p' apps/server/src/modules/notification/controllers/notifications.controller.ts`
+- **Files added/updated**:
+  - `apps/server/src/modules/notification/notification.module.ts`
+  - `apps/server/src/modules/notification/index.ts`
+  - `apps/server/src/modules/notification/controllers/admin-notifications.controller.ts`
+  - `apps/server/src/modules/notification/controllers/notifications.controller.ts`
+  - `apps/server/src/modules/notification/dto/admin-notification-archive-request.dto.ts`
+  - `apps/server/src/modules/notification/dto/admin-notification-create-request.dto.ts`
+  - `apps/server/src/modules/notification/dto/admin-notification-list-query.dto.ts`
+  - `apps/server/src/modules/notification/dto/admin-notification-publish-request.dto.ts`
+  - `apps/server/src/modules/notification/dto/admin-notification-unpublish-request.dto.ts`
+  - `apps/server/src/modules/notification/dto/admin-notification-update-request.dto.ts`
+  - `apps/server/src/modules/notification/dto/notification-list-query.dto.ts`
+  - `apps/server/src/modules/notification/dto/notification-mark-read-request.dto.ts`
+  - `apps/server/src/modules/notification/dto/index.ts`
+  - `apps/server/src/modules/notification/repositories/notification.repository.ts`
+  - `apps/server/src/modules/notification/services/admin-notification.service.ts`
+  - `apps/server/src/modules/notification/services/admin-notification.service.spec.ts`
+  - `apps/server/src/modules/notification/services/notification-read.service.ts`
+  - `apps/server/src/modules/notification/services/notification-read.service.spec.ts`
+  - `apps/server/src/modules/index.ts`
+  - `apps/server/src/modules/aura-domain.module.ts`
+- **Endpoints stabilized**:
+  - User APIs:
+    - `GET /notifications`
+    - `GET /notifications/unread-count`
+    - `POST /notifications/read`
+  - Admin APIs:
+    - `GET /admin/notifications`
+    - `POST /admin/notifications/create`
+    - `POST /admin/notifications/update`
+    - `POST /admin/notifications/publish`
+    - `POST /admin/notifications/unpublish`
+    - `POST /admin/notifications/archive`
+- **Behavior verified**:
+  - `markRead` writes run inside a DB transaction and return stable idempotent counts.
+  - Draft updates are rejected once an item leaves `DRAFT`.
+  - Publish transitions persist audit metadata and audit trail events.
+  - Missing notifications are surfaced as `NotFoundException`.
+- **Findings**:
+  - An earlier suspicion that Prisma had not generated notification models was false; generated client output already contained `notification` and `notificationRead`.
+  - The server gate is now stable enough to open admin and DApp lanes in a later wave, but those lanes have not been started in this session.
+
+### Phase 5: Milestone 4 - Admin Authoring Surfaces
+- **Commands run**:
+  - `pnpm --dir apps/admin lint`
+  - `pnpm --dir apps/admin build`
+- **Files added/updated**:
+  - `apps/admin/src/api/admin.ts`
+  - `apps/admin/src/queries/admin.query.ts`
+  - `apps/admin/src/features/notifications/components/notifications-page.tsx`
+  - `apps/admin/src/app/dashboard/notifications/page.tsx`
+  - `apps/admin/src/features/overview/components/overview-page.tsx`
+- **Findings**:
+  - Admin now has a dedicated `/dashboard/notifications` route.
+  - Admin API/query layers now expose notification CRUD and publish operations.
+  - Overview navigation was updated so the notification feature is reachable from the existing admin shell.
+- **Verification**:
+  - `pnpm --dir apps/admin lint`
+    - PASS
+  - `pnpm --dir apps/admin build`
+    - PASS
+    - Note: `next build` still emits the same pre-existing wagmi/RainbowKit optional connector warnings from `web3-provider.tsx` / `wagmi-config.tsx`, but the build completed successfully.
+
+### Phase 6: Milestone 5 - DApp Inbox and Read-State UX
+- **Commands run**:
+  - `for f in apps/dapp/messages/*/common.json; do jq '.nav, .notifications' "$f"; done`
+  - `pnpm --dir apps/dapp lint`
+  - `pnpm --dir apps/dapp build`
+- **Files added/updated**:
+  - `apps/dapp/src/api/notifications.ts`
+  - `apps/dapp/src/queries/notifications.query.ts`
+  - `apps/dapp/src/components/notifications/notification-utils.ts`
+  - `apps/dapp/src/components/notifications/notification-inbox-entry.tsx`
+  - `apps/dapp/src/components/notifications/notification-list-item.tsx`
+  - `apps/dapp/src/components/pages/notifications-page.tsx`
+  - `apps/dapp/src/components/layout/mobile-layout.tsx`
+  - `apps/dapp/src/app/notifications/page.tsx`
+  - `apps/dapp/messages/en/common.json`
+  - `apps/dapp/messages/ja/common.json`
+  - `apps/dapp/messages/ko/common.json`
+  - `apps/dapp/messages/vi/common.json`
+  - `apps/dapp/messages/zh/common.json`
+  - `apps/dapp/messages/zh-Hant/common.json`
+- **Findings**:
+  - DApp now has:
+    - notification API client
+    - React Query hooks for inbox and unread count
+    - header inbox entry with unread badge
+    - `/notifications` page
+    - notification item rendering and locale fallback helper
+  - The new notification lane is lint-clean.
+  - The initial DApp build blocker turned out to be unrelated existing page drift outside the notification lane.
+- **Verification**:
+  - `for f in apps/dapp/messages/*/common.json; do jq '.nav, .notifications' "$f"; done`
+    - PASS
+  - `pnpm --dir apps/dapp lint`
+    - PASS
+    - Note: one pre-existing `@next/next/no-img-element` warning remains in `wallet-button.tsx`
+  - `pnpm --dir apps/dapp build`
+    - PASS after additional DApp unblock fixes outside the notification lane
+- **Deviations**:
+  - To close the planned verification gate, additional existing DApp drift had to be corrected outside the notification lane:
+    - `apps/dapp/src/components/pages/nft-page.tsx`
+    - `apps/dapp/src/components/pages/rewards-page.tsx`
+    - `apps/dapp/src/components/pages/section-page.tsx`
+    - `apps/dapp/src/components/pages/team-page.tsx`
+  - These fixes were build-unblock changes only; they were not new notification feature scope.
+
+### Phase 7: Milestone 6 - Static Verification Closure
+- **Commands run**:
+  - `pnpm --dir apps/dapp build`
+  - `pnpm --dir apps/dapp lint`
+- **Findings**:
+  - DApp production build now completes successfully with the notification inbox route included:
+    - `/notifications`
+  - Static verification across shared/server/admin/dapp is now closed.
+  - Remaining open item for Milestone 6 is integrated manual smoke:
+    - admin creates draft
+    - admin publishes
+    - DApp unread badge updates
+    - DApp marks notification read
+- **Verification**:
+  - `pnpm --dir apps/dapp build`
+    - PASS
+  - `pnpm --dir apps/dapp lint`
+    - PASS
+    - Note: one pre-existing `@next/next/no-img-element` warning remains in `wallet-button.tsx`
+
+### Phase 8: Milestone 6 - Fork Schema Repair and Integrated Smoke
+- **Commands run**:
+  - `node --input-type=module -e "fetch('http://127.0.0.1:3210/api/v1/notifications/unread-count')..."`
+  - `kill -9 17754`
+  - `node scripts/uat/start-promotion-services.mjs --env fork-anvil --services server`
+  - `tail -n 80 config/promotion-envs/fork-anvil/logs/server.log`
+  - `node scripts/uat/reset-weekly-fork-db.mjs --env fork-anvil`
+  - `node scripts/uat/prepare-weekly-fork-db.mjs --env fork-anvil`
+  - `node .tmp/notification-smoke.mjs`
+- **Files added/updated**:
+  - `scripts/uat/weekly-fork-lib.mjs`
+- **Findings**:
+  - The first live smoke against the restarted server proved the notification routes were mounted, but they failed with `P2021` because schema `fork_anvil` did not contain `Notification` / `NotificationRead`.
+  - Root cause was not the notification module itself. The fork DB preparation flow only cloned the `public` schema baseline and copied `_prisma_migrations`, but it did not apply newer repo migrations that were missing from `public`.
+  - `scripts/uat/weekly-fork-lib.mjs` now repairs this by:
+    - checking whether `_prisma_migrations` exists in the isolated schema
+    - cloning the baseline only when needed
+    - applying any repo migrations missing from the isolated schema via SQL with the fork schema in `search_path`
+    - recording the applied migration checksum/name into the isolated schema `_prisma_migrations`
+  - This avoids depending on `prisma migrate status/deploy`, which currently returned an unhelpful schema engine failure against the local promotion database.
+- **Behavior verified**:
+  - `reset-weekly-fork-db` now reports:
+    - `cloned public schema baseline (22 tables)`
+    - `applied pending migrations: 20260319_multilingual_notification_center_foundation`
+  - `prepare-weekly-fork-db` now reports:
+    - `reused existing isolated schema baseline`
+    - `schema already matched repo migration set`
+  - Integrated smoke passed end-to-end:
+    - admin login
+    - user login
+    - admin draft creation
+    - admin publish
+    - user unread count increments
+    - published item appears in user list with multilingual content
+    - user mark-read succeeds
+    - unread count returns to baseline
+- **Verification**:
+  - `node scripts/uat/reset-weekly-fork-db.mjs --env fork-anvil`
+    - PASS
+  - `node scripts/uat/prepare-weekly-fork-db.mjs --env fork-anvil`
+    - PASS
+  - `node .tmp/notification-smoke.mjs`
+    - PASS
+    - Output:
+      - `notificationId` returned
+      - unread count moved `1 -> 2 -> 1`
+      - `markReadUpdatedCount = 1`
+      - `isReadAfterRead = true`
+
 ## Verification
-- No code implementation or runtime validation has been performed yet.
-- Validation commands will be added as implementation progresses.
+- `pnpm --dir packages/common build`
+  - PASS
+- `pnpm --dir apps/server db:generate`
+  - PASS
+- `pnpm --dir apps/server exec prisma validate`
+  - PASS
+- `pnpm --dir apps/server test -- --runInBand modules/notification/services/admin-notification.service.spec.ts modules/notification/services/notification-read.service.spec.ts`
+  - PASS
+- `pnpm --dir apps/server build`
+  - PASS
+- `pnpm --dir apps/admin lint`
+  - PASS
+- `pnpm --dir apps/admin build`
+  - PASS
+- `pnpm --dir apps/dapp lint`
+  - PASS
+  - Note: one pre-existing `@next/next/no-img-element` warning remains in `wallet-button.tsx`
+- `pnpm --dir apps/dapp build`
+  - PASS
+- `node scripts/uat/reset-weekly-fork-db.mjs --env fork-anvil`
+  - PASS
+- `node scripts/uat/prepare-weekly-fork-db.mjs --env fork-anvil`
+  - PASS
+- `node .tmp/notification-smoke.mjs`
+  - PASS
+- `pnpm --dir apps/server test -- --runInBand modules/notification/services/admin-notification.service.spec.ts modules/notification/services/notification-read.service.spec.ts`
+  - PASS
+  - Note: `ts-jest` emitted a pre-existing warning about compiling generated Prisma `.js` files because `allowJs` is not enabled; tests still passed.
+- `pnpm --dir apps/server build`
+  - PASS
+- `pnpm --dir apps/admin lint`
+  - PASS
+- `pnpm --dir apps/admin build`
+  - PASS
+- `for f in apps/dapp/messages/*/common.json; do jq '.nav, .notifications' "$f"; done`
+  - PASS
+- `pnpm --dir apps/dapp lint`
+  - PASS
+  - Note: one pre-existing `@next/next/no-img-element` warning remains in `wallet-button.tsx`
+- `pnpm --dir apps/dapp build`
+  - PASS

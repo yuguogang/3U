@@ -3,6 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   AdminApproveReferralNftRequest,
+  AdminNotificationArchiveRequest,
+  AdminNotificationCreateRequest,
+  AdminNotificationListQuery,
+  AdminNotificationPublishRequest,
+  AdminNotificationUnpublishRequest,
+  AdminNotificationUpdateRequest,
   AdminAuditLogListQuery,
   AdminCheckinIssueListQuery,
   AdminCheckinRepairRequest,
@@ -16,6 +22,9 @@ import type {
 } from "3u-aura-common";
 import {
   apiApproveReferralNft,
+  apiArchiveAdminNotification,
+  apiCreateAdminNotification,
+  apiGetAdminNotifications,
   apiExecuteCheckinRepair,
   apiExecuteClaimSync,
   apiExecuteEpochSync,
@@ -26,10 +35,13 @@ import {
   apiGetClaimIssues,
   apiGetNftEligibility,
   apiGetPendingPlacements,
+  apiPublishAdminNotification,
   apiPreviewCheckinRepair,
   apiPreviewClaimSync,
   apiPreviewEpochSync,
   apiRejectReferralNft,
+  apiUnpublishAdminNotification,
+  apiUpdateAdminNotification,
 } from "@/api/admin";
 
 export const adminQueryKeys = {
@@ -40,6 +52,8 @@ export const adminQueryKeys = {
     ["admin", "claims", query] as const,
   nftEligibility: (query: AdminNftEligibilityListQuery) =>
     ["admin", "nft-eligibility", query] as const,
+  notifications: (query: AdminNotificationListQuery) =>
+    ["admin", "notifications", query] as const,
   overview: ["admin", "overview"] as const,
   placements: (query: AdminPendingPlacementListQuery) =>
     ["admin", "placements", query] as const,
@@ -117,6 +131,17 @@ export function useAuditLogsQuery(
     enabled,
     queryFn: () => apiGetAuditLogs(query),
     queryKey: adminQueryKeys.audit(query),
+  });
+}
+
+export function useAdminNotificationsQuery(
+  query: AdminNotificationListQuery,
+  enabled: boolean,
+) {
+  return useQuery({
+    enabled,
+    queryFn: () => apiGetAdminNotifications(query),
+    queryKey: adminQueryKeys.notifications(query),
   });
 }
 
@@ -211,6 +236,78 @@ export function useRejectReferralNftMutation() {
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.overview }),
         queryClient.invalidateQueries({ queryKey: ["admin", "nft-eligibility"] }),
       ]);
+    },
+  });
+}
+
+function invalidateAdminNotificationQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: adminQueryKeys.overview }),
+    queryClient.invalidateQueries({ queryKey: ["admin", "notifications"] }),
+  ]);
+}
+
+export function useCreateAdminNotificationMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: AdminNotificationCreateRequest) =>
+      apiCreateAdminNotification(body),
+    mutationKey: ["admin", "notifications", "create"],
+    onSuccess: async () => {
+      await invalidateAdminNotificationQueries(queryClient);
+    },
+  });
+}
+
+export function useUpdateAdminNotificationMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: AdminNotificationUpdateRequest) =>
+      apiUpdateAdminNotification(body),
+    mutationKey: ["admin", "notifications", "update"],
+    onSuccess: async () => {
+      await invalidateAdminNotificationQueries(queryClient);
+    },
+  });
+}
+
+export function usePublishAdminNotificationMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: AdminNotificationPublishRequest) =>
+      apiPublishAdminNotification(body),
+    mutationKey: ["admin", "notifications", "publish"],
+    onSuccess: async () => {
+      await invalidateAdminNotificationQueries(queryClient);
+    },
+  });
+}
+
+export function useUnpublishAdminNotificationMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: AdminNotificationUnpublishRequest) =>
+      apiUnpublishAdminNotification(body),
+    mutationKey: ["admin", "notifications", "unpublish"],
+    onSuccess: async () => {
+      await invalidateAdminNotificationQueries(queryClient);
+    },
+  });
+}
+
+export function useArchiveAdminNotificationMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: AdminNotificationArchiveRequest) =>
+      apiArchiveAdminNotification(body),
+    mutationKey: ["admin", "notifications", "archive"],
+    onSuccess: async () => {
+      await invalidateAdminNotificationQueries(queryClient);
     },
   });
 }

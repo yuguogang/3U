@@ -67,7 +67,14 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({
   const config = getStatusConfig();
 
   return (
-    <GlassCard variant="elevated" className={cn("p-6", className)}>
+    <GlassCard
+      variant="elevated"
+      className={cn("p-6", className)}
+      role={status === "error" ? "alert" : "status"}
+      aria-live={status === "error" ? "assertive" : "polite"}
+      aria-atomic="true"
+      aria-busy={status === "pending" || status === "confirming"}
+    >
       <div className="flex flex-col items-center text-center">
         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/5">
           {config.icon}
@@ -83,6 +90,11 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({
               <div
                 className="h-full bg-aura-warning transition-all duration-300"
                 style={{ width: `${(confirmations / totalConfirmations) * 100}%` }}
+                role="progressbar"
+                aria-label="Transaction confirmations"
+                aria-valuemin={0}
+                aria-valuemax={totalConfirmations}
+                aria-valuenow={confirmations}
               />
             </div>
             <p className="mt-2 text-xs text-white/40">
@@ -97,6 +109,7 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             className="mb-4 flex items-center gap-1 text-sm text-aura-primary transition-colors hover:text-aura-primary-light"
+            aria-label={`View transaction ${hash} on block explorer`}
           >
             <span>View on Explorer</span>
             <ExternalLink className="w-3 h-3" />
@@ -105,17 +118,23 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({
 
         <div className="flex w-full items-center gap-3">
           {status === "error" && onRetry && (
-            <Button onClick={onRetry} className="flex-1 bg-aura-primary text-white hover:bg-aura-primary-dark">
+            <Button
+              onClick={onRetry}
+              variant="outline"
+              className="flex-1 border-white/20"
+              type="button"
+            >
               Retry
             </Button>
           )}
           {onClose && (
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={onClose}
-              className="flex-1 border-white/10 text-white hover:bg-white/5"
+              className="flex-1"
+              type="button"
             >
-              Close
+              {status === "success" ? "Done" : "Close"}
             </Button>
           )}
         </div>

@@ -1,41 +1,25 @@
 "use client";
 
-import type { ReactNode } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
-import {
-  CalendarCheck2,
-  Gem,
-  LayoutDashboard,
-  ReceiptText,
-  Trophy,
-  Users,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ReactNode } from "react";
+import { NotificationInboxEntry } from "@/components/notifications/notification-inbox-entry";
 import { WalletButton } from "@/components/wallet-button";
 import { BottomNav } from "@/components/ui-custom/bottom-nav";
 
 type MobileLayoutProps = {
   children: ReactNode;
   title?: string;
-  description?: string;
   eyebrow?: string;
+  description?: string;
   actions?: ReactNode;
-  showBack?: boolean;
 };
 
 export function MobileLayout({
   children,
   title,
-  description,
   eyebrow = "Promotion Baseline",
+  description,
   actions,
-  showBack = false,
 }: MobileLayoutProps) {
-  const pathname = usePathname();
-  const t = useTranslations("Common");
-
   return (
     <div className="min-h-screen bg-[#050505] text-white overflow-x-hidden">
       {/* Background Gradients */}
@@ -45,14 +29,14 @@ export function MobileLayout({
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col pb-32">
         {/* Header */}
-        <header className="sticky top-0 z-30 bg-[#050505]/80 backdrop-blur-xl border-b border-white/[0.08]">
-          <div className="px-4 py-4 flex items-center justify-between">
+        <header className="sticky top-0 z-30 bg-[#050505]/80 backdrop-blur-xl border-b border-white/[0.06]">
+          <div className="px-4 pt-3 pb-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-aura-primary to-aura-primary-dark flex items-center justify-center shadow-glow-sm">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-aura-primary to-aura-primary-dark flex items-center justify-center shadow-glow-sm flex-shrink-0">
                 <span className="text-white font-bold text-sm">3U</span>
               </div>
-              <div>
-                <h1 className="text-lg font-bold tracking-tight text-white leading-none mb-1">
+              <div className="flex flex-col gap-0.5">
+                <h1 className="text-base font-semibold tracking-tight text-white leading-none">
                   {title || "AURA"}
                 </h1>
                 <p className="text-[10px] uppercase tracking-widest text-white/40 leading-none">
@@ -60,7 +44,10 @@ export function MobileLayout({
                 </p>
               </div>
             </div>
-            <WalletButton />
+            <div className="flex items-center gap-2">
+              <NotificationInboxEntry />
+              <WalletButton />
+            </div>
           </div>
         </header>
 

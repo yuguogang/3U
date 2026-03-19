@@ -1,17 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CheckCircle2,
   Gem,
   ShieldAlert,
   ShoppingBag,
   Star,
-  Lock,
-  Zap,
-  Info,
   TrendingUp,
-  Clock,
+  Zap,
 } from "lucide-react";
 import {
   useAccount,
@@ -30,6 +27,7 @@ import {
   promotionChainId,
   promotionContracts,
 } from "@/lib/promotion-contracts";
+import { NftEligibilityStatus } from "3u-aura-common";
 import {
   formatPercent,
   formatUsdtAtomic,
@@ -39,12 +37,16 @@ import {
   useCurrentEligibilityQuery,
   useReferralMintSignatureMutation,
 } from "@/queries/promotion.query";
+import {
+  useSyncMyPurchasedNftMutation,
+  useSyncMyReferralNftMutation,
+} from "@/queries/claims.query";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 
 export function NftPage() {
   const chainId = useChainId();
-  const { address, isConnected } = useAccount();
+  const { address } = useAccount();
   const { authAddress, hasHydrated, isAuthenticated } = useAuthStore();
   const useAutomationInjectedWallet =
     process.env.NEXT_PUBLIC_E2E_INJECTED_WALLET === "true";
@@ -63,6 +65,8 @@ export function NftPage() {
     Boolean(isAuthenticated && hasHydrated && effectiveAddress),
   );
   const signatureMutation = useReferralMintSignatureMutation();
+  const syncPurchasedNftMutation = useSyncMyPurchasedNftMutation();
+  const syncReferralNftMutation = useSyncMyReferralNftMutation();
   const approveWrite = useWriteContract();
   const buyWrite = useWriteContract();
   const referralMintWrite = useWriteContract();
@@ -84,10 +88,21 @@ export function NftPage() {
 
   const purchasePrice = contractState.purchasePrice ?? BigInt(0);
   const allowance = contractState.allowance ?? BigInt(0);
+  const nftBalance = contractState.nftBalance ?? BigInt(0);
   const usdtBalance = contractState.usdtBalance ?? BigInt(0);
+  const purchasedMinted =
+    BigInt(30) - (contractState.remainingSupply?.purchasedRemaining ?? BigInt(30));
+  const referralMinted =
+    BigInt(70) - (contractState.remainingSupply?.referralRemaining ?? BigInt(70));
+  const nftSaleAddress = promotionContracts.nftSaleAddress;
+  const paymentTokenAddress = promotionContracts.paymentTokenAddress;
   const isCorrectReadChain = isPromotionChain(effectiveReadChainId);
   const isCorrectWriteChain = isPromotionChain(chainId);
   const eligibility = eligibilityQuery.data;
+  const canMintReferralNft =
+    eligibility?.status === NftEligibilityStatus.APPROVED ||
+    eligibility?.status === NftEligibilityStatus.EXPIRED ||
+    eligibility?.status === NftEligibilityStatus.SIGNED;
   
   const checkinProgress = eligibility
     ? formatPercent(
@@ -104,40 +119,101 @@ export function NftPage() {
 
   const isApprovalSatisfied =
     allowance >= purchasePrice && purchasePrice > BigInt(0);
+  const {
+    refetchAllowance,
+    refetchNftBalance,
+    refetchRemainingSupply,
+    refetchUsdtBalance,
+  } =
+    contractState;
+  const isApproveConfirmed = approveReceipt.isSuccess;
+  const isBuyConfirmed = buyReceipt.isSuccess;
+
+  useEffect(() => {
+    if (!isApproveConfirmed) {
+      return;
+    }
+
+    void refetchAllowance();
+  }, [isApproveConfirmed, refetchAllowance]);
+
+  useEffect(() => {
+    if (!isBuyConfirmed) {
+      return;
+    }
+
+    void Promise.all([
+      buyHash
+        ? syncPurchasedNftMutation.mutateAsync({ txHash: buyHash })
+        : Promise.resolve(),
+      refetchAllowance(),
+      refetchNftBalance(),
+      refetchRemainingSupply(),
+      refetchUsdtBalance(),
+    ]);
+  }, [
+    buyHash,
+    isBuyConfirmed,
+    refetchAllowance,
+    refetchNftBalance,
+    refetchRemainingSupply,
+    refetchUsdtBalance,
+    syncPurchasedNftMutation,
+  ]);
+
+  useEffect(() => {
+    if (!referralMintReceipt.isSuccess) {
+      return;
+    }
+
+    void Promise.all([
+      referralMintHash
+        ? syncReferralNftMutation.mutateAsync({ txHash: referralMintHash })
+        : Promise.resolve(),
+      refetchNftBalance(),
+      refetchRemainingSupply(),
+    ]);
+  }, [
+    referralMintHash,
+    referralMintReceipt.isSuccess,
+    refetchNftBalance,
+    refetchRemainingSupply,
+    syncReferralNftMutation,
+  ]);
 
   const handleApprove = async () => {
-    if (!purchasePrice) return;
+    if (!purchasePrice || !paymentTokenAddress || !nftSaleAddress) return;
     const hash = await approveWrite.writeContractAsync({
-      address: promotionContracts.usdt,
+      address: paymentTokenAddress,
       abi: erc20Abi,
       functionName: "approve",
-      args: [promotionContracts.nftSale, purchasePrice],
+      args: [nftSaleAddress, purchasePrice],
     });
     setApproveHash(hash);
   };
 
   const handleBuy = async () => {
+    if (!nftSaleAddress) return;
     const hash = await buyWrite.writeContractAsync({
-      address: promotionContracts.nftSale,
+      address: nftSaleAddress,
       abi: nftSaleAbi,
-      functionName: "buyPurchasedNFT",
+      functionName: "buyNFT",
     });
     setBuyHash(hash);
   };
 
   const handleReferralMint = async () => {
-    if (!effectiveAddress) return;
+    if (!effectiveAddress || !nftSaleAddress) return;
     const result = await signatureMutation.mutateAsync({
       chainId: promotionChainId,
       recipient: effectiveAddress,
     });
 
     const hash = await referralMintWrite.writeContractAsync({
-      address: promotionContracts.nftSale,
+      address: nftSaleAddress,
       abi: nftSaleAbi,
-      functionName: "mintReferralNFT",
+      functionName: "mintNFTByReferral",
       args: [
-        result.recipient as `0x${string}`,
         BigInt(result.nonce),
         BigInt(result.expiry),
         result.signature as `0x${string}`,
@@ -157,16 +233,34 @@ export function NftPage() {
           <div className="grid grid-cols-2 gap-3">
             <StatCard
               label="Purchased Minted"
-              value={contractState.purchasedMinted?.toString() || "0"}
+              value={purchasedMinted.toString()}
               unit="/ 30"
               icon={<ShoppingBag className="w-5 h-5" />}
             />
             <StatCard
               label="Referral Minted"
-              value={contractState.referralMinted?.toString() || "0"}
+              value={referralMinted.toString()}
               unit="/ 70"
               icon={<Gem className="w-5 h-5" />}
             />
+          </div>
+        </section>
+
+        {/* My NFTs Summary */}
+        <section className="animate-slide-up" style={{ animationDelay: "0.05s" }}>
+          <div className="grid grid-cols-2 gap-3">
+            <GlassCard className="p-3">
+              <p className="text-xs text-white/50 mb-1">Owned</p>
+              <p className="text-2xl font-bold text-white font-mono">
+                {nftBalance.toString()}
+              </p>
+            </GlassCard>
+            <GlassCard className="p-3">
+              <p className="text-xs text-white/50 mb-1">Claimable</p>
+              <p className="text-2xl font-bold text-aura-primary font-mono">
+                {canMintReferralNft ? "1" : "0"}
+              </p>
+            </GlassCard>
           </div>
         </section>
 
@@ -190,8 +284,12 @@ export function NftPage() {
           </h2>
           <GlassCard variant="elevated" className="overflow-hidden">
             <div className="aspect-square bg-gradient-to-br from-aura-primary/20 to-aura-primary-dark/20 flex items-center justify-center relative">
-              <div className="absolute top-4 right-4 px-2 py-1 rounded bg-yellow-500/20 text-yellow-400 text-[10px] font-bold flex items-center gap-1">
-                <Star className="w-3 h-3 fill-yellow-400" />
+              <div className="absolute top-4 left-4 flex gap-0.5">
+                {[1,2,3,4].map((i) => (
+                  <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <div className="absolute top-4 right-4 px-2 py-1 rounded bg-yellow-500/20 text-yellow-400 text-[10px] font-bold">
                 LEGENDARY
               </div>
               <Gem className="w-24 h-24 text-aura-primary opacity-50" />
@@ -255,7 +353,7 @@ export function NftPage() {
               </div>
               <div className={cn(
                 "px-2 py-1 rounded text-[10px] font-bold",
-                eligibility?.eligible ? "bg-aura-success/20 text-aura-success" : "bg-white/5 text-white/40"
+                canMintReferralNft ? "bg-aura-success/20 text-aura-success" : "bg-white/5 text-white/40"
               )}>
                 {eligibility?.status || "LOCKED"}
               </div>
@@ -292,7 +390,7 @@ export function NftPage() {
             <Button
               onClick={handleReferralMint}
               className="w-full h-11 bg-white/5 border border-white/10 text-white hover:bg-white/10 rounded-xl"
-              disabled={!eligibility?.eligible || referralMintWrite.isPending || !isCorrectWriteChain}
+              disabled={!canMintReferralNft || referralMintWrite.isPending || !isCorrectWriteChain}
             >
               {referralMintWrite.isPending ? "Minting..." : "Claim Milestone NFT"}
             </Button>

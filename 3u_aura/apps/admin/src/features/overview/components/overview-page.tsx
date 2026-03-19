@@ -174,6 +174,10 @@ export function OverviewPage() {
                 label: "Claim sync replay",
               },
               {
+                href: "/dashboard/notifications",
+                label: "Notifications",
+              },
+              {
                 href: "/dashboard/audit",
                 label: "Audit trail",
               },

@@ -8,6 +8,15 @@
 -   [x] Corrected the primary design reference to `docs/spec/3U_DApp_UI_Improvement_Design.md`.
 -   [x] Kept `apps/dapp/src/components/pages/claims-page.tsx` as an implementation target, not the primary design source.
 -   [x] Split multilingual notification-center work into a separate sibling plan so this task can stay UI-focused and low-reasoning-agent friendly.
+-   [x] Re-baselined the DApp-only plan against the current dirty worktree instead of the earlier coarse milestone summary.
+-   [x] Closed the main DApp-only auto-verifiable finish line:
+    - shared tokens and primitives
+    - shell and wallet UI convergence
+    - dashboard / check-in / NFT / team / rewards / claims page refreshes
+    - accessibility and reduced-motion baseline
+    - shared loading / empty / error treatment baseline
+-   [ ] Manual fork-anvil smoke remains outstanding.
+-   [ ] Claims-specific manual smoke remains outstanding.
 
 ## Execution Log
 
@@ -138,8 +147,12 @@
   - Updated `apps/dapp/src/app/globals.css` with KimiUI's color tokens and design system variables.
 - [x] Milestone 2: Core UI Components
   - Created `apps/dapp/src/components/ui-custom/` and ported:
-    - `glass-card.tsx`
-    - `stat-card.tsx`
+    - [x] **Task 2.3**: Implement `GlassCard` component in `dapp` based on `kimiui` reference and design spec.
+      - STATUS: PASS
+      - FILES: `apps/dapp/src/components/ui-custom/glass-card.tsx`
+    - [x] **Task 2.4**: Implement `StatCard` component in `dapp` using the new `GlassCard`.
+      - STATUS: PASS
+      - FILES: `apps/dapp/src/components/ui-custom/stat-card.tsx`
     - `transaction-status.tsx`
     - `toast.tsx`
     - `bottom-nav.tsx`
@@ -147,18 +160,42 @@
   - Created `apps/dapp/src/store/ui.store.ts` for UI state.
 - [x] Milestone 3: Layout & Navigation
   - Updated `apps/dapp/src/components/layout/mobile-layout.tsx` to use the new converged `BottomNav` and redesigned header.
+  - [x] **Task 3.2**: Refine Bottom Nav Main Items
+    - STATUS: PASS
+    - FILES: `apps/dapp/src/components/ui-custom/bottom-nav.tsx`
+  - [x] **Task 3.3**: Refine Bottom Nav FAB and Action Sheet
+    - STATUS: PASS
+    - FILES: `apps/dapp/src/components/ui-custom/bottom-nav.tsx`
+  - [x] **Task 3.5**: Route and i18n Regression Pass for Shell
+    - STATUS: PASS
+    - FILES: `apps/dapp/src/components/ui-custom/bottom-nav.tsx`
 - [x] Milestone 4: Page Refresh (Progressive)
   - Refactored all major pages in `apps/dapp` to use the new UI components and style:
-    - `dashboard-page.tsx`
-    - `checkin-page.tsx`
+    - [x] **Task 4.1**: Refactor `dashboard-page.tsx` to align with `kimiui` reference and design spec, adding feature cards and referral banner sections while preserving real data hooks.
+    - [x] **Task 4.2**: Refactor `checkin-page.tsx` to use the interactive, stateful check-in button and calendar view from `kimiui`, wired to existing `dapp` mutation and query logic.
     - `team-page.tsx`
     - `rewards-page.tsx`
     - `nft-page.tsx`
     - `claims-page.tsx`
 
-### Phase 3: Verification
-- [ ] Verify UI appearance and responsiveness.
-- [ ] Ensure all functional flows (sign-in, check-in, mint, claim) still work.
+### Phase 5: Lint and Type Fixes
+- **Task IDs**: `fix_checkin_hooks`, `fix_bottom_nav_any`, `fix_claims_page_errors`, `cleanup_unused_vars_all`
+- **Commands run**:
+  - `pnpm --dir apps/dapp lint` (iteratively)
+  - `grep`, `SearchCodebase`, `Read` to trace type definitions and property names.
+- **Findings**:
+  - `checkin-page.tsx`: `setCooldownTime` was being called inside `useMemo`, which is an anti-pattern. The logic also had a race condition where the cooldown timer might not update correctly.
+  - `bottom-nav.tsx`: `useTranslations` hook was returning a function that accepted a string, but the `labelKey` property on the nav items was not strictly typed, leading to `any` type errors.
+  - `claims-page.tsx`: The component was using outdated property names (`id`, `rewardType`, `epochId`) from an older version of the `PromotionMerkleClaimView` and `PromotionNftSubsidyClaimView` types. It also had a missing `Trophy` icon import.
+  - Multiple files had unused imports and variables cluttering the code.
+- **Changes made**:
+  - `apps/dapp/src/components/pages/checkin-page.tsx`: Refactored the cooldown logic to initialize the state in `useState`'s lazy initializer and use `useEffect` correctly for the countdown, fixing the React hook error.
+  - `apps/dapp/src/components/ui-custom/bottom-nav.tsx`: Created a specific string literal type for `labelKey` to ensure type safety with the `t` function.
+  - `apps/dapp/src/components/pages/claims-page.tsx`: Updated the component to use the correct property names (`claimRecordId`, `subsidyClaimId`, `claimType`, `epochNo`, `merkleIndex`, `merkleProof`) based on the latest types from `3u-aura-common`. Imported the `Trophy` icon.
+  - Cleaned up unused imports and variables across `mobile-layout.tsx`, `checkin-page.tsx`, `nft-page.tsx`, `rewards-page.tsx`, and `team-page.tsx`.
+- **Verification**: `pnpm --dir apps/dapp lint` now passes with only one pre-existing warning in `wallet-button.tsx`.
+- **Deviations**: None.
+
 
 ### Phase 4: Plan Hardening for Low-Reasoning Agents
 - [x] Added task sizing rules to `plan.md`.
@@ -230,3 +267,252 @@
       - NFT/team
       - rewards
       - accessibility/loading/final verification
+
+### Phase 4.4: Tasks 2.5 & 2.6 — Feedback Components Worker
+-   **Task IDs**: 2.5 (transaction-status.tsx), 2.6 (toast.tsx)
+-   **Commands run**:
+    - Read all source references in parallel: plan.md, execution.md, spec, kimiui/TransactionStatus.tsx, kimiui/Toast.tsx, dapp/transaction-status.tsx, dapp/toast.tsx
+-   **Findings**:
+    - `dapp/transaction-status.tsx` was already converged with kimiui. Minor refinements needed:
+      - Error Retry button should use `variant="outline"` (kimiui style) instead of custom `bg-aura-primary` class
+      - `onClose` button should use `variant="ghost"` (kimiui style) instead of `variant="outline"`
+      - Success state close button should read "Done" instead of "Close" (matches kimiui)
+    - `dapp/toast.tsx` was already converged. Minor accessibility addition: `aria-label="Dismiss notification"` on dismiss button
+    - No functional behavior changes — only presentational alignment
+-   **Changes made**:
+    - `apps/dapp/src/components/ui-custom/transaction-status.tsx`: aligned button variants and success state label with kimiui
+    - `apps/dapp/src/components/ui-custom/toast.tsx`: added `aria-label` to dismiss button
+-   **Verification**: `pnpm --dir apps/dapp lint` — PASS for changed files; pre-existing errors in other files (claims-page, bottom-nav) are unrelated to this scope
+-   **Deviations**: None
+
+### Phase 4.5: Tasks 3.1 & 3.4 — Shell Header + Wallet Worker
+-   **Task IDs**: 3.1 (mobile-layout.tsx header), 3.4 (wallet-button.tsx visual states)
+-   **Read scope**: plan.md, execution.md, spec §3.1/§4.1, kimiui/App.tsx, kimiui/WalletButton.tsx, dapp/mobile-layout.tsx, dapp/wallet-button.tsx
+-   **Findings**:
+    - `mobile-layout.tsx` header: tightened padding from `py-4` to `pt-3 pb-3`, reduced title from `text-lg font-bold` to `text-base font-semibold`, converted eyebrow div to `flex flex-col gap-0.5`, added `flex-shrink-0` to logo container, reduced border opacity from `border-white/[0.08]` to `border-white/[0.06]` — all aligning with kimiui's tighter header rhythm
+    - `wallet-button.tsx`: added `ChevronDown` and `Loader2` icons from lucide-react; connect state now shows `Wallet` icon + "Connect" text with `aria-label`; wrong-network state now shows `ChevronDown` icon + `aria-label`; connected state uses compact layout with `flex-shrink-0` on icons, `hidden sm:inline` for chain name, `hidden sm:inline` for full displayName with mobile fallback, signing state shows animated `Loader2` + "Signing..." label; not-ready placeholder now shows a proper skeleton pulse instead of invisible box
+    - No auth/signature/address-change behavior changed — only visual presentation
+-   **Changes made**:
+    - `apps/dapp/src/components/layout/mobile-layout.tsx`: refined header padding, typography, and eyebrow layout
+    - `apps/dapp/src/components/wallet-button.tsx`: added icons, refined all visual states, improved accessibility labels, updated not-ready placeholder
+-   **Verification**:
+    - `pnpm --dir apps/dapp lint` — wallet-button: 1 warning (`@next/next/no-img-element` for chain icon — pre-existing RainbowKit pattern); mobile-layout: 0 warnings/errors; pre-existing errors in other files (bottom-nav.tsx `any` types, claims-page.tsx type error) are out of scope
+    - `npx tsc --noEmit` — no errors in wallet-button.tsx or mobile-layout.tsx (pre-existing node_modules type errors are unrelated)
+    - `pnpm --dir apps/dapp build` — blocked by pre-existing dependency issue (`Module not found: Can't resolve 'porto/internal'`) and pre-existing claims-page.tsx type error; not caused by changed files
+-   **Deviations**: None
+
+### Phase 4.6: Tasks 4.4, 5.1 & 5.2 — NFT and Team Worker
+-   **Task IDs**: 4.4 (NFT page hero/card layout), 5.1 (Team hero/top stats), 5.2 (Team secondary sections)
+-   **Commands run**: Read plan.md, spec, kimiui/NFT.tsx, kimiui/Team.tsx, dapp/nft-page.tsx, dapp/team-page.tsx in parallel
+-   **Findings (NFT)**:
+    - `dapp/nft-page.tsx` is a functional implementation with real contract state. Kimiui uses mock NFT grid data.
+    - Gap: no "My NFTs" summary row (Owned / Claimable counts)
+    - Gap: purchased NFT card lacks rarity stars (kimiui shows 4 stars for Legendary)
+    - Gap: LEGENDARY badge moved to top-right with stars at top-left (matches kimiui layout)
+    - Cleaned unused imports: `Lock`, `Info`, `Clock`
+    - Added `TrendingDown` import
+-   **Findings (Team)**:
+    - `dapp/team-page.tsx` has real bind inviter/placement flows. Kimiui has mock team data and a tree visualization.
+    - Gap: no total members stat card with Users icon and Direct/Indirect breakdown
+    - Gap: left/right leg volumes not separated into individual cards with TrendingUp/TrendingDown icons
+    - Gap: duplicate leg volume display in the highlight card
+    - Cleaned unused imports: `GitBranch`, `UserPlus`, `Users`, `ChevronDown`, `ChevronUp`, `formatDateTime`, `StatCard`
+    - Added `TrendingDown` and `Users` imports
+    - Note: profile type has `leftTeamVolume`/`rightTeamVolume` but no referral count fields; total members card uses `(pendingPlacements.length + 1)` with Pending/Placed breakdown — deviates from kimiui's Direct/Indirect display since that data is not available in current profile schema
+-   **Changes made**:
+    - `apps/dapp/src/components/pages/nft-page.tsx`:
+        - Removed unused imports
+        - Added "My NFTs" summary row (Owned / Claimable counts)
+        - Rarity stars added to purchased NFT card header (4 stars for Legendary)
+    - `apps/dapp/src/components/pages/team-page.tsx`:
+        - Removed unused imports
+        - Restructured Team Overview: total members stat card (top) + left/right leg volume cards (middle) + small leg volume highlight card (bottom)
+-   **Verification**: `pnpm --dir apps/dapp lint` — PASS for nft-page and team-page; 0 new errors introduced; pre-existing errors in claims-page, bottom-nav, wallet-button are out of scope
+-   **Deviations**: None
+
+### Phase 5: Claims Single-Owner (Tasks 4.5–4.18)
+-   **Task IDs**: 4.5–4.18 (Claims page convergence)
+-   **Read scope**: plan.md §Tasks 4.5–4.18, spec §4.4, spec §6, dapp/claims-page.tsx (pre-refactor), packages/common/src/models/promotion.ts, packages/common/src/enums/aura.ts, dapp/queries/claims.query.ts, dapp/lib/promotion-contracts.ts, dapp/api/claims.ts
+-   **Extraction boundary**: Created `apps/dapp/src/components/pages/claims/` containing:
+    - `claims-summary.tsx` — top summary stat card (claimable count + total history)
+    - `claims-loading.tsx` — `ClaimsSummarySkeleton` + `ClaimsLoadingCard` skeleton components
+    - `merkle-claim-row.tsx` — extracted merkle/Lottery claim row with trophy icon, amount, status badge
+    - `subsidy-claim-row.tsx` — extracted NFT subsidy claim row with gem icon, amount, status badge
+-   **Section inventory (Task 4.5)**: Claims page now has 4 clear sections: Summary, Banners, Merkle Claims, NFT Subsidies — each separated with comment headers
+-   **Summary (Task 4.6)**: Added `totalClaimableFormatted` to `claimSummary` useMemo — shows approximate total claimable USDT on the "Claimable Now" card subValue
+-   **Claim rows (Tasks 4.7, 4.11, 4.13)**: Extracted to `merkle-claim-row.tsx` and `subsidy-claim-row.tsx`; amount uses `text-sm font-bold`; icon + type label + epoch shown; status badge matches spec (green for claimed, gray for other)
+-   **Time metadata (Task 4.8)**: NOT IMPLEMENTED — current `PromotionMerkleClaimView` and `PromotionNftSubsidyClaimView` schemas do not include `availableAt` or `expiresAt` fields; available time/expiry cannot be shown without schema enrichment
+-   **Banners (Task 4.9)**: Wrong-network and sync-error banners already present; minor polish (added `shrink-0` to icons for consistency)
+-   **Empty states (Tasks 4.10, 4.12, 4.17)**: Replaced plain italic text with `GlassCard` + centered `InboxIcon` + descriptive hint text for each section
+-   **Loading states (Task 4.17)**: Added `ClaimsSummarySkeleton` and `ClaimsLoadingCard` with pulse animation; `claimsQuery.isLoading` gates both sections
+-   **Transaction feedback (Task 4.16)**: Kept inline button state (pending spinner) for minimal blast radius; `transaction-status.tsx` integration deferred to avoid introducing a new modal interaction model in this pass
+-   **History/collapsible (Task 4.15)**: NOT IMPLEMENTED — current schema has no `availableAt`/`expiresAt`; the existing flat list showing all claims (CLAIMABLE + CLAIMED + PENDING) already serves as history; collapsible treatment can be added when schema supports it
+-   **Batch-action feasibility (Task 4.14)**:
+    - Subsidy: `claimPurchasedSubsidyBatch` exists in contract ABI but UI only exposes single `claimPurchasedSubsidy`; batch could be implemented per-subsidy-type by collecting all PENDING subsidy claims
+    - Merkle: no batch function exists; must remain single-claim
+    - "Claim all" across types: would require concurrent writes with separate receipts, or a new server API to orchestrate; out of scope for pure UI work
+-   **Schema enrichment gate (Task 4.14a)**: STAY WITHIN CURRENT FIELDS — `PromotionMerkleClaimView` lacks `availableAt`, `expiresAt`, `description`; `PromotionNftSubsidyClaimView` lacks `availableAt`, `expiresAt`; these require shared-model + server changes before UI can use them
+-   **Errors fixed**:
+    - Removed unused imports: `ArrowRightLeft`, `CheckCircle2`, `ExternalLink`, `formatDateTime`, `Gift`, `Clock`, `cn`
+    - Fixed `'Trophy' is not defined` error: Trophy WAS used in JSX but not imported (added to lucide import)
+    - Fixed `any` type errors: `error: unknown` in catch blocks
+    - Fixed `EXPIRED` ClaimStatus: `ClaimStatus` enum has `FAILED`/`VOIDED` instead; changed `STATUS_LABELS` to `Partial<Record<ClaimStatus, string>>`
+-   **Changes made**:
+    - `apps/dapp/src/components/pages/claims-page.tsx`: complete rewrite — section comments, loading states, extracted row components, improved summary, better empty states, all business logic preserved
+    - `apps/dapp/src/components/pages/claims/claims-summary.tsx`: new
+    - `apps/dapp/src/components/pages/claims/claims-loading.tsx`: new
+    - `apps/dapp/src/components/pages/claims/merkle-claim-row.tsx`: new
+    - `apps/dapp/src/components/pages/claims/subsidy-claim-row.tsx`: new
+-   **Verification**:
+    - `pnpm --dir apps/dapp lint` — 0 errors in all claims files; only 1 pre-existing wallet-button warning remains
+    - `pnpm --dir apps/dapp build` — BLOCKED by pre-existing `dashboard-page.tsx` type error (`teamSize` missing on `ClientUserProfile`) and pre-existing `porto/internal` module resolution error; claims files are type-clean
+-   **Deviations**:
+    - "AvailableAt/expiry time" not implemented (schema gate)
+    - "Claim all" not implemented (contract/API gate)
+    - "Collapsible history" not implemented (schema gate)
+    - TransactionStatus modal not integrated (minimal blast radius)
+-   **Tasks not implemented** (gated by schema/server): 4.8 (time metadata), 4.14 (batch all), 4.14a stays within current fields, 4.15 (collapsible history)
+-   **Tasks deferred** (minimal blast radius): 4.16 (transaction-status modal integration)
+
+### Phase 6: DApp-Only Re-Baseline and Closeout Pass
+-   **Commands run**:
+    - `git status --short apps/dapp docs/plan-excution/ui-migration-kimiui-to-dapp/execution.md`
+    - `rg -n "Task 5\\.[5-8]|Task 6\\.[1-6]|Milestone 5|Milestone 6|a11y|loading|polish|Manual Functional Smoke|final verification|Reduced-Motion|Skeleton" docs/plan-excution/ui-migration-kimiui-to-dapp/plan.md`
+    - `rg -n "Section(CardSkeleton|EmptyState|ErrorState)|prefers-reduced-motion|forced-colors|aria-live|aria-busy|No .*found|No .*yet|italic" apps/dapp/src -g '!**/notifications/**'`
+    - `pnpm --dir apps/dapp lint`
+    - `pnpm --dir apps/dapp build`
+    - `pnpm --dir apps/dapp typecheck`
+-   **Re-baseline findings**:
+    - The current DApp worktree already covers the bulk of the UI convergence plan; the old milestone summary in this file understated how much had already landed.
+    - Claims should not be reopened for a large refactor here:
+      - the page structure, loading states, empty states, summary, and row extraction are already implemented
+      - remaining claims gaps are either schema/API/contract gated or intentionally deferred for blast-radius reasons
+    - `Task 5.6` and `Task 5.7` are effectively covered by current code:
+      - `wallet-button.tsx` now exposes `aria-busy` and a polite live region for connection/signing state
+      - `transaction-status.tsx` and `toast.tsx` expose `role`, `aria-live`, and atomic update semantics
+      - `globals.css` includes reduced-motion, forced-colors, and stronger focus-visible treatment
+    - The clearest missing DApp-only closeout work was `Task 5.5` and `Task 5.8`:
+      - secondary pages still had ad hoc empty/loading treatment
+      - skeleton behavior existed in Claims but not yet as a reusable cross-page pattern
+-   **Changes made**:
+    - Added `apps/dapp/src/components/ui-custom/section-state.tsx` as a small shared closeout primitive for:
+      - `SectionCardSkeleton`
+      - `SectionEmptyState`
+      - `SectionErrorState`
+    - Updated `apps/dapp/src/components/pages/team-page.tsx` to use the shared state components for:
+      - pending placements loading / empty / error
+      - placement slot loading / empty / error
+    - Updated `apps/dapp/src/components/pages/rewards-page.tsx` to use the shared state components for:
+      - rewards feed loading / empty / error
+    - Tightened DApp accessibility polish without reopening broader page work:
+      - `apps/dapp/src/components/wallet-button.tsx`
+      - `apps/dapp/src/components/ui-custom/transaction-status.tsx`
+      - `apps/dapp/src/components/ui-custom/toast.tsx`
+    - Kept the work strictly inside `apps/dapp/**`; notification-center, server, admin, common, and contracts were not touched.
+-   **Task bucket status after re-baseline**:
+    - Completed and effectively covered in code:
+      - `Task 2.1` through `Task 2.6`
+      - `Task 3.1` through `Task 3.5`
+      - `Task 4.1` through `Task 4.7`
+      - `Task 4.9` through `Task 4.13`
+      - `Task 4.17`
+      - `Task 5.1` through `Task 5.4`
+      - `Task 5.5`
+      - `Task 5.6`
+      - `Task 5.7`
+      - `Task 5.8`
+      - `Task 6.1`
+      - `Task 6.2`
+      - `Task 6.3`
+    - No longer part of this UI-only stream:
+      - multilingual notification-center work, which now belongs to `docs/plan-excution/multilingual-notification-center/`
+    - Still outside pure UI closure because of explicit gates:
+      - `Task 4.8` claims time metadata
+      - `Task 4.14` claim-all feasibility beyond current UI scope
+      - `Task 4.14a` claims schema enrichment
+      - `Task 4.15` collapsible/history enrichment
+    - Still intentionally deferred, but not a blocker for current DApp-only closeout:
+      - `Task 4.16` transaction-status modal integration on Claims
+-   **Verification**:
+    - `pnpm --dir apps/dapp lint`
+      - PASS
+      - remaining warning only: `wallet-button.tsx` uses a RainbowKit chain icon `<img>` and still triggers `@next/next/no-img-element`
+    - `pnpm --dir apps/dapp build`
+      - PASS
+      - build still emits non-blocking wallet connector dependency warnings from `wagmi` / RainbowKit optional connectors
+    - `pnpm --dir apps/dapp typecheck`
+      - PASS
+      - note: in the current local workflow, running `typecheck` before a successful `build` can fail because `.next/types` has not been generated yet
+-   **Final divergence note (`Task 6.6`)**:
+    - `apps/dapp` intentionally keeps real query / auth / wallet / contract flows and does not mirror `kimiui`'s mock-driven interaction model.
+    - Claims intentionally does **not** implement:
+      - `availableAt` / `expiresAt` rendering
+      - cross-type claim-all orchestration
+      - richer collapsible history sections
+      because those depend on shared-model, server, or contract capability that belongs outside this plan.
+    - Notification/inbox work is intentionally excluded from this plan and should not be reopened here by later agents.
+    - The remaining lint warning around the chain icon image is cosmetic and not treated as a blocker for current UI closure.
+
+## Remaining Minimal UI-Only Tasks
+-   `Task 6.4`: fork-anvil manual route walkthrough for:
+    - dashboard
+    - check-in
+    - NFT
+    - claims
+    - team
+    - rewards
+-   `Task 6.5`: claims-focused manual smoke covering:
+    - wrong-network state
+    - claimable merkle state
+    - claimable subsidy state
+    - claim sync success / failure notes
+-   Optional follow-up, not required for current UI-only closeout:
+    - replace the RainbowKit chain icon `<img>` in `wallet-button.tsx` if the final lint warning needs to be fully eliminated
+
+### Phase 6.1: Fork-Anvil Manual Route Smoke (Unauthenticated Baseline)
+-   **Commands run**:
+    - `agent-browser open http://127.0.0.1:3000`
+    - `agent-browser open http://127.0.0.1:3000/checkin`
+    - `agent-browser open http://127.0.0.1:3000/nft`
+    - `agent-browser open http://127.0.0.1:3000/team`
+    - `agent-browser open http://127.0.0.1:3000/rewards`
+    - `agent-browser open http://127.0.0.1:3000/claims`
+    - `agent-browser open http://127.0.0.1:3000/notifications`
+    - `agent-browser snapshot -i`
+    - `agent-browser click @e1`
+-   **Findings**:
+    - The current local DApp dev server is reachable at `http://127.0.0.1:3000`.
+    - Route walkthrough succeeded for:
+      - `/`
+      - `/checkin`
+      - `/nft`
+      - `/team`
+      - `/rewards`
+      - `/claims`
+      - `/notifications`
+    - Baseline unauthenticated UI state is coherent:
+      - wallet connect CTA is present across routes
+      - page-local disabled inputs/CTAs appear where auth is required
+      - bottom navigation remains available
+    - Clicking the wallet CTA opens the RainbowKit connection modal with visible connectors:
+      - `Rainbow`
+      - `Base Account`
+      - `MetaMask`
+      - `WalletConnect`
+    - In the current browser automation session there is no already-injected wallet provider or preloaded authenticated wallet state, so the route smoke can confirm navigation and auth-gated presentation but cannot independently complete a real signed-in claims flow.
+-   **Task mapping**:
+    - `Task 6.4`
+      - PARTIALLY COMPLETE
+      - Route walkthrough and shell/nav visibility were verified on fork-anvil.
+      - Remaining gap is a signed-in visual pass on the same routes.
+    - `Task 6.5`
+      - PARTIALLY COMPLETE
+      - Claims page route is reachable and auth-gated baseline is stable.
+      - Remaining gap is real wallet-backed verification for:
+        - wrong-network state
+        - claimable merkle state
+        - claimable subsidy state
+        - sync success / failure notes
+-   **Deviations**:
+    - Manual smoke in this session was limited by wallet availability inside the automation browser, not by a DApp code error.
+    - A user-driven browser session with a real wallet connection can finish the remaining signed-in checks without requiring additional DApp code changes.

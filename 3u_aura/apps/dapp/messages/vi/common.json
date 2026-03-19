@@ -6,5 +6,34 @@
     "rewards": "Phần thưởng",
     "nft": "NFT",
     "claims": "Nhận thưởng"
+  },
+  "notifications": {
+    "entryAria": "Mở trung tâm thông báo",
+    "eyebrow": "Hộp thư / Cập nhật",
+    "title": "Thông báo",
+    "description": "Thông báo dự án, cập nhật đội nhóm và tin ra mắt sắp tới sẽ xuất hiện tại đây.",
+    "markRead": "Đánh dấu đã đọc",
+    "markingRead": "Đang lưu...",
+    "markAllVisible": "Đánh dấu tất cả là đã đọc",
+    "read": "Đã đọc",
+    "unread": "Chưa đọc",
+    "publishedAt": "Đã phát hành",
+    "readAt": "Đã đọc lúc",
+    "loading": "Đang tải thông báo...",
+    "loadingMore": "Đang tải thêm...",
+    "loadMore": "Tải thêm",
+    "emptyTitle": "Chưa có thông báo",
+    "emptyBody": "Các thông báo đã phát hành từ đội ngũ quản trị sẽ xuất hiện tại đây.",
+    "loadErrorTitle": "Không thể tải thông báo",
+    "loadErrorBody": "Vui lòng thử lại sau.",
+    "authRequiredTitle": "Cần đăng nhập ví",
+    "authRequiredBody": "Vui lòng đăng nhập để xem hộp thư thông báo cá nhân.",
+    "missingContentTitle": "Chưa có nội dung cho ngôn ngữ này",
+    "missingContentBody": "Thông báo này chưa có nội dung cho ngôn ngữ đã chọn.",
+    "categories": {
+      "PROJECT_ACTIVITY": "Hoạt động dự án",
+      "TEAM_ACTIVITY": "Hoạt động đội nhóm",
+      "UPCOMING_LAUNCH": "Ra mắt sắp tới"
+    }
   }
 }

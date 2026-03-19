@@ -3,6 +3,10 @@ import type {
   PromotionClaimsView,
   PromotionClaimSyncRequest,
   PromotionClaimSyncResult,
+  PromotionPurchasedNftSyncRequest,
+  PromotionPurchasedNftSyncResult,
+  PromotionReferralNftSyncRequest,
+  PromotionReferralNftSyncResult,
 } from "3u-aura-common";
 
 export async function apiGetMyClaims() {
@@ -14,4 +18,28 @@ export async function apiSyncMyClaim(input: PromotionClaimSyncRequest) {
     body: input,
     method: "POST",
   });
+}
+
+export async function apiSyncMyPurchasedNft(
+  input: PromotionPurchasedNftSyncRequest,
+) {
+  return fetchClient<PromotionPurchasedNftSyncResult>(
+    "/api/v1/claims/purchased-nft/sync",
+    {
+      body: input,
+      method: "POST",
+    },
+  );
+}
+
+export async function apiSyncMyReferralNft(
+  input: PromotionReferralNftSyncRequest,
+) {
+  return fetchClient<PromotionReferralNftSyncResult>(
+    "/api/v1/claims/referral-nft/sync",
+    {
+      body: input,
+      method: "POST",
+    },
+  );
 }

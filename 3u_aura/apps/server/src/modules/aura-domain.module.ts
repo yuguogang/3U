@@ -8,6 +8,7 @@ import { LedgerModule } from './ledger';
 import { LotteryModule } from './lottery';
 import { MerkleModule } from './merkle';
 import { NftEligibilityModule } from './nft-eligibility';
+import { NotificationModule } from './notification';
 import { PaymentModule } from './payment';
 import { RankingModule } from './ranking';
 import { ReferralModule } from './referral';
@@ -36,6 +37,7 @@ import { VolumeModule } from './volume';
     RankingModule,
     MerkleModule,
     NftEligibilityModule,
+    NotificationModule,
     SigningModule,
     AuditModule,
   ],

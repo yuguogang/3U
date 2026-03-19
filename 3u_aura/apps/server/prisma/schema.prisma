@@ -154,6 +154,25 @@ enum NftEligibilityStatus {
   REVOKED
 }
 
+/// 站内通知分类：项目活动、团队活动、预备上线等
+enum NotificationCategory {
+  PROJECT_ACTIVITY
+  TEAM_ACTIVITY
+  UPCOMING_LAUNCH
+}
+
+/// 站内通知发布状态：草稿、已发布、已归档
+enum NotificationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// 首版仅支持全体用户可见
+enum NotificationAudienceScope {
+  ALL_USERS
+}
+
 /// 用户主表
 /// 作用：保存钱包地址、邀请关系、二叉树父子关系、推荐 nonce 等核心身份信息
 model User {
@@ -202,6 +221,7 @@ model User {
   nftSubsidyClaims   NftSubsidyClaim[]
   tokenGenesisLeaves TokenGenesisLeaf[]
   refreshTokens      RefreshToken[]
+  notificationReads  NotificationRead[]
 
   @@index([inviterId])
   @@index([parentId])
@@ -779,6 +799,52 @@ model SystemConfig {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+/// 站内通知表
+/// 作用：保存管理员编写的多语言公告、发布状态与审计字段
+model Notification {
+  id String @id @default(cuid())
+
+  category      NotificationCategory
+  status        NotificationStatus        @default(DRAFT)
+  audienceScope NotificationAudienceScope @default(ALL_USERS)
+  defaultLocale String                    @db.VarChar(16)
+  localeContent Json
+
+  createdByWallet  String? @db.VarChar(64)
+  updatedByWallet  String? @db.VarChar(64)
+  publishedAt      DateTime?
+  publishedByWallet String? @db.VarChar(64)
+  archivedAt       DateTime?
+  archivedByWallet String? @db.VarChar(64)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reads NotificationRead[]
+
+  @@index([status, category])
+  @@index([createdAt])
+  @@index([publishedAt])
+}
+
+/// 通知已读表
+/// 作用：按用户记录已读时间，支撑未读数与站内信列表幂等更新
+model NotificationRead {
+  id String @id @default(cuid())
+
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  readAt DateTime @default(now())
+
+  @@unique([notificationId, userId])
+  @@index([userId, readAt])
+  @@index([notificationId])
 }
 
 /// 管理后台审计表

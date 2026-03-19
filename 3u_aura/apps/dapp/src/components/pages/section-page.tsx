@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { GlassCard, GradientButton, MobileLayout } from "@/components/layout/mobile-layout";
+import { MobileLayout } from "@/components/layout/mobile-layout";
+import { Button } from "@/components/ui/button";
+import { GlassCard } from "@/components/ui-custom/glass-card";
 
 type SectionPageProps = {
   eyebrow: string;
@@ -30,13 +32,16 @@ export function SectionPage({
       description={description}
       actions={
         <>
-          <GradientButton asChild>
+          <Button
+            asChild
+            className="bg-gradient-to-r from-aura-primary to-aura-primary-dark text-white shadow-glow-sm hover:opacity-90"
+          >
             <Link href={primaryHref}>{primaryLabel}</Link>
-          </GradientButton>
+          </Button>
           {secondaryHref && secondaryLabel ? (
-            <GradientButton asChild className="bg-white/10 shadow-none">
+            <Button asChild className="bg-white/10 text-white shadow-none hover:bg-white/15">
               <Link href={secondaryHref}>{secondaryLabel}</Link>
-            </GradientButton>
+            </Button>
           ) : null}
         </>
       }

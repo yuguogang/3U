@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { createHash, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { spawn, spawnSync } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -739,45 +740,128 @@ function extractEnumDefaultLabel(columnDefault) {
   return match[1].replaceAll("''", "'");
 }
 
-function runPrismaCommand({
-  envName,
-  prismaArgs,
-}) {
-  const result = spawnSync(
-    process.execPath,
-    [
-      path.join(REPO_ROOT, 'scripts', 'promotion-env', 'run-with-env.mjs'),
-      '--target',
+function listServerMigrationDirs() {
+  return fs
+    .readdirSync(path.join(REPO_ROOT, 'apps', 'server', 'prisma', 'migrations'), {
+      withFileTypes: true,
+    })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort((left, right) => left.localeCompare(right));
+}
+
+function readMigrationSql(migrationName) {
+  return fs.readFileSync(
+    path.join(
+      REPO_ROOT,
+      'apps',
       'server',
-      '--env',
-      envName,
-      '--',
-      'pnpm',
-      '--dir',
-      'apps/server',
-      'exec',
       'prisma',
-      ...prismaArgs,
-    ],
-    {
-      cwd: REPO_ROOT,
-      encoding: 'utf8',
-    },
+      'migrations',
+      migrationName,
+      'migration.sql',
+    ),
+    'utf8',
+  );
+}
+
+function checksumMigrationSql(sql) {
+  return createHash('sha256').update(sql).digest('hex');
+}
+
+async function schemaHasPrismaMigrationsTable(client, schema) {
+  const result = await client.query(
+    `
+      SELECT EXISTS (
+        SELECT 1
+        FROM pg_tables
+        WHERE schemaname = $1
+          AND tablename = '_prisma_migrations'
+      ) AS present
+    `,
+    [schema],
   );
 
-  if (result.status !== 0) {
-    const output = [result.stdout, result.stderr].filter(Boolean).join('\n').trim();
-    throw new Error(
-      `Prisma ${prismaArgs.join(' ')} failed for ${envName}${
-        output ? `:\n${output}` : ''
-      }`,
-    );
-  }
+  return result.rows[0]?.present === true;
+}
 
-  return {
-    stderr: result.stderr.trim(),
-    stdout: result.stdout.trim(),
-  };
+async function readAppliedMigrationNames(client, schema) {
+  const result = await client.query(
+    `SELECT migration_name
+       FROM ${quoteIdentifier(schema)}."_prisma_migrations"
+      WHERE rolled_back_at IS NULL
+      ORDER BY migration_name ASC`,
+  );
+
+  return result.rows.map((row) => row.migration_name);
+}
+
+async function applyPendingServerMigrations(envName) {
+  const manifest = loadManifest(envName);
+  const schema = manifest.infra.database.schema;
+  const client = new Client(buildDatabaseConnectionConfig(manifest));
+
+  await client.connect();
+
+  try {
+    if (!(await schemaHasPrismaMigrationsTable(client, schema))) {
+      throw new Error(
+        `Schema ${schema} is missing _prisma_migrations; baseline clone is required before applying pending migrations`,
+      );
+    }
+
+    const applied = new Set(await readAppliedMigrationNames(client, schema));
+    const pending = listServerMigrationDirs().filter(
+      (migrationName) => !applied.has(migrationName),
+    );
+
+    for (const migrationName of pending) {
+      const sql = readMigrationSql(migrationName);
+      const timestamp = new Date();
+
+      try {
+        await client.query('BEGIN');
+        await client.query(
+          `SET LOCAL search_path TO ${quoteIdentifier(schema)}, public`,
+        );
+        await client.query(sql);
+        await client.query(
+          `INSERT INTO ${quoteIdentifier(schema)}."_prisma_migrations" (
+            id,
+            checksum,
+            finished_at,
+            migration_name,
+            logs,
+            rolled_back_at,
+            started_at,
+            applied_steps_count
+          ) VALUES ($1, $2, $3, $4, '', NULL, $3, 0)`,
+          [
+            randomUUID(),
+            checksumMigrationSql(sql),
+            timestamp,
+            migrationName,
+          ],
+        );
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw new Error(
+          `Failed to apply pending migration ${migrationName} to schema ${schema}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    }
+
+    return {
+      appliedMigrations: pending,
+      pendingCount: pending.length,
+      schema,
+    };
+  } finally {
+    await client.end();
+  }
 }
 
 export async function prepareWeeklyForkDatabase(options) {
@@ -786,31 +870,35 @@ export async function prepareWeeklyForkDatabase(options) {
     envName: options.envName,
     reset: false,
   });
-  let prismaDeploy = 'skipped: existing isolated schema baseline reused';
-  let status;
+  let baseline = 'reused existing isolated schema baseline';
+  let cloned = null;
+
+  const manifest = loadManifest(options.envName);
+  const client = new Client(buildDatabaseConnectionConfig(manifest));
+  await client.connect();
 
   try {
-    status = runPrismaCommand({
-      envName: options.envName,
-      prismaArgs: ['migrate', 'status'],
-    });
-  } catch {
-    const cloned = await cloneWeeklyForkSchemaBaseline({
-      envName: options.envName,
-      reset: true,
-    });
-    prismaDeploy = `skipped: cloned ${cloned.sourceSchema} schema baseline (${cloned.tableCount} tables)`;
-    status = runPrismaCommand({
-      envName: options.envName,
-      prismaArgs: ['migrate', 'status'],
-    });
+    if (!(await schemaHasPrismaMigrationsTable(client, manifest.infra.database.schema))) {
+      cloned = await cloneWeeklyForkSchemaBaseline({
+        envName: options.envName,
+        reset: true,
+      });
+      baseline = `cloned ${cloned.sourceSchema} schema baseline (${cloned.tableCount} tables)`;
+    }
+  } finally {
+    await client.end();
   }
+
+  const migrationApply = await applyPendingServerMigrations(options.envName);
 
   return {
     database,
     envName: options.envName,
-    prismaDeploy,
-    prismaStatus: status.stdout,
+    prismaDeploy: baseline,
+    prismaStatus:
+      migrationApply.pendingCount > 0
+        ? `applied pending migrations: ${migrationApply.appliedMigrations.join(', ')}`
+        : 'schema already matched repo migration set',
     reset: false,
   };
 }
@@ -827,18 +915,19 @@ export async function resetWeeklyForkDatabase(options) {
     port: loadManifest(options.envName).infra.database.port,
     schema: cloned.targetSchema,
   };
-  const status = runPrismaCommand({
-    envName: options.envName,
-    prismaArgs: ['migrate', 'status'],
-  });
+  const migrationApply = await applyPendingServerMigrations(options.envName);
 
   return {
     database,
     envName: options.envName,
-    prismaDeploy: `skipped: cloned ${cloned.sourceSchema} schema baseline (${cloned.tableCount} tables)`,
-    prismaStatus: status.stdout,
+    prismaDeploy: `cloned ${cloned.sourceSchema} schema baseline (${cloned.tableCount} tables)`,
+    prismaStatus:
+      migrationApply.pendingCount > 0
+        ? `applied pending migrations: ${migrationApply.appliedMigrations.join(', ')}`
+        : 'schema already matched repo migration set',
     reset: true,
     clonedTableCount: cloned.tableCount,
+    appliedMigrationCount: migrationApply.pendingCount,
   };
 }
 

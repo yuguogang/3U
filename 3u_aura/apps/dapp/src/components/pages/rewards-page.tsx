@@ -1,14 +1,19 @@
 "use client";
 
 import { useMemo } from "react";
-import { Coins, Ticket, Trophy, TrendingUp, Clock, Zap, Gift } from "lucide-react";
+import { Coins, Trophy, Clock, Zap, Gift } from "lucide-react";
+import { RewardType } from "3u-aura-common";
 import { MobileLayout } from "@/components/layout/mobile-layout";
 import { GlassCard } from "@/components/ui-custom/glass-card";
+import {
+  SectionCardSkeleton,
+  SectionEmptyState,
+  SectionErrorState,
+} from "@/components/ui-custom/section-state";
 import StatCard from "@/components/ui-custom/stat-card";
 import {
   formatAuraAtomic,
   formatDateTime,
-  formatUsdtAtomic,
 } from "@/lib/promotion-format";
 import { useMyClaimsQuery } from "@/queries/claims.query";
 import { useCurrentEpochQuery } from "@/queries/promotion.query";
@@ -25,7 +30,7 @@ export function RewardsPage() {
   const epochQuery = useCurrentEpochQuery();
   const profile = profileQuery.data?.profile;
 
-  const rewardTotals = useMemo(() => {
+  useMemo(() => {
     const rewards = rewardsQuery.data ?? [];
 
     return rewards.reduce(
@@ -143,22 +148,35 @@ export function RewardsPage() {
           </div>
           
           <div className="space-y-3">
-            {!rewardsQuery.data || rewardsQuery.data.length === 0 ? (
-              <div className="py-12 text-center">
-                <p className="text-xs text-white/30 italic">No rewards found yet.</p>
-              </div>
+            {rewardsQuery.isLoading ? (
+              <SectionCardSkeleton rows={3} />
+            ) : rewardsQuery.error instanceof Error ? (
+              <SectionErrorState
+                title="Unable to load rewards"
+                description={rewardsQuery.error.message}
+              />
+            ) : !rewardsQuery.data || rewardsQuery.data.length === 0 ? (
+              <SectionEmptyState
+                title="No rewards yet"
+                description="Your check-in, referral, and epoch rewards will show up here once they are recorded."
+              />
             ) : (
-              rewardsQuery.data.map((reward) => (
-                <GlassCard key={reward.id} className="p-4">
+              rewardsQuery.data.map((reward) => {
+                const isAuraReward =
+                  reward.rewardType === RewardType.CONSOLATION_AURA ||
+                  BigInt(reward.amountAura) > BigInt(0);
+
+                return (
+                <GlassCard key={reward.rewardId} className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         "w-10 h-10 rounded-xl flex items-center justify-center",
-                        reward.rewardType === "CHECKIN" ? "bg-aura-primary/10" : "bg-blue-500/10"
+                        isAuraReward ? "bg-aura-primary/10" : "bg-blue-500/10"
                       )}>
                         <Coins className={cn(
                           "w-5 h-5",
-                          reward.rewardType === "CHECKIN" ? "text-aura-primary" : "text-blue-400"
+                          isAuraReward ? "text-aura-primary" : "text-blue-400"
                         )} />
                       </div>
                       <div>
@@ -172,7 +190,8 @@ export function RewardsPage() {
                     </div>
                   </div>
                 </GlassCard>
-              ))
+                );
+              })
             )}
           </div>
         </section>

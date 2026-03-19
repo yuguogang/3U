@@ -1,11 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/store/ui.store";
+import { useAuthStore } from "@/store/auth.store";
+import { useMyClaimsQuery } from "@/queries/claims.query";
 import { 
   LayoutDashboard, 
   Users, 
@@ -20,7 +22,7 @@ export type NavPage = "/" | "/checkin" | "/team" | "/nft" | "/rewards" | "/claim
 
 interface NavItem {
   id: NavPage;
-  labelKey: string;
+  labelKey: "nav.dashboard" | "nav.checkin" | "nav.team" | "nav.rewards" | "nav.nft" | "nav.claims";
   icon: React.ElementType;
   badge?: number;
 }
@@ -32,11 +34,6 @@ const mainNavItems: NavItem[] = [
   { id: "/rewards", labelKey: "nav.rewards", icon: Trophy },
 ];
 
-const actionItems: NavItem[] = [
-  { id: "/checkin", labelKey: "nav.checkin", icon: CalendarCheck },
-  { id: "/claims", labelKey: "nav.claims", icon: Gift, badge: 0 },
-];
-
 export interface BottomNavProps {
   className?: string;
 }
@@ -45,9 +42,23 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
   const pathname = usePathname();
   const t = useTranslations("Common");
   const { showActionMenu, setShowActionMenu } = useUIStore();
+  const { hasHydrated, isAuthenticated } = useAuthStore();
+  const claimsQuery = useMyClaimsQuery(isAuthenticated && hasHydrated);
   
-  // TODO: Get pending claims count from rewards/claims store/query
-  const pendingClaims = 0;
+  const pendingClaims = useMemo(() => {
+    const merkleClaims = claimsQuery.data?.merkleClaims ?? [];
+    const nftSubsidyClaims = claimsQuery.data?.nftSubsidyClaims ?? [];
+    
+    const claimableMerkle = merkleClaims.filter((claim) => claim.status === "CLAIMABLE").length;
+    const claimableSubsidy = nftSubsidyClaims.filter((claim) => claim.status === "PENDING").length;
+    
+    return claimableMerkle + claimableSubsidy;
+  }, [claimsQuery.data]);
+
+  const actionItems: NavItem[] = [
+    { id: "/checkin", labelKey: "nav.checkin", icon: CalendarCheck },
+    { id: "/claims", labelKey: "nav.claims", icon: Gift, badge: pendingClaims },
+  ];
 
   const handleMainNavClick = () => {
     setShowActionMenu(false);
@@ -109,7 +120,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
                       "text-xs font-medium",
                       isActive ? "text-aura-primary" : "text-white/70"
                     )}>
-                      {t(item.labelKey as any)}
+                      {t(item.labelKey)}
                     </span>
                   </Link>
                 );
@@ -155,7 +166,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
                     "text-[10px] font-medium",
                     isActive && "text-aura-primary"
                   )}>
-                    {t(item.labelKey as any)}
+                    {t(item.labelKey)}
                   </span>
                   {isActive && (
                     <div className="absolute bottom-1 h-1 w-1 rounded-full bg-aura-primary" />

@@ -6,5 +6,34 @@
     "rewards": "獎勵",
     "nft": "NFT",
     "claims": "領取"
+  },
+  "notifications": {
+    "entryAria": "開啟通知中心",
+    "eyebrow": "站內信 / 動態",
+    "title": "通知中心",
+    "description": "專案活動、團隊動態與即將上線通知會顯示在這裡。",
+    "markRead": "標記為已讀",
+    "markingRead": "儲存中...",
+    "markAllVisible": "全部標記為已讀",
+    "read": "已讀",
+    "unread": "未讀",
+    "publishedAt": "發布時間",
+    "readAt": "閱讀時間",
+    "loading": "正在載入通知...",
+    "loadingMore": "正在載入更多...",
+    "loadMore": "載入更多",
+    "emptyTitle": "暫時沒有通知",
+    "emptyBody": "管理員發布的公告會在可見時顯示於此。",
+    "loadErrorTitle": "通知載入失敗",
+    "loadErrorBody": "請稍後再試。",
+    "authRequiredTitle": "需要錢包登入",
+    "authRequiredBody": "請先完成錢包登入，再查看你的通知中心。",
+    "missingContentTitle": "此語言內容暫不可用",
+    "missingContentBody": "目前通知尚未提供所選語言內容。",
+    "categories": {
+      "PROJECT_ACTIVITY": "專案活動",
+      "TEAM_ACTIVITY": "團隊動態",
+      "UPCOMING_LAUNCH": "即將上線"
+    }
   }
 }

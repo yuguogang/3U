@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { GitBranch, Link2, Network, UserPlus, Users, Share2, Copy, Check, ChevronDown, ChevronUp, Wallet, TrendingUp } from "lucide-react";
+import { Link2, Network, Share2, Copy, Check, Wallet, TrendingUp, TrendingDown, Users } from "lucide-react";
 import type {
   ReferralPendingPlacementView,
   ReferralPlacementSlotView,
@@ -10,9 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MobileLayout } from "@/components/layout/mobile-layout";
 import { GlassCard } from "@/components/ui-custom/glass-card";
-import StatCard from "@/components/ui-custom/stat-card";
 import {
-  formatDateTime,
+  SectionCardSkeleton,
+  SectionEmptyState,
+  SectionErrorState,
+} from "@/components/ui-custom/section-state";
+import {
   formatUsdtAtomic,
   formatWalletAddress,
 } from "@/lib/promotion-format";
@@ -24,7 +27,6 @@ import {
 } from "@/queries/promotion.query";
 import { useUserProfileQuery } from "@/queries/user.query";
 import { useAuthStore } from "@/store/auth.store";
-import { cn } from "@/lib/utils";
 
 const EMPTY_PENDING_PLACEMENTS: ReferralPendingPlacementView[] = [];
 const EMPTY_SELECTABLE_SLOTS: ReferralPlacementSlotView[] = [];
@@ -98,29 +100,78 @@ export function TeamPage() {
       <div className="space-y-6">
         {/* Team Overview */}
         <section className="animate-fade-in">
-          <GlassCard variant="highlight" className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-white/50">Small Leg Volume</p>
-                <p className="text-2xl font-bold text-white font-mono">
-                  {profile ? formatUsdtAtomic(profile.smallLegVolume) : "0"} <span className="text-xs text-white/50 font-sans">USDT</span>
+          <div className="space-y-3">
+            <GlassCard variant="highlight" className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm text-white/50">Total Members</p>
+                  <p className="text-2xl font-bold text-white font-mono">
+                    {(pendingPlacements.length + 1).toString()}
+                  </p>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-aura-primary/10 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-aura-primary" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/[0.08]">
+                <div>
+                  <p className="text-xs text-white/50">Pending</p>
+                  <p className="text-lg font-semibold text-white">{pendingPlacements.length}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/50">Placed</p>
+                  <p className="text-lg font-semibold text-white">0</p>
+                </div>
+              </div>
+            </GlassCard>
+
+            <div className="grid grid-cols-2 gap-3">
+              <GlassCard className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-green-400" />
+                  <span className="text-xs text-white/50">Left Leg</span>
+                </div>
+                <p className="text-lg font-semibold text-white font-mono">
+                  {profile ? formatUsdtAtomic(profile.leftTeamVolume) : "0"}
                 </p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-aura-primary/10 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-aura-primary" />
-              </div>
+                <p className="text-xs text-white/40">USDT Volume</p>
+              </GlassCard>
+              <GlassCard className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingDown className="w-4 h-4 text-blue-400" />
+                  <span className="text-xs text-white/50">Right Leg</span>
+                </div>
+                <p className="text-lg font-semibold text-white font-mono">
+                  {profile ? formatUsdtAtomic(profile.rightTeamVolume) : "0"}
+                </p>
+                <p className="text-xs text-white/40">USDT Volume</p>
+              </GlassCard>
             </div>
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/[0.08]">
-              <div>
-                <p className="text-xs text-white/50">Left Leg</p>
-                <p className="text-lg font-semibold text-white">{profile ? formatUsdtAtomic(profile.leftTeamVolume) : "0"}</p>
+
+            <GlassCard variant="highlight" className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm text-white/50">Small Leg Volume</p>
+                  <p className="text-2xl font-bold text-white font-mono">
+                    {profile ? formatUsdtAtomic(profile.smallLegVolume) : "0"} <span className="text-xs text-white/50 font-sans">USDT</span>
+                  </p>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-aura-primary/10 flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-aura-primary" />
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-white/50">Right Leg</p>
-                <p className="text-lg font-semibold text-white">{profile ? formatUsdtAtomic(profile.rightTeamVolume) : "0"}</p>
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/[0.08]">
+                <div>
+                  <p className="text-xs text-white/50">Left Leg</p>
+                  <p className="text-lg font-semibold text-white">{profile ? formatUsdtAtomic(profile.leftTeamVolume) : "0"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/50">Right Leg</p>
+                  <p className="text-lg font-semibold text-white">{profile ? formatUsdtAtomic(profile.rightTeamVolume) : "0"}</p>
+                </div>
               </div>
-            </div>
-          </GlassCard>
+            </GlassCard>
+          </div>
         </section>
 
         {/* Invite Code */}
@@ -150,7 +201,7 @@ export function TeamPage() {
         </section>
 
         {/* Bind Inviter */}
-        {!profile?.inviterId && (
+        {!user?.inviterId && (
           <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
             <h2 className="text-sm font-medium text-white/70 mb-3">Bind Inviter</h2>
             <GlassCard className="p-4">
@@ -186,17 +237,25 @@ export function TeamPage() {
           </div>
           
           <div className="space-y-3">
-            {pendingPlacements.length === 0 ? (
-              <div className="py-8 text-center">
-                <p className="text-xs text-white/30 italic">No pending placements found.</p>
-              </div>
+            {pendingPlacementQuery.isLoading ? (
+              <SectionCardSkeleton rows={2} />
+            ) : pendingPlacementQuery.error instanceof Error ? (
+              <SectionErrorState
+                title="Unable to load pending placements"
+                description={pendingPlacementQuery.error.message}
+              />
+            ) : pendingPlacements.length === 0 ? (
+              <SectionEmptyState
+                title="No pending placements"
+                description="Newly joined referrals waiting for placement will appear here."
+              />
             ) : (
               pendingPlacements.map((p) => (
                 <GlassCard
-                  key={p.id}
-                  variant={selectedPlacementUserId === p.id ? "highlight" : "default"}
+                  key={p.userId}
+                  variant={selectedPlacementUserId === p.userId ? "highlight" : "default"}
                   className="p-3"
-                  onClick={() => setSelectedPlacementUserId(p.id)}
+                  onClick={() => setSelectedPlacementUserId(p.userId)}
                   hoverEffect
                 >
                   <div className="flex items-center justify-between">
@@ -206,14 +265,14 @@ export function TeamPage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-white">
-                          {formatWalletAddress(p.address)}
+                          {formatWalletAddress(p.walletAddress)}
                         </p>
                         <p className="text-[10px] text-white/40">
-                          Joined {new Date(p.createdAt).toLocaleDateString()}
+                          Joined {new Date(p.registeredAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
-                    {selectedPlacementUserId === p.id && (
+                    {selectedPlacementUserId === p.userId && (
                       <Check className="w-4 h-4 text-aura-primary" />
                     )}
                   </div>
@@ -228,8 +287,18 @@ export function TeamPage() {
           <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
             <h2 className="text-sm font-medium text-white/70 mb-3">Select Placement Slot</h2>
             <div className="grid grid-cols-1 gap-2">
-              {selectableSlots.length === 0 ? (
-                <p className="text-xs text-white/30 italic py-4">No available slots found.</p>
+              {selectableSlotsQuery.isLoading ? (
+                <SectionCardSkeleton rows={2} />
+              ) : selectableSlotsQuery.error instanceof Error ? (
+                <SectionErrorState
+                  title="Unable to load placement slots"
+                  description={selectableSlotsQuery.error.message}
+                />
+              ) : selectableSlots.length === 0 ? (
+                <SectionEmptyState
+                  title="No placement slots available"
+                  description="Try again after the latest topology updates have been processed."
+                />
               ) : (
                 selectableSlots.map((slot) => (
                   <GlassCard
@@ -246,10 +315,10 @@ export function TeamPage() {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white">
-                            Parent: {formatWalletAddress(slot.parentAddress)}
+                            Parent: {formatWalletAddress(slot.parentWalletAddress)}
                           </p>
                           <p className="text-[10px] text-white/40">
-                            Position: {slot.teamPosition === 1 ? "Left" : "Right"}
+                            Position: {slot.teamPosition === "LEFT" ? "Left" : "Right"}
                           </p>
                         </div>
                       </div>

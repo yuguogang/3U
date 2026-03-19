@@ -1,5 +1,12 @@
 import type {
   AdminApproveReferralNftRequest,
+  AdminNotificationArchiveRequest,
+  AdminNotificationCreateRequest,
+  AdminNotificationItemView,
+  AdminNotificationListQuery,
+  AdminNotificationPublishRequest,
+  AdminNotificationUnpublishRequest,
+  AdminNotificationUpdateRequest,
   AdminAuditLogListQuery,
   AdminAuditLogView,
   AdminCheckinIssueListQuery,
@@ -79,6 +86,72 @@ export async function apiGetAuditLogs(query: AdminAuditLogListQuery) {
     method: "GET",
     query,
   });
+}
+
+export async function apiGetAdminNotifications(
+  query: AdminNotificationListQuery,
+) {
+  return fetchClient<PaginateData<AdminNotificationItemView>>(
+    "/api/v1/admin/notifications",
+    {
+      method: "GET",
+      query,
+    },
+  );
+}
+
+export async function apiCreateAdminNotification(
+  body: AdminNotificationCreateRequest,
+) {
+  return fetchClient<AdminNotificationItemView>("/api/v1/admin/notifications/create", {
+    body,
+    method: "POST",
+  });
+}
+
+export async function apiUpdateAdminNotification(
+  body: AdminNotificationUpdateRequest,
+) {
+  return fetchClient<AdminNotificationItemView>("/api/v1/admin/notifications/update", {
+    body,
+    method: "POST",
+  });
+}
+
+export async function apiPublishAdminNotification(
+  body: AdminNotificationPublishRequest,
+) {
+  return fetchClient<AdminNotificationItemView>(
+    "/api/v1/admin/notifications/publish",
+    {
+      body,
+      method: "POST",
+    },
+  );
+}
+
+export async function apiUnpublishAdminNotification(
+  body: AdminNotificationUnpublishRequest,
+) {
+  return fetchClient<AdminNotificationItemView>(
+    "/api/v1/admin/notifications/unpublish",
+    {
+      body,
+      method: "POST",
+    },
+  );
+}
+
+export async function apiArchiveAdminNotification(
+  body: AdminNotificationArchiveRequest,
+) {
+  return fetchClient<AdminNotificationItemView>(
+    "/api/v1/admin/notifications/archive",
+    {
+      body,
+      method: "POST",
+    },
+  );
 }
 
 export async function apiPreviewCheckinRepair(

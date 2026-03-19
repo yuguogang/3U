@@ -11,8 +11,10 @@ const glassCardVariants = cva(
       variant: {
         default: "bg-white/[0.03] border border-white/[0.08]",
         elevated: "bg-white/[0.05] border border-white/[0.12] shadow-2xl",
-        interactive: "bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.15] cursor-pointer",
-        highlight: "bg-gradient-to-br from-aura-primary/10 to-transparent border border-aura-primary/20",
+        interactive:
+          "bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.15] cursor-pointer",
+        highlight:
+          "bg-gradient-to-br from-aura-primary/10 to-transparent border border-aura-primary/20",
         glow: "bg-white/[0.03] border border-white/[0.08] hover:shadow-glow transition-shadow duration-300",
       },
       intensity: {
@@ -32,7 +34,7 @@ const glassCardVariants = cva(
       intensity: "high",
       radius: "lg",
     },
-  }
+  },
 );
 
 export interface GlassCardProps
@@ -44,22 +46,35 @@ export interface GlassCardProps
 }
 
 const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
-  ({ className, variant, intensity, radius, children, hoverEffect = false, glowOnHover = false, ...props }, ref) => {
+  (
+    {
+      className,
+      variant,
+      intensity,
+      radius,
+      children,
+      hoverEffect = false,
+      glowOnHover = false,
+      ...props
+    },
+    ref,
+  ) => {
     return (
       <div
         ref={ref}
         className={cn(
           glassCardVariants({ variant, intensity, radius }),
-          hoverEffect && "hover:-translate-y-1 hover:shadow-xl transition-all duration-300",
+          hoverEffect &&
+            "hover:-translate-y-1 hover:shadow-xl transition-all duration-300",
           glowOnHover && "hover:shadow-glow-sm",
-          className
+          className,
         )}
         {...props}
       >
         {children}
       </div>
     );
-  }
+  },
 );
 
 GlassCard.displayName = "GlassCard";

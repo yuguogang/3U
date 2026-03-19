@@ -3,12 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useAccount, useChainId, useConnect, useSignMessage } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ChevronDown, Loader2, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import {
   useUserProfileQuery,
   userProfileQueryFn,
 } from "@/queries/user.query";
+import { promotionChainId } from "@/lib/promotion-contracts";
 import {
   useAuthSignatureMessageMutation,
   useAuthSigninBySignatureMutation,
@@ -52,6 +54,15 @@ export function WalletButton() {
   const signinMutation = useAuthSigninBySignatureMutation();
   const automationConnector =
     connectors.find((connector) => connector.type === "injected") ?? null;
+  const liveStatusMessage = !isConnected
+    ? "Wallet disconnected"
+    : chainId !== promotionChainId
+    ? "Wallet connected on the wrong network"
+    : isSigning
+    ? "Signature request in progress"
+    : isAuthenticated
+    ? "Wallet connected and authenticated"
+    : "Wallet connected. Signature required to continue";
 
   // 当已登录时，获取用户信息
   const { data: userProfile } = useUserProfileQuery(
@@ -178,11 +189,7 @@ export function WalletButton() {
           return (
             <div
               aria-hidden={true}
-              style={{
-                opacity: 0,
-                pointerEvents: "none",
-                userSelect: "none",
-              }}
+              className="w-[120px] h-9 rounded-xl bg-white/5 animate-pulse"
             />
           );
         }
@@ -190,6 +197,7 @@ export function WalletButton() {
         if (!connected) {
           return (
             <button
+              type="button"
               onClick={async () => {
                 if (useAutomationInjectedWallet) {
                   if (!automationConnector) {
@@ -208,11 +216,23 @@ export function WalletButton() {
               className={cn(
                 "flex h-9 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium text-white transition-all duration-200",
                 "bg-gradient-to-r from-aura-primary to-aura-primary-dark shadow-glow-sm hover:scale-[1.02] active:scale-[0.98]",
-                "disabled:opacity-50"
+                "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
               disabled={isConnecting}
+              aria-label="Connect wallet"
+              aria-busy={isConnecting}
             >
-              {isConnecting ? "Connecting..." : "Connect"}
+              {isConnecting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Connecting...</span>
+                </>
+              ) : (
+                <>
+                  <Wallet className="w-4 h-4" />
+                  <span>Connect</span>
+                </>
+              )}
             </button>
           );
         }
@@ -220,23 +240,28 @@ export function WalletButton() {
         if (chain.unsupported) {
           return (
             <button
+              type="button"
               onClick={openChainModal}
               className="flex h-9 items-center justify-center gap-2 rounded-xl border border-aura-error/30 bg-aura-error/10 px-4 text-sm font-medium text-aura-error transition-all hover:bg-aura-error/20"
+              aria-label="Wrong network - click to switch"
             >
               Wrong Network
+              <ChevronDown className="w-3 h-3" />
             </button>
           );
         }
 
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
+              type="button"
               onClick={openChainModal}
-              className="flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/5 px-3 text-sm font-medium text-white/80 transition-all hover:bg-white/10"
+              className="flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/5 px-2.5 text-sm font-medium text-white/80 transition-all hover:bg-white/10"
+              aria-label={`Current network: ${chain.name}`}
             >
               {chain.hasIcon && (
                 <div
-                  className="h-4 w-4 overflow-hidden rounded-full"
+                  className="h-4 w-4 overflow-hidden rounded-full flex-shrink-0"
                   style={{ background: chain.iconBackground }}
                 >
                   {chain.iconUrl && (
@@ -248,20 +273,41 @@ export function WalletButton() {
                   )}
                 </div>
               )}
-              <span className="hidden sm:inline">{chain.name}</span>
+              <span className="text-xs font-medium hidden sm:inline">{chain.name}</span>
+              <ChevronDown className="w-3 h-3 text-white/40 flex-shrink-0" />
             </button>
 
             <button
+              type="button"
               onClick={
                 isAuthenticated
                   ? openAccountModal
                   : () => handleLogin(account.displayName)
               }
               disabled={isSigning}
-              className="flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/5 px-3 text-sm font-medium text-white transition-all hover:bg-white/10"
+              className={cn(
+                "flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/5 px-2.5 text-sm font-medium text-white transition-all hover:bg-white/10",
+                isSigning && "opacity-60"
+              )}
+              aria-label={isAuthenticated ? "Account options" : "Sign in with wallet"}
+              aria-busy={isSigning}
             >
-              <span className="font-mono">{isSigning ? "Signing..." : account.displayName}</span>
+              {isSigning ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-white/60 flex-shrink-0" />
+                  <span className="text-xs font-medium text-white/60 hidden sm:inline">Signing...</span>
+                </>
+              ) : (
+                <>
+                  <span className="font-mono text-xs hidden sm:inline">{account.displayName}</span>
+                  <span className="font-mono text-[11px] sm:hidden">{account.displayBalance ? `${account.displayBalance.slice(0, 6)}...` : account.address.slice(0, 4)}</span>
+                  {!isAuthenticated && <ChevronDown className="w-3 h-3 text-white/40 flex-shrink-0" />}
+                </>
+              )}
             </button>
+            <span className="sr-only" aria-live="polite" aria-atomic="true">
+              {liveStatusMessage}
+            </span>
           </div>
         );
       }}

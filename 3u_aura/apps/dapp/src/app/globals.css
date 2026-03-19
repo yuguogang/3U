@@ -165,4 +165,46 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  :where(a, button, [role="button"], input, select, textarea):focus-visible {
+    outline: 2px solid var(--color-aura-primary-light);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-delay: 0ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --border: rgba(255, 255, 255, 0.22);
+    --input: rgba(255, 255, 255, 0.22);
+    --muted-foreground: rgba(255, 255, 255, 0.78);
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top, rgba(250, 43, 21, 0.08), transparent 40%),
+      #020202;
+  }
+}
+
+@media (forced-colors: active) {
+  * {
+    forced-color-adjust: auto;
+  }
 }

@@ -6,5 +6,34 @@
     "rewards": "奖励",
     "nft": "NFT",
     "claims": "领取"
+  },
+  "notifications": {
+    "entryAria": "打开通知中心",
+    "eyebrow": "站内信 / 动态",
+    "title": "通知中心",
+    "description": "项目活动、团队动态和预备上线通知会显示在这里。",
+    "markRead": "标记已读",
+    "markingRead": "保存中...",
+    "markAllVisible": "全部标记为已读",
+    "read": "已读",
+    "unread": "未读",
+    "publishedAt": "发布时间",
+    "readAt": "阅读时间",
+    "loading": "正在加载通知...",
+    "loadingMore": "正在加载更多...",
+    "loadMore": "加载更多",
+    "emptyTitle": "暂时没有通知",
+    "emptyBody": "管理员发布的公告会在可见时显示在这里。",
+    "loadErrorTitle": "通知加载失败",
+    "loadErrorBody": "请稍后重试。",
+    "authRequiredTitle": "需要钱包登录",
+    "authRequiredBody": "请先完成钱包登录，再查看你的通知中心。",
+    "missingContentTitle": "该语言内容暂不可用",
+    "missingContentBody": "当前通知暂未提供所选语言内容。",
+    "categories": {
+      "PROJECT_ACTIVITY": "项目活动",
+      "TEAM_ACTIVITY": "团队动态",
+      "UPCOMING_LAUNCH": "预备上线"
+    }
   }
 }

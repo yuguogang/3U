@@ -6,5 +6,34 @@
     "rewards": "報酬",
     "nft": "NFT",
     "claims": "請求"
+  },
+  "notifications": {
+    "entryAria": "通知センターを開く",
+    "eyebrow": "受信箱 / 更新情報",
+    "title": "通知センター",
+    "description": "プロジェクト告知、チーム活動、近日公開のお知らせがここに表示されます。",
+    "markRead": "既読にする",
+    "markingRead": "保存中...",
+    "markAllVisible": "表示中をすべて既読にする",
+    "read": "既読",
+    "unread": "未読",
+    "publishedAt": "公開日時",
+    "readAt": "既読日時",
+    "loading": "通知を読み込み中...",
+    "loadingMore": "さらに読み込み中...",
+    "loadMore": "さらに表示",
+    "emptyTitle": "通知はまだありません",
+    "emptyBody": "管理者が公開したお知らせはここに表示されます。",
+    "loadErrorTitle": "通知を読み込めませんでした",
+    "loadErrorBody": "しばらくしてから再度お試しください。",
+    "authRequiredTitle": "ウォレットのサインインが必要です",
+    "authRequiredBody": "個人向け通知を表示するには先にサインインしてください。",
+    "missingContentTitle": "この言語の内容はまだありません",
+    "missingContentBody": "選択した言語向けの通知内容はまだ用意されていません。",
+    "categories": {
+      "PROJECT_ACTIVITY": "プロジェクト活動",
+      "TEAM_ACTIVITY": "チーム活動",
+      "UPCOMING_LAUNCH": "近日公開"
+    }
   }
 }

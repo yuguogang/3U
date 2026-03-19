@@ -18,6 +18,7 @@ export const promotionChainId = Number.parseInt(
 );
 
 export const promotionContracts = {
+  founderNftAddress: asAddress(process.env.NEXT_PUBLIC_FOUNDER_NFT_ADDRESS),
   merkleClaimAddress: asAddress(process.env.NEXT_PUBLIC_MERKLE_CLAIM_ADDRESS),
   nftSaleAddress: asAddress(process.env.NEXT_PUBLIC_NFT_SALE_ADDRESS),
   paymentTokenAddress: asAddress(process.env.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS),

@@ -6,5 +6,34 @@
     "rewards": "Rewards",
     "nft": "NFT",
     "claims": "Claims"
+  },
+  "notifications": {
+    "entryAria": "Open notifications",
+    "eyebrow": "Inbox / Updates",
+    "title": "Notifications",
+    "description": "Project announcements, team updates, and upcoming launch notices appear here.",
+    "markRead": "Mark as read",
+    "markingRead": "Saving...",
+    "markAllVisible": "Mark all visible as read",
+    "read": "Read",
+    "unread": "Unread",
+    "publishedAt": "Published",
+    "readAt": "Read at",
+    "loading": "Loading notifications...",
+    "loadingMore": "Loading more...",
+    "loadMore": "Load more",
+    "emptyTitle": "No notifications yet",
+    "emptyBody": "Published notices from the admin team will appear here once available.",
+    "loadErrorTitle": "Unable to load notifications",
+    "loadErrorBody": "Please try again in a moment.",
+    "authRequiredTitle": "Wallet sign-in required",
+    "authRequiredBody": "Please sign in to view your personalized notification inbox.",
+    "missingContentTitle": "Notification content unavailable",
+    "missingContentBody": "The selected locale content is not available yet.",
+    "categories": {
+      "PROJECT_ACTIVITY": "Project Activity",
+      "TEAM_ACTIVITY": "Team Activity",
+      "UPCOMING_LAUNCH": "Upcoming Launch"
+    }
   }
 }

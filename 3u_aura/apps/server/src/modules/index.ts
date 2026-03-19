@@ -8,6 +8,7 @@ export * from './ledger';
 export * from './lottery';
 export * from './merkle';
 export * from './nft-eligibility';
+export * from './notification';
 export * from './payment';
 export * from './ranking';
 export * from './referral';

@@ -34,8 +34,10 @@ const StatCard: React.FC<StatCardProps> = ({
   onClick,
 }) => {
   const getTrendIcon = () => {
-    if (trend === "up") return <TrendingUp className="w-4 h-4 text-aura-success" />;
-    if (trend === "down") return <TrendingDown className="w-4 h-4 text-aura-error" />;
+    if (trend === "up")
+      return <TrendingUp className="w-4 h-4 text-aura-success" />;
+    if (trend === "down")
+      return <TrendingDown className="w-4 h-4 text-aura-error" />;
     return <Minus className="w-4 h-4 text-white/50" />;
   };
 
@@ -57,23 +59,33 @@ const StatCard: React.FC<StatCardProps> = ({
         <div className="flex-1">
           <p className="text-xs text-white/50 mb-1">{label}</p>
           <div className="flex items-baseline gap-1">
-            <span className={cn(
-              "text-2xl font-bold font-mono",
-              highlight ? "bg-gradient-to-r from-aura-primary to-aura-primary-light bg-clip-text text-transparent" : "text-white"
-            )}>
+            <span
+              className={cn(
+                "text-2xl font-bold font-mono",
+                highlight
+                  ? "bg-gradient-to-r from-aura-primary to-aura-primary-light bg-clip-text text-transparent"
+                  : "text-white",
+              )}
+            >
               {value}
             </span>
-            {unit && (
-              <span className="text-sm text-white/50">{unit}</span>
-            )}
+            {unit && <span className="text-sm text-white/50">{unit}</span>}
           </div>
           {subValue && (
             <p className="text-xs text-white/40 mt-1">{subValue}</p>
           )}
           {change && (
-            <div className={cn("flex items-center gap-1 mt-2 text-xs", getChangeColor())}>
+            <div
+              className={cn(
+                "flex items-center gap-1 mt-2 text-xs",
+                getChangeColor(),
+              )}
+            >
               {getTrendIcon()}
-              <span>{change.value > 0 ? "+" : ""}{change.value}%</span>
+              <span>
+                {change.value > 0 ? "+" : ""}
+                {change.value}%
+              </span>
             </div>
           )}
         </div>
