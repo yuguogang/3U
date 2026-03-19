@@ -11,6 +11,7 @@
     "tree-placement": "node commands/tree-placement.flow.mjs",
     "nft-purchase": "node commands/nft-purchase.flow.mjs",
     "subsidy-claim": "node commands/subsidy-claim.flow.mjs",
+    "subsidy-deadline-passed": "node commands/subsidy-deadline-passed.flow.mjs",
     "merkle-claim": "node commands/merkle-claim.flow.mjs",
     "merkle-ranking-claim": "node commands/merkle-claim.flow.mjs",
     "merkle-lottery-claim": "node commands/merkle-lottery-claim.flow.mjs",

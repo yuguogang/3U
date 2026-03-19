@@ -6,6 +6,7 @@ const FLOW_ALIASES = new Map([
   ['tree-placement', 'tree-placement.flow.mjs'],
   ['nft-purchase', 'nft-purchase.flow.mjs'],
   ['subsidy-claim', 'subsidy-claim.flow.mjs'],
+  ['subsidy-deadline-passed', 'subsidy-deadline-passed.flow.mjs'],
   ['merkle-claim', 'merkle-claim.flow.mjs'],
   ['merkle-ranking-claim', 'merkle-claim.flow.mjs'],
   ['merkle-lottery-claim', 'merkle-lottery-claim.flow.mjs'],

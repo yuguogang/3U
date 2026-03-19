@@ -157,6 +157,10 @@ In progress. `Milestone 1-6` 已有真实 flow 验证支撑，当前已实现 fl
   - `scripts/ci/commands/referral-expired-signature.flow.mjs` 新增独立 expiry flow
   - 该 flow 会推进 fork 时间超过签名过期时间，并验证链上 `mintNFTByReferral` 因 `SignatureExpired` 类错误拒绝
   - 该 flow 结束时会主动停止 anvil，避免“链上时间被推进”污染后续 happy-path flow
+- 已新增 subsidy deadline failure-path flow：
+  - `scripts/ci/commands/subsidy-deadline-passed.flow.mjs` 新增独立 subsidy deadline flow
+  - 该 flow 会以短 deadline 发布 subsidy epoch，推进 fork 时间后验证链上 `claimPurchasedSubsidy` 因 deadline passed 被拒绝
+  - 该 flow 结束时会主动停止 anvil，避免“链上时间被推进”污染后续 happy-path flow
 - 已完成一次真实 `run-all` 串行全量回归：
   - `payment` 组通过：`checkin`、`nft-purchase`
   - `topology` 组通过：`login`、`inviter-bind`、`tree-placement`
@@ -258,6 +262,7 @@ In progress. `Milestone 1-6` 已有真实 flow 验证支撑，当前已实现 fl
 - `node scripts/ci/run.mjs subsidy-claim` (escalated, post-failure-path assertion rerun)
 - `node scripts/ci/run.mjs referral-approval` (escalated, isolated rerun after expiry-flow experiments)
 - `node scripts/ci/run.mjs referral-expired-signature` (escalated)
+- `node scripts/ci/run.mjs subsidy-deadline-passed` (escalated)
 
 ## Verification Results
 - `node scripts/ci/run.mjs --help` passed
@@ -358,6 +363,11 @@ In progress. `Milestone 1-6` 已有真实 flow 验证支撑，当前已实现 fl
   - fork time was advanced beyond signature expiry
   - on-chain referral mint reverted with `0xf88f0490` (`SignatureExpired(uint256,uint256)`)
   - cleanup stopped anvil to avoid propagating advanced chain time into later flows
+- `node scripts/ci/run.mjs subsidy-deadline-passed` passed outside sandbox
+  - purchased NFT buy and subsidy projection setup succeeded
+  - fork time was advanced beyond the published subsidy deadline
+  - on-chain purchased subsidy claim reverted with `0x7a040d91` (`EpochDeadlinePassed(uint256)`)
+  - cleanup stopped anvil to avoid propagating advanced chain time into later flows
 
 ## Open Findings
 - `scripts/uat/start-weekly-fork.mjs` currently depends on a fork environment that is not reliably reproducible in the present sandbox
@@ -375,6 +385,7 @@ In progress. `Milestone 1-6` 已有真实 flow 验证支撑，当前已实现 fl
 - duplicate on-chain purchased subsidy claim is now explicitly verified to revert; CI no longer relies only on sync-back idempotency for this flow
 - referral signature expiry is now explicitly verified in an isolated flow; CI no longer relies only on `forge test` for this expiry path
 - advancing chain time on the shared fork can invalidate later signature-based happy-path flows; the isolated referral expiry flow now stops anvil during cleanup to contain that side effect
+- subsidy claim deadline expiry is now explicitly verified in an isolated flow; CI no longer relies only on duplicate-claim checks for this risk
 - running multiple flows in parallel against the same `fork-anvil` / server runtime is unsafe today because one flow's cleanup can stop shared processes used by another flow
 - 新加的 runtime env override 已解决 `referral-mint` 的 signer mismatch 阻塞
 - fork 场景本轮仍会在 `apps/contracts/broadcast/*/97/` 生成原始 broadcast 文件；当前策略仍是复制隔离到 `scripts/ci/.runtime`，尚未自动删除原件
