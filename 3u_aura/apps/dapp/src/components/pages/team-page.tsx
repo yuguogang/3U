@@ -1,14 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { GitBranch, Link2, Network, UserPlus } from "lucide-react";
+import { GitBranch, Link2, Network, UserPlus, Users, Share2, Copy, Check, ChevronDown, ChevronUp, Wallet, TrendingUp } from "lucide-react";
 import type {
   ReferralPendingPlacementView,
   ReferralPlacementSlotView,
 } from "3u-aura-common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { GlassCard, MobileLayout } from "@/components/layout/mobile-layout";
+import { MobileLayout } from "@/components/layout/mobile-layout";
+import { GlassCard } from "@/components/ui-custom/glass-card";
+import StatCard from "@/components/ui-custom/stat-card";
 import {
   formatDateTime,
   formatUsdtAtomic,
@@ -22,9 +24,9 @@ import {
 } from "@/queries/promotion.query";
 import { useUserProfileQuery } from "@/queries/user.query";
 import { useAuthStore } from "@/store/auth.store";
+import { cn } from "@/lib/utils";
 
 const EMPTY_PENDING_PLACEMENTS: ReferralPendingPlacementView[] = [];
-
 const EMPTY_SELECTABLE_SLOTS: ReferralPlacementSlotView[] = [];
 
 export function TeamPage() {
@@ -39,10 +41,12 @@ export function TeamPage() {
   const bindInviterMutation = useBindInviterMutation();
   const bindPlacementMutation = useBindPlacementMutation();
   const [inviteCode, setInviteCode] = useState("");
+  const [copied, setCopied] = useState(false);
   const [selectedPlacementUserId, setSelectedPlacementUserId] = useState<
     string | null
   >(null);
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
+  
   const user = profileQuery.data;
   const profile = user?.profile;
   const pendingPlacements =
@@ -78,202 +82,196 @@ export function TeamPage() {
     setSelectedSlotKey(null);
   }
 
+  const handleCopyInvite = () => {
+    if (user?.inviteCode) {
+      navigator.clipboard.writeText(user.inviteCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
     <MobileLayout
       eyebrow="Promotion / Team"
-      title="Referral and placement"
-      description="Inviter binding and binary-tree placement stay separate here. This page drives the Phase3.1 inviter-operated placement flow without requiring a full graphical tree read model."
+      title="My Team"
     >
-      <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
-          <GlassCard className="p-5">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-orange-300/75">
-              Referral identity
-            </p>
-            <div className="mt-4 space-y-3 text-sm text-white/70">
-              <p>
-                Your invite code:{" "}
-                <span className="font-semibold text-white">
-                  <span data-testid="team-invite-code">{user?.inviteCode ?? "-"}</span>
-                </span>
-              </p>
-              <p>
-                Inviter bound:{" "}
-                <span className="font-semibold text-white">
-                  {user?.inviterId ? "Yes" : "No"}
-                </span>
-              </p>
-              <p>
-                Placement frozen:{" "}
-                <span className="font-semibold text-white">
-                  {user?.parentId ? `${user.teamPosition} @ ${user.parentId}` : "Pending"}
-                </span>
-              </p>
+      <div className="space-y-6">
+        {/* Team Overview */}
+        <section className="animate-fade-in">
+          <GlassCard variant="highlight" className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm text-white/50">Small Leg Volume</p>
+                <p className="text-2xl font-bold text-white font-mono">
+                  {profile ? formatUsdtAtomic(profile.smallLegVolume) : "0"} <span className="text-xs text-white/50 font-sans">USDT</span>
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-aura-primary/10 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-aura-primary" />
+              </div>
             </div>
-            <div className="mt-5 rounded-3xl border border-white/10 bg-black/20 p-4 text-sm text-white/65">
-              <p>Small leg: {formatUsdtAtomic(profile?.smallLegVolume)}</p>
-              <p className="mt-2">
-                Left / Right: {formatUsdtAtomic(profile?.leftTeamVolume)} /{" "}
-                {formatUsdtAtomic(profile?.rightTeamVolume)}
-              </p>
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/[0.08]">
+              <div>
+                <p className="text-xs text-white/50">Left Leg</p>
+                <p className="text-lg font-semibold text-white">{profile ? formatUsdtAtomic(profile.leftTeamVolume) : "0"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/50">Right Leg</p>
+                <p className="text-lg font-semibold text-white">{profile ? formatUsdtAtomic(profile.rightTeamVolume) : "0"}</p>
+              </div>
             </div>
           </GlassCard>
+        </section>
 
-          <GlassCard className="p-5">
-            <div className="flex items-center gap-3 text-white">
-              <UserPlus className="h-5 w-5 text-orange-300" />
-              <h2 className="text-lg font-semibold">Bind inviter</h2>
-            </div>
-            <p className="mt-3 text-sm leading-6 text-white/70">
-              Registration can complete before placement, but the inviter relationship must be frozen first.
-            </p>
-            <div className="mt-5 space-y-3">
-              <Input
-                data-testid="team-bind-invite-code-input"
-                placeholder="Invite code"
-                value={inviteCode}
-                onChange={(event) => setInviteCode(event.target.value)}
-              />
-              {bindInviterMutation.error ? (
-                <p className="text-sm text-rose-300">
-                  {bindInviterMutation.error instanceof Error
-                    ? bindInviterMutation.error.message
-                    : "Failed to bind inviter"}
-                </p>
-              ) : null}
+        {/* Invite Code */}
+        <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
+          <h2 className="text-sm font-medium text-white/70 mb-3">Your Invite Code</h2>
+          <GlassCard className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                  <Share2 className="w-5 h-5 text-aura-primary" />
+                </div>
+                <div>
+                  <p className="text-lg font-mono font-semibold text-white">{user?.inviteCode || "---"}</p>
+                  <p className="text-xs text-white/50">Share to invite friends</p>
+                </div>
+              </div>
               <Button
-                data-testid="team-bind-inviter-button"
-                className="h-11 rounded-2xl px-6"
-                disabled={
-                  !isAuthenticated ||
-                  Boolean(user?.inviterId) ||
-                  bindInviterMutation.isPending ||
-                  !inviteCode.trim()
-                }
-                onClick={handleBindInviter}
-                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCopyInvite}
+                className="h-9 border-white/10 hover:bg-white/5"
               >
-                {bindInviterMutation.isPending ? "Binding..." : "Bind Inviter"}
+                {copied ? <Check className="w-4 h-4 text-aura-success" /> : <Copy className="w-4 h-4" />}
               </Button>
             </div>
           </GlassCard>
-        </div>
+        </section>
 
-        <GlassCard className="p-5">
-          <div className="mb-4 flex items-center gap-3 text-white">
-            <GitBranch className="h-5 w-5 text-orange-300" />
-            <h2 className="text-lg font-semibold">Pending placements</h2>
-          </div>
-          {!pendingPlacements.length ? (
-            <p className="text-sm leading-6 text-white/68">
-              No direct referrals are waiting for inviter-operated placement right now.
-            </p>
-          ) : (
-            <div className="grid gap-3">
-              {pendingPlacements.map((invitee) => (
-                <button
-                  key={invitee.userId}
-                  data-testid={`team-pending-placement-${invitee.userId}`}
-                  className={`rounded-3xl border px-4 py-4 text-left transition ${
-                    selectedPlacementUserId === invitee.userId
-                      ? "border-orange-300/50 bg-orange-400/10"
-                      : "border-white/10 bg-black/20 hover:border-white/25"
-                  }`}
-                  onClick={() => setSelectedPlacementUserId(invitee.userId)}
-                  type="button"
+        {/* Bind Inviter */}
+        {!profile?.inviterId && (
+          <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
+            <h2 className="text-sm font-medium text-white/70 mb-3">Bind Inviter</h2>
+            <GlassCard className="p-4">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                  <Input
+                    placeholder="Enter invite code"
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value)}
+                    className="h-10 pl-9 bg-white/5 border-white/10"
+                  />
+                </div>
+                <Button
+                  onClick={handleBindInviter}
+                  disabled={!inviteCode.trim() || bindInviterMutation.isPending}
+                  className="bg-aura-primary hover:bg-aura-primary-dark"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-white">
-                        {formatWalletAddress(invitee.walletAddress)}
-                      </p>
-                      <p className="mt-1 text-xs text-white/45">
-                        Registered {formatDateTime(invitee.registeredAt)}
-                      </p>
+                  Bind
+                </Button>
+              </div>
+            </GlassCard>
+          </section>
+        )}
+
+        {/* Pending Placements */}
+        <section className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-medium text-white/70">Pending Placements</h2>
+            <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold">
+              {pendingPlacements.length} Total
+            </span>
+          </div>
+          
+          <div className="space-y-3">
+            {pendingPlacements.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-xs text-white/30 italic">No pending placements found.</p>
+              </div>
+            ) : (
+              pendingPlacements.map((p) => (
+                <GlassCard
+                  key={p.id}
+                  variant={selectedPlacementUserId === p.id ? "highlight" : "default"}
+                  className="p-3"
+                  onClick={() => setSelectedPlacementUserId(p.id)}
+                  hoverEffect
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                        <Wallet className="w-5 h-5 text-white/40" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          {formatWalletAddress(p.address)}
+                        </p>
+                        <p className="text-[10px] text-white/40">
+                          Joined {new Date(p.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-                    <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/60">
-                      Pending
-                    </span>
+                    {selectedPlacementUserId === p.id && (
+                      <Check className="w-4 h-4 text-aura-primary" />
+                    )}
                   </div>
-                </button>
-              ))}
+                </GlassCard>
+              ))
+            )}
+          </div>
+        </section>
+
+        {/* Placement Slots */}
+        {selectedPlacementUserId && (
+          <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
+            <h2 className="text-sm font-medium text-white/70 mb-3">Select Placement Slot</h2>
+            <div className="grid grid-cols-1 gap-2">
+              {selectableSlots.length === 0 ? (
+                <p className="text-xs text-white/30 italic py-4">No available slots found.</p>
+              ) : (
+                selectableSlots.map((slot) => (
+                  <GlassCard
+                    key={slot.placementKey}
+                    variant={selectedSlotKey === slot.placementKey ? "highlight" : "default"}
+                    className="p-3"
+                    onClick={() => setSelectedSlotKey(slot.placementKey)}
+                    hoverEffect
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                          <Network className="w-4 h-4 text-white/40" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-white">
+                            Parent: {formatWalletAddress(slot.parentAddress)}
+                          </p>
+                          <p className="text-[10px] text-white/40">
+                            Position: {slot.teamPosition === 1 ? "Left" : "Right"}
+                          </p>
+                        </div>
+                      </div>
+                      {selectedSlotKey === slot.placementKey && (
+                        <Check className="w-4 h-4 text-aura-primary" />
+                      )}
+                    </div>
+                  </GlassCard>
+                ))
+              )}
             </div>
-          )}
-        </GlassCard>
-
-        <GlassCard className="p-5">
-          <div className="mb-4 flex items-center gap-3 text-white">
-            <Network className="h-5 w-5 text-orange-300" />
-            <h2 className="text-lg font-semibold">Selectable slots</h2>
-          </div>
-          <p className="mb-4 text-sm leading-6 text-white/68">
-            The server enumerates inviter-subtree slots. This list-first MVP avoids building a graphical tree read model before it is justified.
-          </p>
-          <div className="mb-4 rounded-3xl border border-white/10 bg-black/20 p-4 text-sm text-white/65">
-            <p>Returned slots: {selectableSlots.length}</p>
-            <p className="mt-2">Selected invitee: {selectedPlacementUserId ?? "-"}</p>
-            <p className="mt-2">
-              Selected slot:{" "}
-              {selectedSlot
-                ? `${formatWalletAddress(selectedSlot.parentWalletAddress)} / ${selectedSlot.teamPosition} / depth ${selectedSlot.depth}`
-                : "-"}
-            </p>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            {selectableSlots.slice(0, 24).map((slot) => (
-              <button
-                key={slot.placementKey}
-                data-testid={`team-slot-${slot.placementKey}`}
-                className={`rounded-3xl border px-4 py-4 text-left transition ${
-                  selectedSlotKey === slot.placementKey
-                    ? "border-orange-300/50 bg-orange-400/10"
-                    : "border-white/10 bg-black/20 hover:border-white/25"
-                }`}
-                onClick={() => setSelectedSlotKey(slot.placementKey)}
-                type="button"
+            <div className="mt-4">
+              <Button
+                className="w-full bg-aura-primary hover:bg-aura-primary-dark font-bold"
+                disabled={!selectedSlotKey || bindPlacementMutation.isPending}
+                onClick={handleBindPlacement}
               >
-                <p className="text-sm font-semibold text-white">
-                  {formatWalletAddress(slot.parentWalletAddress)}
-                </p>
-                <p className="mt-2 text-xs text-white/55">
-                  {slot.teamPosition} · depth {slot.depth}
-                </p>
-                <p className="mt-2 break-all text-[11px] text-white/35">
-                  {slot.parentId}
-                </p>
-              </button>
-            ))}
-          </div>
-
-          {bindPlacementMutation.error ? (
-            <p className="mt-4 text-sm text-rose-300">
-              {bindPlacementMutation.error instanceof Error
-                ? bindPlacementMutation.error.message
-                : "Failed to bind placement"}
-            </p>
-          ) : null}
-
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <Button
-              data-testid="team-confirm-placement-button"
-              className="h-11 rounded-2xl px-6"
-              disabled={
-                !selectedPlacementUserId ||
-                !selectedSlot ||
-                bindPlacementMutation.isPending
-              }
-              onClick={handleBindPlacement}
-              type="button"
-            >
-              {bindPlacementMutation.isPending ? "Placing..." : "Confirm Placement"}
-            </Button>
-            <div className="inline-flex items-center gap-2 text-sm text-white/55">
-              <Link2 className="h-4 w-4" />
-              Placement is immutable after confirmation unless admin repair is used.
+                {bindPlacementMutation.isPending ? "Confirming..." : "Confirm Placement"}
+              </Button>
             </div>
-          </div>
-        </GlassCard>
+          </section>
+        )}
       </div>
     </MobileLayout>
   );

@@ -6,6 +6,12 @@ import {
   Gem,
   ShieldAlert,
   ShoppingBag,
+  Star,
+  Lock,
+  Zap,
+  Info,
+  TrendingUp,
+  Clock,
 } from "lucide-react";
 import {
   useAccount,
@@ -14,7 +20,9 @@ import {
   useWriteContract,
 } from "wagmi";
 import { Button } from "@/components/ui/button";
-import { GlassCard, MobileLayout } from "@/components/layout/mobile-layout";
+import { MobileLayout } from "@/components/layout/mobile-layout";
+import { GlassCard } from "@/components/ui-custom/glass-card";
+import StatCard from "@/components/ui-custom/stat-card";
 import {
   erc20Abi,
   isPromotionChain,
@@ -24,16 +32,15 @@ import {
 } from "@/lib/promotion-contracts";
 import {
   formatPercent,
-  formatDateTime,
   formatUsdtAtomic,
 } from "@/lib/promotion-format";
 import { usePromotionContractState } from "@/hooks/use-promotion-contract-state";
 import {
   useCurrentEligibilityQuery,
   useReferralMintSignatureMutation,
-  useReferralMintPreviewMutation,
 } from "@/queries/promotion.query";
 import { useAuthStore } from "@/store/auth.store";
+import { cn } from "@/lib/utils";
 
 export function NftPage() {
   const chainId = useChainId();
@@ -55,7 +62,6 @@ export function NftPage() {
     effectiveAddress ?? undefined,
     Boolean(isAuthenticated && hasHydrated && effectiveAddress),
   );
-  const previewMutation = useReferralMintPreviewMutation();
   const signatureMutation = useReferralMintSignatureMutation();
   const approveWrite = useWriteContract();
   const buyWrite = useWriteContract();
@@ -82,6 +88,7 @@ export function NftPage() {
   const isCorrectReadChain = isPromotionChain(effectiveReadChainId);
   const isCorrectWriteChain = isPromotionChain(chainId);
   const eligibility = eligibilityQuery.data;
+  
   const checkinProgress = eligibility
     ? formatPercent(
         eligibility.personalCheckinCount,
@@ -97,413 +104,232 @@ export function NftPage() {
 
   const isApprovalSatisfied =
     allowance >= purchasePrice && purchasePrice > BigInt(0);
-  const canRequestReferralMint =
-    isConnected &&
-    isAuthenticated &&
-    isCorrectWriteChain &&
-    Boolean(address) &&
-    Boolean(promotionContracts.nftSaleAddress);
-  const canProceedReferralMint =
-    eligibility?.status === "APPROVED" ||
-    eligibility?.status === "SIGNED" ||
-    eligibility?.status === "EXPIRED";
-  const canBuyPurchasedNft =
-    isConnected &&
-    isAuthenticated &&
-    isCorrectWriteChain &&
-    contractState.hasNftSaleConfig &&
-    contractState.hasPaymentTokenConfig &&
-    isApprovalSatisfied;
 
-  const previewSummary = useMemo(() => {
-    if (!previewMutation.data) {
-      return null;
-    }
-
-    return {
-      chainId: previewMutation.data.chainId,
-      contractAddress:
-        previewMutation.data.contractAddress ??
-        promotionContracts.nftSaleAddress ??
-        "-",
-      expiresAt: previewMutation.data.expiresAt ?? "-",
-      nonce: previewMutation.data.nonce ?? 0,
-      recipient: previewMutation.data.recipient,
-    };
-  }, [previewMutation.data]);
-
-  const signatureSummary = useMemo(() => {
-    if (!signatureMutation.data) {
-      return null;
-    }
-
-    return {
-      contractAddress:
-        signatureMutation.data.contractAddress ??
-        promotionContracts.nftSaleAddress ??
-        "-",
-      digest: signatureMutation.data.digest,
-      expiresAt: signatureMutation.data.expiresAt,
-      nonce: signatureMutation.data.nonce,
-      recipient: signatureMutation.data.recipient,
-    };
-  }, [signatureMutation.data]);
-
-  async function handleApprove() {
-    if (
-      !promotionContracts.paymentTokenAddress ||
-      !promotionContracts.nftSaleAddress ||
-      !purchasePrice
-    ) {
-      return;
-    }
-
+  const handleApprove = async () => {
+    if (!purchasePrice) return;
     const hash = await approveWrite.writeContractAsync({
+      address: promotionContracts.usdt,
       abi: erc20Abi,
-      address: promotionContracts.paymentTokenAddress,
-      args: [promotionContracts.nftSaleAddress, purchasePrice],
       functionName: "approve",
+      args: [promotionContracts.nftSale, purchasePrice],
     });
     setApproveHash(hash);
-  }
+  };
 
-  async function handleBuy() {
-    if (!promotionContracts.nftSaleAddress) {
-      return;
-    }
-
+  const handleBuy = async () => {
     const hash = await buyWrite.writeContractAsync({
+      address: promotionContracts.nftSale,
       abi: nftSaleAbi,
-      address: promotionContracts.nftSaleAddress,
-      functionName: "buyNFT",
+      functionName: "buyPurchasedNFT",
     });
     setBuyHash(hash);
-  }
+  };
 
-  async function handlePrepareReferralMint() {
-    if (!address) {
-      return;
-    }
-
-    await previewMutation.mutateAsync({
-      chainId: chainId ?? promotionChainId,
-      contractAddress: promotionContracts.nftSaleAddress,
-      recipient: address,
-    });
-  }
-
-  async function handleReferralMint() {
-    if (!address || !promotionContracts.nftSaleAddress) {
-      return;
-    }
-
-    const payload = await signatureMutation.mutateAsync({
-      chainId: chainId ?? promotionChainId,
-      contractAddress: promotionContracts.nftSaleAddress,
-      recipient: address,
+  const handleReferralMint = async () => {
+    if (!effectiveAddress) return;
+    const result = await signatureMutation.mutateAsync({
+      chainId: promotionChainId,
+      recipient: effectiveAddress,
     });
 
     const hash = await referralMintWrite.writeContractAsync({
+      address: promotionContracts.nftSale,
       abi: nftSaleAbi,
-      address: payload.contractAddress as `0x${string}`,
+      functionName: "mintReferralNFT",
       args: [
-        BigInt(payload.nonce),
-        BigInt(payload.expiry),
-        payload.signature as `0x${string}`,
+        result.recipient as `0x${string}`,
+        BigInt(result.nonce),
+        BigInt(result.expiry),
+        result.signature as `0x${string}`,
       ],
-      functionName: "mintNFTByReferral",
     });
     setReferralMintHash(hash);
-  }
+  };
 
   return (
     <MobileLayout
       eyebrow="Promotion / NFT"
       title="Founder NFT"
-      description="Purchased NFTs remain wallet-driven on the sale contract. Referral NFTs now require admin approval first; only approved users can request the backend signer payload and submit the final `mintNFTByReferral()` call on the configured promotion chain."
     >
-      <div className="space-y-4">
-        {!isCorrectReadChain ? (
-          <GlassCard className="border border-amber-400/20 bg-amber-400/8 p-5">
+      <div className="space-y-6">
+        {/* NFT Overview */}
+        <section className="animate-fade-in">
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard
+              label="Purchased Minted"
+              value={contractState.purchasedMinted?.toString() || "0"}
+              unit="/ 30"
+              icon={<ShoppingBag className="w-5 h-5" />}
+            />
+            <StatCard
+              label="Referral Minted"
+              value={contractState.referralMinted?.toString() || "0"}
+              unit="/ 70"
+              icon={<Gem className="w-5 h-5" />}
+            />
+          </div>
+        </section>
+
+        {!isCorrectReadChain && (
+          <GlassCard className="border border-amber-400/20 bg-amber-400/5 p-5">
             <div className="flex items-center gap-3 text-amber-200">
               <ShieldAlert className="h-5 w-5" />
-              <p className="text-sm font-medium">
-                Wallet is not on the promotion claim chain. Current chain:{" "}
-                {chainId ?? "-"}, target chain: {promotionChainId}.
-              </p>
+              <p className="text-sm font-medium">Wrong Network</p>
             </div>
+            <p className="mt-2 text-xs text-amber-100/60 leading-relaxed">
+              Please switch your wallet to the promotion chain (ID: {promotionChainId}) to interact with NFTs.
+            </p>
           </GlassCard>
-        ) : null}
-        {hasAutomationSession && !isCorrectWriteChain ? (
-          <GlassCard className="border border-sky-400/20 bg-sky-400/8 p-5">
-            <div className="flex items-center gap-3 text-sky-100">
-              <ShieldAlert className="h-5 w-5" />
-              <p className="text-sm font-medium">
-                Automation session is reading from the configured promotion RPC.
-                Wallet writes stay disabled until the wallet switches from{" "}
-                {chainId ?? "-"} to {promotionChainId}.
-              </p>
-            </div>
-          </GlassCard>
-        ) : null}
+        )}
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <GlassCard className="p-5">
-            <div className="flex items-center gap-3 text-white">
-              <ShoppingBag className="h-5 w-5 text-orange-300" />
-              <h2 className="text-lg font-semibold">Purchased NFT sale</h2>
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
-                <p className="text-xs text-white/50">Purchase price</p>
-                <p
-                  className="mt-2 text-xl font-semibold text-white"
-                  data-testid="nft-purchase-price"
-                >
-                  {formatUsdtAtomic(purchasePrice.toString())} USDT
-                </p>
+        {/* Purchased NFT Section */}
+        <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
+          <h2 className="text-sm font-medium text-white/70 mb-3 flex items-center gap-2">
+            <ShoppingBag className="w-4 h-4" />
+            <span>Purchased NFT</span>
+          </h2>
+          <GlassCard variant="elevated" className="overflow-hidden">
+            <div className="aspect-square bg-gradient-to-br from-aura-primary/20 to-aura-primary-dark/20 flex items-center justify-center relative">
+              <div className="absolute top-4 right-4 px-2 py-1 rounded bg-yellow-500/20 text-yellow-400 text-[10px] font-bold flex items-center gap-1">
+                <Star className="w-3 h-3 fill-yellow-400" />
+                LEGENDARY
               </div>
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
-                <p className="text-xs text-white/50">USDT balance</p>
-                <p
-                  className="mt-2 text-xl font-semibold text-white"
-                  data-testid="nft-usdt-balance"
-                >
-                  {formatUsdtAtomic(usdtBalance.toString())} USDT
-                </p>
-              </div>
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
-                <p className="text-xs text-white/50">Purchased supply left</p>
-                <p
-                  className="mt-2 text-xl font-semibold text-white"
-                  data-testid="nft-purchased-remaining"
-                >
-                  {contractState.remainingSupply?.purchasedRemaining?.toString() ??
-                    "-"}
-                </p>
-              </div>
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
-                <p className="text-xs text-white/50">Referral supply left</p>
-                <p
-                  className="mt-2 text-xl font-semibold text-white"
-                  data-testid="nft-referral-remaining"
-                >
-                  {contractState.remainingSupply?.referralRemaining?.toString() ??
-                    "-"}
-                </p>
-              </div>
+              <Gem className="w-24 h-24 text-aura-primary opacity-50" />
             </div>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Button
-                data-testid="nft-approve-button"
-                className="h-11 rounded-2xl px-6"
-                disabled={
-                  !isConnected ||
-                  !isAuthenticated ||
-                  !isCorrectWriteChain ||
-                  !contractState.hasNftSaleConfig ||
-                  !contractState.hasPaymentTokenConfig ||
-                  approveWrite.isPending
-                }
-                onClick={handleApprove}
-                type="button"
-              >
-                {approveWrite.isPending ? "Approving..." : "Approve 1000 USDT"}
-              </Button>
-              <Button
-                data-testid="nft-buy-button"
-                className="h-11 rounded-2xl px-6"
-                disabled={!canBuyPurchasedNft || buyWrite.isPending}
-                onClick={handleBuy}
-                type="button"
-                variant="secondary"
-              >
-                {buyWrite.isPending ? "Buying..." : "Buy Purchased NFT"}
-              </Button>
-            </div>
-            <div className="mt-4 text-sm text-white/60">
-              <p data-testid="nft-allowance-ready">
-                Allowance ready: {isApprovalSatisfied ? "Yes" : "No"}
-              </p>
-              <p className="mt-2">
-                Current referral nonce:{" "}
-                {contractState.referralNonce?.toString() ?? "0"}
-              </p>
-              {approveReceipt.isSuccess ? (
-                <p className="mt-2 text-emerald-300">
-                  Approval confirmed on-chain.
-                </p>
-              ) : null}
-              {buyReceipt.isSuccess ? (
-                <p className="mt-2 text-emerald-300">
-                  Purchase tx confirmed on-chain.
-                </p>
-              ) : null}
-            </div>
-          </GlassCard>
-
-          <GlassCard className="p-5">
-            <div className="flex items-center gap-3 text-white">
-              <Gem className="h-5 w-5 text-orange-300" />
-              <h2 className="text-lg font-semibold">Referral NFT eligibility</h2>
-            </div>
-            <div className="mt-4 space-y-4">
+            <div className="p-5 space-y-4">
               <div>
-                <div className="mb-2 flex items-center justify-between text-sm text-white/65">
-                  <span>Check-in progress</span>
-                  <span>
-                    {eligibility?.personalCheckinCount ?? 0}/
-                    {eligibility?.requiredCheckinCount ?? 30}
-                  </span>
+                <h3 className="text-lg font-bold text-white">Founder NFT (Sale)</h3>
+                <p className="text-xs text-white/50">Exclusive benefits and weekly USDT subsidies.</p>
+              </div>
+              
+              <div className="flex items-center justify-between py-3 border-y border-white/[0.08]">
+                <div>
+                  <p className="text-[10px] text-white/40 uppercase">Price</p>
+                  <p className="text-lg font-mono font-bold text-white">{formatUsdtAtomic(purchasePrice)} USDT</p>
                 </div>
-                <div className="h-2 rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-orange-300"
-                    style={{ width: `${checkinProgress}%` }}
+                <div className="text-right">
+                  <p className="text-[10px] text-white/40 uppercase">Your Balance</p>
+                  <p className="text-sm font-mono text-white/70">{formatUsdtAtomic(usdtBalance)} USDT</p>
+                </div>
+              </div>
+
+              {!isApprovalSatisfied ? (
+                <Button
+                  onClick={handleApprove}
+                  className="w-full h-12 bg-white text-black hover:bg-white/90 font-bold rounded-xl"
+                  disabled={approveWrite.isPending || !isCorrectWriteChain}
+                >
+                  {approveWrite.isPending ? "Approving..." : "Approve USDT"}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleBuy}
+                  className="w-full h-12 bg-gradient-to-r from-aura-primary to-aura-primary-dark text-white font-bold rounded-xl shadow-glow-sm"
+                  disabled={buyWrite.isPending || !isCorrectWriteChain}
+                >
+                  {buyWrite.isPending ? "Purchasing..." : "Buy Now"}
+                </Button>
+              )}
+
+              {buyReceipt.isSuccess && (
+                <div className="p-3 rounded-lg bg-aura-success/10 border border-aura-success/20 text-aura-success text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Purchase successful! Check your wallet.
+                </div>
+              )}
+            </div>
+          </GlassCard>
+        </section>
+
+        {/* Referral NFT Section */}
+        <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
+          <h2 className="text-sm font-medium text-white/70 mb-3 flex items-center gap-2">
+            <Gem className="w-4 h-4" />
+            <span>Referral NFT</span>
+          </h2>
+          <GlassCard className="p-5 space-y-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <h3 className="font-bold text-white">Milestone NFT</h3>
+                <p className="text-xs text-white/50">Earned through team growth.</p>
+              </div>
+              <div className={cn(
+                "px-2 py-1 rounded text-[10px] font-bold",
+                eligibility?.eligible ? "bg-aura-success/20 text-aura-success" : "bg-white/5 text-white/40"
+              )}>
+                {eligibility?.status || "LOCKED"}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] uppercase tracking-wider">
+                  <span className="text-white/40">Personal Check-ins</span>
+                  <span className="text-white/70">{eligibility?.personalCheckinCount || 0} / {eligibility?.requiredCheckinCount || 30}</span>
+                </div>
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-aura-primary transition-all duration-500" 
+                    style={{ width: `${checkinProgress}%` }} 
                   />
                 </div>
               </div>
-              <div>
-                <div className="mb-2 flex items-center justify-between text-sm text-white/65">
-                  <span>Small leg progress</span>
-                  <span>
-                    {formatUsdtAtomic(eligibility?.smallLegVolumeUsdt)}/
-                    {formatUsdtAtomic(eligibility?.requiredSmallLegUsdt)}
-                  </span>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] uppercase tracking-wider">
+                  <span className="text-white/40">Small Leg Volume</span>
+                  <span className="text-white/70">{formatUsdtAtomic(eligibility?.smallLegVolumeUsdt || "0")} / {formatUsdtAtomic(eligibility?.requiredSmallLegUsdt || "6000000000")}</span>
                 </div>
-                <div className="h-2 rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-emerald-300"
-                    style={{ width: `${smallLegProgress}%` }}
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-blue-500 transition-all duration-500" 
+                    style={{ width: `${smallLegProgress}%` }} 
                   />
                 </div>
               </div>
-              <div className="rounded-3xl border border-white/10 bg-black/20 p-4 text-sm text-white/65">
-                <p>
-                  Status:{" "}
-                  <span className="font-semibold text-white">
-                    {eligibility?.status ?? "Not loaded"}
-                  </span>
-                </p>
-                <p className="mt-2">
-                  Expires at:{" "}
-                  {formatDateTime(
-                    previewSummary?.expiresAt ?? eligibility?.expiresAt,
-                  )}
-                </p>
-                <p className="mt-2">
-                  Approved at: {formatDateTime(eligibility?.approvedAt)}
-                </p>
-                <p className="mt-2">
-                  Rejected at: {formatDateTime(eligibility?.rejectedAt)}
-                </p>
-                <p className="mt-2">
-                  Decision: {eligibility?.decisionReason ?? "-"}
-                </p>
-              </div>
-              {eligibility?.status === "PENDING_APPROVAL" ? (
-                <div className="rounded-3xl border border-amber-400/20 bg-amber-400/8 p-4 text-sm text-amber-100">
-                  Thresholds are met, but referral mint is waiting for admin approval.
-                </div>
-              ) : null}
-              {eligibility?.status === "REJECTED" ? (
-                <div className="rounded-3xl border border-rose-400/20 bg-rose-400/8 p-4 text-sm text-rose-100">
-                  Referral mint was rejected by the operator. Review the decision reason above before retrying.
-                </div>
-              ) : null}
-              {eligibility?.status === "APPROVED" ? (
-                <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/8 p-4 text-sm text-emerald-100">
-                  Approval is in place. You can now request the final signer payload and mint on-chain.
-                </div>
-              ) : null}
-              {eligibility?.status === "EXPIRED" ? (
-                <div className="rounded-3xl border border-amber-400/20 bg-amber-400/8 p-4 text-sm text-amber-100">
-                  The previous signer payload expired before mint. Request a refreshed payload to continue.
-                </div>
-              ) : null}
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  data-testid="nft-prepare-referral-button"
-                  className="h-11 rounded-2xl px-6"
-                  disabled={
-                    !canRequestReferralMint ||
-                    !canProceedReferralMint ||
-                    previewMutation.isPending
-                  }
-                  onClick={handlePrepareReferralMint}
-                  type="button"
-                >
-                  {previewMutation.isPending
-                    ? "Preparing..."
-                    : "Prepare Referral Mint"}
-                </Button>
-                <Button
-                  data-testid="nft-referral-mint-button"
-                  className="h-11 rounded-2xl px-6"
-                  disabled={
-                    !canRequestReferralMint ||
-                    !canProceedReferralMint ||
-                    signatureMutation.isPending ||
-                    referralMintWrite.isPending
-                  }
-                  onClick={handleReferralMint}
-                  type="button"
-                  variant="secondary"
-                >
-                  {signatureMutation.isPending || referralMintWrite.isPending
-                    ? "Signing & minting..."
-                    : "Sign & Mint Referral NFT"}
-                </Button>
-              </div>
-              {previewMutation.error ? (
-                <p className="text-sm text-rose-300">
-                  {previewMutation.error instanceof Error
-                    ? previewMutation.error.message
-                    : "Failed to prepare referral mint"}
-                </p>
-              ) : null}
-              {signatureMutation.error ? (
-                <p className="text-sm text-rose-300">
-                  {signatureMutation.error instanceof Error
-                    ? signatureMutation.error.message
-                    : "Failed to issue referral mint signature"}
-                </p>
-              ) : null}
-              {previewSummary ? (
-                <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/8 p-4 text-sm text-white/72">
-                  <div className="mb-2 flex items-center gap-2 text-emerald-300">
-                    <CheckCircle2 className="h-4 w-4" />
-                    Preview payload prepared
-                  </div>
-                  <p>Recipient: {previewSummary.recipient}</p>
-                  <p className="mt-1">Nonce: {previewSummary.nonce}</p>
-                  <p className="mt-1">Contract: {previewSummary.contractAddress}</p>
-                </div>
-              ) : null}
-              {signatureSummary ? (
-                <div className="rounded-3xl border border-orange-300/20 bg-orange-300/8 p-4 text-sm text-white/72">
-                  <div className="mb-2 flex items-center gap-2 text-orange-200">
-                    <CheckCircle2 className="h-4 w-4" />
-                    Final signer payload ready
-                  </div>
-                  <p>Recipient: {signatureSummary.recipient}</p>
-                  <p className="mt-1">Nonce: {signatureSummary.nonce}</p>
-                  <p className="mt-1">
-                    Expires: {formatDateTime(signatureSummary.expiresAt)}
-                  </p>
-                  <p className="mt-1">
-                    Digest: {signatureSummary.digest.slice(0, 18)}...
-                  </p>
-                </div>
-              ) : null}
-              {referralMintReceipt.isSuccess ? (
-                <p className="text-sm text-emerald-300">
-                  Referral NFT mint tx confirmed on-chain.
-                </p>
-              ) : null}
             </div>
+
+            <Button
+              onClick={handleReferralMint}
+              className="w-full h-11 bg-white/5 border border-white/10 text-white hover:bg-white/10 rounded-xl"
+              disabled={!eligibility?.eligible || referralMintWrite.isPending || !isCorrectWriteChain}
+            >
+              {referralMintWrite.isPending ? "Minting..." : "Claim Milestone NFT"}
+            </Button>
+
+            {referralMintReceipt.isSuccess && (
+              <div className="p-3 rounded-lg bg-aura-success/10 border border-aura-success/20 text-aura-success text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                NFT minted successfully!
+              </div>
+            )}
           </GlassCard>
-        </div>
+        </section>
+
+        {/* Benefits Info */}
+        <section className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
+          <h2 className="text-sm font-medium text-white/70 mb-3">NFT Holder Benefits</h2>
+          <div className="grid grid-cols-1 gap-3">
+            <GlassCard className="p-4 flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-aura-primary/10 flex items-center justify-center shrink-0">
+                <Zap className="w-5 h-5 text-aura-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-white">Weekly Subsidies</p>
+                <p className="text-xs text-white/50 leading-relaxed">Purchased NFT holders receive 30 USDT weekly during the promotion phase.</p>
+              </div>
+            </GlassCard>
+            <GlassCard className="p-4 flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
+                <TrendingUp className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-white">Revenue Sharing</p>
+                <p className="text-xs text-white/50 leading-relaxed">All Founder NFT holders share 60% of transaction taxes after AURA token launch.</p>
+              </div>
+            </GlassCard>
+          </div>
+        </section>
       </div>
     </MobileLayout>
   );

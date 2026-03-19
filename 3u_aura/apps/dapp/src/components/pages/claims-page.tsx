@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRightLeft, ShieldAlert } from "lucide-react";
+import { ArrowRightLeft, ShieldAlert, Gift, Gem, CheckCircle2, AlertCircle, Clock, ExternalLink } from "lucide-react";
 import {
   useChainId,
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
 import { Button } from "@/components/ui/button";
-import { GlassCard, MobileLayout } from "@/components/layout/mobile-layout";
+import { MobileLayout } from "@/components/layout/mobile-layout";
+import { GlassCard } from "@/components/ui-custom/glass-card";
+import StatCard from "@/components/ui-custom/stat-card";
 import {
   isPromotionChain,
   merkleClaimAbi,
@@ -23,6 +25,7 @@ import {
   useSyncMyClaimMutation,
 } from "@/queries/claims.query";
 import { useAuthStore } from "@/store/auth.store";
+import { cn } from "@/lib/utils";
 
 type PendingClaimSync = {
   claimRecordId?: string;
@@ -121,269 +124,201 @@ export function ClaimsPage() {
             : "Failed to sync subsidy claim result",
         );
       });
-  }, [
-    claimSyncMutation,
-    pendingSubsidySync,
-    subsidyHash,
-    subsidyReceipt.isSuccess,
-  ]);
+  }, [claimSyncMutation, subsidyHash, subsidyReceipt.isSuccess, pendingSubsidySync]);
 
-  async function handleMerkleClaim(claimRecordId: string) {
-    const claim = claimsQuery.data?.merkleClaims.find(
-      (entry) => entry.claimRecordId === claimRecordId,
-    );
-    const rewardTypeCode = claim
-      ? rewardTypeCodeFromClaimType(claim.claimType)
-      : undefined;
-    const contractAddress = (
-      claim?.contractAddress ?? promotionContracts.merkleClaimAddress
-    ) as `0x${string}` | undefined;
-
-    if (
-      !claim ||
-      !rewardTypeCode ||
-      !contractAddress ||
-      claim.merkleIndex === undefined
-    ) {
-      return;
-    }
-
-    setSyncError(null);
+  async function handleClaimMerkle(claim: any) {
+    if (!isCorrectChain) return;
     const hash = await merkleWrite.writeContractAsync({
+      address: promotionContracts.merkleClaim,
       abi: merkleClaimAbi,
-      address: contractAddress,
-      args: [
-        BigInt(claim.epochNo),
-        BigInt(claim.merkleIndex),
-        rewardTypeCode,
-        BigInt(claim.amount),
-        claim.merkleProof as `0x${string}`[],
-      ],
       functionName: "claim",
+      args: [
+        BigInt(claim.epochId),
+        BigInt(claim.index),
+        rewardTypeCodeFromClaimType(claim.rewardType),
+        BigInt(claim.amount),
+        claim.proof as `0x${string}`[],
+      ],
     });
     setMerkleHash(hash);
-    setPendingMerkleSync({ claimRecordId });
+    setPendingMerkleSync({ claimRecordId: claim.id });
   }
 
-  async function handleSubsidyClaim(subsidyClaimId: string) {
-    const claim = claimsQuery.data?.nftSubsidyClaims.find(
-      (entry) => entry.subsidyClaimId === subsidyClaimId,
-    );
-    const contractAddress = (
-      claim?.contractAddress ?? promotionContracts.settlementAddress
-    ) as `0x${string}` | undefined;
-
-    if (!claim || !contractAddress) {
-      return;
-    }
-
-    setSyncError(null);
+  async function handleClaimSubsidy(claim: any) {
+    if (!isCorrectChain) return;
     const hash = await subsidyWrite.writeContractAsync({
+      address: promotionContracts.settlement,
       abi: settlementAbi,
-      address: contractAddress,
-      args: [BigInt(claim.epochNo), BigInt(claim.tokenId)],
       functionName: "claimPurchasedSubsidy",
+      args: [BigInt(claim.epochId), BigInt(claim.tokenId)],
     });
     setSubsidyHash(hash);
-    setPendingSubsidySync({ subsidyClaimId });
+    setPendingSubsidySync({ subsidyClaimId: claim.id });
   }
 
   return (
     <MobileLayout
       eyebrow="Promotion / Claims"
-      title="Claims"
-      description="Weekly merkle claims use server-published proof rows, while purchased NFT subsidy claims use settlement rows. After each successful receipt the page now syncs the chain result back into server state instead of relying on a local submitted marker."
+      title="Claim Rewards"
     >
-      <div className="space-y-4">
-        {!isCorrectChain ? (
-          <GlassCard className="border border-amber-400/20 bg-amber-400/8 p-5">
+      <div className="space-y-6">
+        {/* Overview Stats */}
+        <section className="animate-fade-in">
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard
+              label="Pending Claims"
+              value={claimSummary.claimableMerkle + claimSummary.claimableSubsidy}
+              subValue="Available now"
+              icon={<Gift className="w-5 h-5" />}
+              highlight={claimSummary.claimableMerkle + claimSummary.claimableSubsidy > 0}
+            />
+            <StatCard
+              label="Total History"
+              value={claimSummary.merkleCount + claimSummary.subsidyCount}
+              subValue="Records found"
+              icon={<Clock className="w-5 h-5" />}
+            />
+          </div>
+        </section>
+
+        {!isCorrectChain && (
+          <GlassCard className="border border-amber-400/20 bg-amber-400/5 p-5">
             <div className="flex items-center gap-3 text-amber-200">
               <ShieldAlert className="h-5 w-5" />
-              <p className="text-sm font-medium">
-                Claim actions are disabled until the wallet is on chain{" "}
-                {promotionChainId}.
-              </p>
+              <p className="text-sm font-medium">Wrong Network</p>
+            </div>
+            <p className="mt-2 text-xs text-amber-100/60 leading-relaxed">
+              Please switch to the promotion chain (ID: {promotionChainId}) to claim your rewards.
+            </p>
+          </GlassCard>
+        )}
+
+        {syncError && (
+          <GlassCard className="border border-aura-error/20 bg-aura-error/5 p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-aura-error shrink-0" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-aura-error">Sync Error</p>
+              <p className="text-xs text-aura-error/70">{syncError}</p>
+              <Button size="sm" variant="outline" className="h-7 text-[10px] mt-2 border-aura-error/20" onClick={() => setSyncError(null)}>
+                Dismiss
+              </Button>
             </div>
           </GlassCard>
-        ) : null}
+        )}
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <GlassCard className="p-5">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-orange-300/75">
-              Weekly merkle claims
-            </p>
-            <p className="mt-3 text-3xl font-semibold text-white">
-              {claimSummary.merkleCount}
-            </p>
-            <p className="mt-2 text-sm text-white/65">
-              Claimable rows: {claimSummary.claimableMerkle}
-            </p>
-            {merkleReceipt.isSuccess ? (
-              <p className="mt-3 text-sm text-emerald-300">
-                Latest merkle claim tx confirmed and queued for server sync.
-              </p>
-            ) : null}
-          </GlassCard>
-          <GlassCard className="p-5">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-orange-300/75">
-              Purchased NFT subsidy
-            </p>
-            <p className="mt-3 text-3xl font-semibold text-white">
-              {claimSummary.subsidyCount}
-            </p>
-            <p className="mt-2 text-sm text-white/65">
-              Pending subsidy rows: {claimSummary.claimableSubsidy}
-            </p>
-            {subsidyReceipt.isSuccess ? (
-              <p className="mt-3 text-sm text-emerald-300">
-                Latest subsidy claim tx confirmed and queued for server sync.
-              </p>
-            ) : null}
-          </GlassCard>
-        </div>
-        {syncError ? (
-          <GlassCard className="border border-rose-400/20 bg-rose-400/8 p-5">
-            <p className="text-sm text-rose-200">{syncError}</p>
-          </GlassCard>
-        ) : null}
-
-        <GlassCard className="p-5">
-          <div className="mb-4 flex items-center gap-3 text-white">
-            <ArrowRightLeft className="h-5 w-5 text-orange-300" />
-            <h2 className="text-lg font-semibold">Merkle claim rows</h2>
+        {/* Reward Claims (Merkle) */}
+        <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-medium text-white/70 flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-aura-primary" />
+              <span>Lottery & Ranking</span>
+            </h2>
+            <span className="text-[10px] text-white/40">{claimSummary.merkleCount} Total</span>
           </div>
-          {!claimsQuery.data?.merkleClaims.length ? (
-            <p className="text-sm leading-6 text-white/68">
-              No weekly merkle claim rows are available for this wallet.
-            </p>
-          ) : (
-            <div className="grid gap-3">
-              {claimsQuery.data.merkleClaims.map((claim) => {
-                const isSubmitted =
-                  pendingMerkleSync?.claimRecordId === claim.claimRecordId;
-                const hasContractAddress = Boolean(
-                  claim.contractAddress ?? promotionContracts.merkleClaimAddress,
-                );
-
-                return (
-                  <div
-                    key={claim.claimRecordId}
-                    className="rounded-3xl border border-white/10 bg-black/20 p-4"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-white">
-                          {claim.claimType} · epoch #{claim.epochNo}
-                        </p>
-                        <p className="mt-1 text-xs text-white/45">
-                          {claim.status} · proof length {claim.merkleProof.length}
-                        </p>
+          
+          <div className="space-y-3">
+            {claimsQuery.data?.merkleClaims.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-xs text-white/30 italic">No reward claims found.</p>
+              </div>
+            ) : (
+              claimsQuery.data?.merkleClaims.map((claim) => (
+                <GlassCard key={claim.id} className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-aura-primary/10 flex items-center justify-center">
+                        <Gift className="w-5 h-5 text-aura-primary" />
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-white">
-                          {formatUsdtAtomic(claim.amount)} {claim.tokenSymbol}
-                        </p>
-                        <p className="mt-1 text-xs text-white/45">
-                          index {claim.merkleIndex ?? "-"}
-                        </p>
+                      <div>
+                        <p className="text-sm font-medium text-white">{claim.rewardType}</p>
+                        <p className="text-[10px] text-white/40">Epoch #{claim.epochId}</p>
                       </div>
                     </div>
-                    <div className="mt-4 flex flex-wrap items-center gap-3">
-                      <Button
-                        className="h-10 rounded-2xl px-5"
-                        disabled={
-                          !isCorrectChain ||
-                          !hasContractAddress ||
-                          claim.status !== "CLAIMABLE" ||
-                          isSubmitted ||
-                          merkleWrite.isPending
-                        }
-                        onClick={() => handleMerkleClaim(claim.claimRecordId)}
-                        type="button"
-                      >
-                        {isSubmitted
-                          ? "Syncing..."
-                          : merkleWrite.isPending
-                            ? "Claiming..."
-                            : "Claim weekly reward"}
-                      </Button>
-                      <span className="text-xs text-white/45">
-                        root {claim.root?.slice(0, 10) ?? "-"} · updated{" "}
-                        {formatDateTime(claim.claimedAt)}
-                      </span>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-white">+{formatUsdtAtomic(claim.amount)} USDT</p>
+                      <div className="mt-2">
+                        {claim.status === "CLAIMABLE" ? (
+                          <Button
+                            size="sm"
+                            className="h-8 text-xs bg-aura-primary hover:bg-aura-primary-dark"
+                            onClick={() => handleClaimMerkle(claim)}
+                            disabled={merkleWrite.isPending && pendingMerkleSync?.claimRecordId === claim.id}
+                          >
+                            {merkleWrite.isPending && pendingMerkleSync?.claimRecordId === claim.id ? "Claiming..." : "Claim"}
+                          </Button>
+                        ) : (
+                          <span className={cn(
+                            "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                            claim.status === "CLAIMED" ? "bg-aura-success/20 text-aura-success" : "bg-white/5 text-white/40"
+                          )}>
+                            {claim.status}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </GlassCard>
-
-        <GlassCard className="p-5">
-          <div className="mb-4 flex items-center gap-3 text-white">
-            <ArrowRightLeft className="h-5 w-5 text-orange-300" />
-            <h2 className="text-lg font-semibold">Purchased NFT subsidy rows</h2>
+                </GlassCard>
+              ))
+            )}
           </div>
-          {!claimsQuery.data?.nftSubsidyClaims.length ? (
-            <p className="text-sm leading-6 text-white/68">
-              No purchased NFT subsidy rows are available for this wallet.
-            </p>
-          ) : (
-            <div className="grid gap-3">
-              {claimsQuery.data.nftSubsidyClaims.map((claim) => {
-                const isSubmitted =
-                  pendingSubsidySync?.subsidyClaimId === claim.subsidyClaimId;
-                const hasContractAddress = Boolean(
-                  claim.contractAddress ?? promotionContracts.settlementAddress,
-                );
+        </section>
 
-                return (
-                  <div
-                    key={claim.subsidyClaimId}
-                    className="rounded-3xl border border-white/10 bg-black/20 p-4"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-white">
-                          Token #{claim.tokenId} · epoch #{claim.epochNo}
-                        </p>
-                        <p className="mt-1 text-xs text-white/45">
-                          {claim.status}
-                        </p>
+        {/* NFT Subsidies */}
+        <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-medium text-white/70 flex items-center gap-2">
+              <Gem className="w-4 h-4 text-blue-400" />
+              <span>NFT Subsidies</span>
+            </h2>
+            <span className="text-[10px] text-white/40">{claimSummary.subsidyCount} Total</span>
+          </div>
+          
+          <div className="space-y-3">
+            {claimsQuery.data?.nftSubsidyClaims.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-xs text-white/30 italic">No subsidy claims found.</p>
+              </div>
+            ) : (
+              claimsQuery.data?.nftSubsidyClaims.map((claim) => (
+                <GlassCard key={claim.id} className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                        <Gem className="w-5 h-5 text-blue-400" />
                       </div>
-                      <p className="text-sm font-semibold text-white">
-                        {formatUsdtAtomic(claim.amountUsdt)} USDT
-                      </p>
+                      <div>
+                        <p className="text-sm font-medium text-white">NFT #{claim.tokenId} Subsidy</p>
+                        <p className="text-[10px] text-white/40">Epoch #{claim.epochId}</p>
+                      </div>
                     </div>
-                    <div className="mt-4 flex flex-wrap items-center gap-3">
-                      <Button
-                        className="h-10 rounded-2xl px-5"
-                        disabled={
-                          !isCorrectChain ||
-                          !hasContractAddress ||
-                          claim.status !== "PENDING" ||
-                          isSubmitted ||
-                          subsidyWrite.isPending
-                        }
-                        onClick={() => handleSubsidyClaim(claim.subsidyClaimId)}
-                        type="button"
-                      >
-                        {isSubmitted
-                          ? "Syncing..."
-                          : subsidyWrite.isPending
-                            ? "Claiming..."
-                            : "Claim subsidy"}
-                      </Button>
-                      <span className="text-xs text-white/45">
-                        updated {formatDateTime(claim.claimedAt)}
-                      </span>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-white">+30 USDT</p>
+                      <div className="mt-2">
+                        {claim.status === "PENDING" ? (
+                          <Button
+                            size="sm"
+                            className="h-8 text-xs bg-blue-500 hover:bg-blue-600"
+                            onClick={() => handleClaimSubsidy(claim)}
+                            disabled={subsidyWrite.isPending && pendingSubsidySync?.subsidyClaimId === claim.id}
+                          >
+                            {subsidyWrite.isPending && pendingSubsidySync?.subsidyClaimId === claim.id ? "Claiming..." : "Claim"}
+                          </Button>
+                        ) : (
+                          <span className={cn(
+                            "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                            claim.status === "CLAIMED" ? "bg-aura-success/20 text-aura-success" : "bg-white/5 text-white/40"
+                          )}>
+                            {claim.status}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </GlassCard>
+                </GlassCard>
+              ))
+            )}
+          </div>
+        </section>
       </div>
     </MobileLayout>
   );

@@ -4,16 +4,19 @@ import Link from "next/link";
 import {
   CalendarCheck2,
   Gem,
-  ReceiptText,
   ShieldAlert,
   Trophy,
   Users,
+  TrendingUp,
+  Clock,
+  Zap,
 } from "lucide-react";
 import { useAccount } from "wagmi";
-import { GlassCard, GradientButton, MobileLayout } from "@/components/layout/mobile-layout";
+import { MobileLayout } from "@/components/layout/mobile-layout";
+import { GlassCard } from "@/components/ui-custom/glass-card";
+import StatCard from "@/components/ui-custom/stat-card";
 import {
   formatAuraAtomic,
-  formatDateTime,
   formatUsdtAtomic,
 } from "@/lib/promotion-format";
 import {
@@ -23,44 +26,7 @@ import {
 } from "@/queries/promotion.query";
 import { useUserProfileQuery } from "@/queries/user.query";
 import { useAuthStore } from "@/store/auth.store";
-
-const dashboardSections = [
-  {
-    href: "/checkin",
-    title: "Check-In",
-    description:
-      "Submit a confirmed 3 USDT payment receipt into the accounting path without mixing wallet UX with server-side settlement facts.",
-    icon: CalendarCheck2,
-  },
-  {
-    href: "/team",
-    title: "Team",
-    description:
-      "Bind inviter codes, inspect pending direct referrals, and choose frozen LEFT or RIGHT slots from the inviter subtree.",
-    icon: Users,
-  },
-  {
-    href: "/rewards",
-    title: "Rewards",
-    description:
-      "Read current epoch status, cumulative AURA, and published reward rows without reconstructing weekly settlement logic on the client.",
-    icon: Trophy,
-  },
-  {
-    href: "/nft",
-    title: "NFT",
-    description:
-      "Purchased NFT sale is chain-driven; referral NFT now consumes the backend signer payload and submits the final mint transaction from the wallet.",
-    icon: Gem,
-  },
-  {
-    href: "/claims",
-    title: "Claims",
-    description:
-      "Consume weekly merkle proof rows and purchased NFT subsidy rows, then call the contracts directly from the wallet.",
-    icon: ReceiptText,
-  },
-];
+import { cn } from "@/lib/utils";
 
 export function DashboardPage() {
   const { address, isConnected } = useAccount();
@@ -74,137 +40,162 @@ export function DashboardPage() {
   const pendingPlacementQuery = usePendingPlacementsQuery(
     isAuthenticated && hasHydrated,
   );
+  
   const profile = profileQuery.data?.profile;
+  const epoch = epochQuery.data;
+
+  const quickActions = [
+    { 
+      href: "/checkin", 
+      label: "Check-in", 
+      icon: CalendarCheck2, 
+      color: "bg-aura-primary",
+    },
+    { 
+      href: "/team", 
+      label: "Team", 
+      icon: Users, 
+      color: "bg-blue-500",
+    },
+    { 
+      href: "/rewards", 
+      label: "Rewards", 
+      icon: Trophy, 
+      color: "bg-yellow-500",
+    },
+    { 
+      href: "/nft", 
+      label: "NFT", 
+      icon: Gem, 
+      color: "bg-purple-500",
+    },
+  ];
 
   return (
     <MobileLayout
       eyebrow="Promotion Dashboard"
-      title="3U AURA Promotion Hub"
-      description="This frontend now reads promotion facts from the server and contracts, submits referral NFT mints with backend-issued signatures, and syncs claim receipts back into server state."
-      actions={
-        <>
-          <GradientButton asChild>
-            <Link href="/checkin">Open Check-In</Link>
-          </GradientButton>
-          <GradientButton asChild className="bg-white/10 shadow-none">
-            <Link href="/team">Open Team</Link>
-          </GradientButton>
-        </>
-      }
+      title="AURA HUB"
     >
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {/* Hero Stats */}
+        <section className="animate-fade-in">
+          <GlassCard variant="highlight" className="p-6">
+            <div className="text-center">
+              <p className="text-sm text-white/50 mb-2">Total Earnings (AURA)</p>
+              <h1 className="text-4xl font-bold font-mono mb-1 bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+                {profile ? formatAuraAtomic(profile.totalAuraFromCheckin) : "0.00"}
+              </h1>
+              <p className="text-sm text-white/40">≈ $0.00 USD</p>
+              <div className="flex items-center justify-center gap-1 mt-3">
+                <TrendingUp className="w-4 h-4 text-aura-success" />
+                <span className="text-sm text-aura-success">+0.0%</span>
+                <span className="text-xs text-white/40 ml-1">this week</span>
+              </div>
+            </div>
+          </GlassCard>
+        </section>
+
         {!isConnected || !isAuthenticated ? (
-          <GlassCard className="border border-amber-400/20 bg-amber-400/8 p-5">
+          <GlassCard className="border border-amber-400/20 bg-amber-400/5 p-5">
             <div className="mb-3 flex items-center gap-3 text-amber-200">
               <ShieldAlert className="h-5 w-5" />
               <h2 className="text-sm font-semibold">Wallet sign-in required</h2>
             </div>
-            <p className="text-sm leading-6 text-white/72">
-              Connect the wallet and complete signature sign-in before the dashboard can query profile, team, reward, and claim data.
+            <p className="mb-4 text-xs leading-5 text-amber-100/60">
+              Please connect your wallet and sign the message to access your personalized dashboard and rewards.
             </p>
           </GlassCard>
         ) : null}
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <GlassCard className="p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="text-[11px] uppercase tracking-[0.24em] text-orange-300/75">
-                Weekly Epoch
-              </span>
-              <span className="rounded-full border border-emerald-400/20 bg-emerald-400/12 px-3 py-1 text-[11px] font-medium text-emerald-300">
-                {epochQuery.data?.status ?? "Loading"}
-              </span>
-            </div>
-            <p className="text-3xl font-semibold text-white">
-              #{epochQuery.data?.epochNo ?? "-"}
-            </p>
-            <p className="mt-3 text-sm text-white/65">
-              {formatDateTime(epochQuery.data?.startAt)} to{" "}
-              {formatDateTime(epochQuery.data?.endAt)}
-            </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
-                <p className="text-xs text-white/50">Pending placements</p>
-                <p className="mt-2 text-xl font-semibold text-white">
-                  {pendingPlacementQuery.data?.length ?? 0}
-                </p>
-              </div>
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
-                <p className="text-xs text-white/50">Referral NFT status</p>
-                <p className="mt-2 text-base font-semibold text-white">
-                  {eligibilityQuery.data?.status ?? "Not loaded"}
-                </p>
-              </div>
-            </div>
-          </GlassCard>
-
-          <GlassCard className="p-5">
-            <div className="mb-4">
-              <span className="text-[11px] uppercase tracking-[0.24em] text-orange-300/75">
-                Personal Totals
-              </span>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
-                <p className="text-xs text-white/50">Total check-ins</p>
-                <p className="mt-2 text-xl font-semibold text-white">
-                  {profile?.totalCheckinCount ?? 0}
-                </p>
-              </div>
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
-                <p className="text-xs text-white/50">Current streak</p>
-                <p className="mt-2 text-xl font-semibold text-white">
-                  {profile?.currentStreakDays ?? 0} days
-                </p>
-              </div>
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
-                <p className="text-xs text-white/50">Paid USDT</p>
-                <p className="mt-2 text-xl font-semibold text-white">
-                  {formatUsdtAtomic(profile?.totalCheckinUsdt)}
-                </p>
-              </div>
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
-                <p className="text-xs text-white/50">AURA from check-in</p>
-                <p className="mt-2 text-xl font-semibold text-white">
-                  {formatAuraAtomic(profile?.totalAuraFromCheckin)}
-                </p>
-              </div>
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
-                <p className="text-xs text-white/50">Left volume</p>
-                <p className="mt-2 text-xl font-semibold text-white">
-                  {formatUsdtAtomic(profile?.leftTeamVolume)}
-                </p>
-              </div>
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
-                <p className="text-xs text-white/50">Right volume</p>
-                <p className="mt-2 text-xl font-semibold text-white">
-                  {formatUsdtAtomic(profile?.rightTeamVolume)}
-                </p>
-              </div>
-            </div>
-          </GlassCard>
-        </div>
-
-        <div className="grid gap-4">
-          {dashboardSections.map((section) => {
-            const Icon = section.icon;
-
-            return (
-              <GlassCard key={section.href} className="p-5">
-                <div className="mb-3 flex items-start justify-between gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500/12 text-orange-300">
-                    <Icon className="h-5 w-5" strokeWidth={1.9} />
+        {/* Quick Actions */}
+        <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
+          <div className="grid grid-cols-4 gap-3">
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className="flex flex-col items-center gap-2 group"
+                >
+                  <div className={cn(
+                    "w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transition-all duration-200",
+                    "group-hover:scale-105 group-active:scale-95",
+                    action.color
+                  )}>
+                    <Icon className="w-5 h-5 text-white" />
                   </div>
-                  <GradientButton asChild className="h-9 px-4 text-xs">
-                    <Link href={section.href}>Open</Link>
-                  </GradientButton>
+                  <span className="text-[10px] font-medium text-white/60 group-hover:text-white/90 transition-colors">
+                    {action.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Stats Grid */}
+        <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard
+              label="Current Epoch"
+              value={`#${epoch?.epochNo || 0}`}
+              subValue={epoch?.status || "Loading..."}
+              icon={<Clock className="w-5 h-5" />}
+            />
+            <StatCard
+              label="Small Leg Vol"
+              value={profile ? formatUsdtAtomic(profile.smallLegVolume) : "0"}
+              unit="USDT"
+              subValue="Current Progress"
+              icon={<Users className="w-5 h-5" />}
+              trend="up"
+              change={{ value: 0, type: "neutral" }}
+            />
+          </div>
+        </section>
+
+        {/* Team & NFT Info */}
+        <section className="animate-slide-up space-y-3" style={{ animationDelay: "0.3s" }}>
+          <h2 className="text-sm font-medium text-white/70">Milestones & Alerts</h2>
+          <div className="grid grid-cols-1 gap-3">
+            {pendingPlacementQuery.data && pendingPlacementQuery.data.length > 0 && (
+              <GlassCard variant="elevated" className="p-4 border-blue-500/20 bg-blue-500/5" onClick={() => {}} hoverEffect>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">Pending Placements</p>
+                      <p className="text-xs text-blue-100/50">
+                        {pendingPlacementQuery.data.length} users waiting for tree placement
+                      </p>
+                    </div>
+                  </div>
+                  <Link href="/team" className="text-xs text-blue-400 font-medium">View</Link>
                 </div>
-                <h2 className="mb-2 text-lg font-semibold text-white">{section.title}</h2>
-                <p className="text-sm leading-6 text-white/68">{section.description}</p>
               </GlassCard>
-            );
-          })}
-        </div>
+            )}
+
+            <GlassCard variant="elevated" className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">NFT Eligibility</p>
+                    <p className="text-xs text-white/50">
+                      {eligibilityQuery.data?.status || "Checking..."}
+                    </p>
+                  </div>
+                </div>
+                <Link href="/nft" className="text-xs text-orange-400 font-medium">Details</Link>
+              </div>
+            </GlassCard>
+          </div>
+        </section>
       </div>
     </MobileLayout>
   );

@@ -114,7 +114,7 @@ export function WalletButton() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, address, isAuthenticated, isSigning, hasHydrated]);
 
-  const handleLogin = async (name?: string) => {
+  const handleLogin = async (displayName?: string) => {
     if (!address || isSigning || isAuthenticated) return;
     setIsSigning(true);
     try {
@@ -131,7 +131,7 @@ export function WalletButton() {
       const res = await signinMutation.mutateAsync({
         address,
         // 新用户创建时服务端要求 name，优先用 RainbowKit 的 displayName
-        name: name || shortenAddress(address),
+        name: displayName || shortenAddress(address),
         chain: chainId,
         signature,
         device: DEVICES.BROWSER,
@@ -161,16 +161,33 @@ export function WalletButton() {
     }
   };
 
-  const gradientStyle = {
-    background: "linear-gradient(180deg, rgba(250, 43, 21, 1) 0%, rgba(244, 64, 7, 1) 40%, rgba(250, 164, 75, 1) 100%)",
-    border: "1px solid rgba(255, 255, 255, 0.15)",
-    boxShadow: "inset 0px 0px 6px 3px rgba(255, 255, 255, 0.25)",
-  };
-
   return (
     <ConnectButton.Custom>
-      {({ openConnectModal, openAccountModal, account }) => {
-        if (!account) {
+      {({
+        account,
+        chain,
+        openAccountModal,
+        openChainModal,
+        openConnectModal,
+        mounted,
+      }) => {
+        const ready = mounted;
+        const connected = ready && account && chain;
+
+        if (!ready) {
+          return (
+            <div
+              aria-hidden={true}
+              style={{
+                opacity: 0,
+                pointerEvents: "none",
+                userSelect: "none",
+              }}
+            />
+          );
+        }
+
+        if (!connected) {
           return (
             <button
               onClick={async () => {
@@ -179,7 +196,6 @@ export function WalletButton() {
                     console.error("Automation injected connector is unavailable");
                     return;
                   }
-
                   try {
                     await connectAsync({ connector: automationConnector });
                   } catch (error) {
@@ -187,42 +203,66 @@ export function WalletButton() {
                   }
                   return;
                 }
-
                 openConnectModal();
               }}
-              data-testid="wallet-connect-button"
               className={cn(
-                "flex h-[26px] items-center justify-center gap-[10px] rounded-[30px] px-3 text-xs font-medium leading-[26px] text-white",
-                "hover:opacity-90 transition-opacity"
+                "flex h-9 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium text-white transition-all duration-200",
+                "bg-gradient-to-r from-aura-primary to-aura-primary-dark shadow-glow-sm hover:scale-[1.02] active:scale-[0.98]",
+                "disabled:opacity-50"
               )}
-              style={gradientStyle}
+              disabled={isConnecting}
             >
-              {useAutomationInjectedWallet && isConnecting
-                ? "Connecting..."
-                : "Connect Wallet"}
+              {isConnecting ? "Connecting..." : "Connect"}
+            </button>
+          );
+        }
+
+        if (chain.unsupported) {
+          return (
+            <button
+              onClick={openChainModal}
+              className="flex h-9 items-center justify-center gap-2 rounded-xl border border-aura-error/30 bg-aura-error/10 px-4 text-sm font-medium text-aura-error transition-all hover:bg-aura-error/20"
+            >
+              Wrong Network
             </button>
           );
         }
 
         return (
-          <button
-            onClick={
-              isAuthenticated
-                ? openAccountModal
-                : () => handleLogin(account.displayName)
-            }
-            disabled={isSigning}
-            data-testid={
-              isAuthenticated ? "wallet-account-button" : "wallet-signin-button"
-            }
-            className={cn(
-              "flex h-[26px] items-center justify-center gap-[10px] rounded-[30px] px-3 text-xs font-medium leading-[26px] text-white",
-              "hover:opacity-90 transition-opacity"
-            )}
-            style={gradientStyle}
-          >
-            {isSigning ? "Signing..." : shortenAddress(account.address)}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openChainModal}
+              className="flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/5 px-3 text-sm font-medium text-white/80 transition-all hover:bg-white/10"
+            >
+              {chain.hasIcon && (
+                <div
+                  className="h-4 w-4 overflow-hidden rounded-full"
+                  style={{ background: chain.iconBackground }}
+                >
+                  {chain.iconUrl && (
+                    <img
+                      alt={chain.name ?? "Chain icon"}
+                      src={chain.iconUrl}
+                      className="h-4 w-4"
+                    />
+                  )}
+                </div>
+              )}
+              <span className="hidden sm:inline">{chain.name}</span>
+            </button>
+
+            <button
+              onClick={
+                isAuthenticated
+                  ? openAccountModal
+                  : () => handleLogin(account.displayName)
+              }
+              disabled={isSigning}
+              className="flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/5 px-3 text-sm font-medium text-white transition-all hover:bg-white/10"
+            >
+              <span className="font-mono">{isSigning ? "Signing..." : account.displayName}</span>
+            </button>
+          </div>
         );
       }}
     </ConnectButton.Custom>
