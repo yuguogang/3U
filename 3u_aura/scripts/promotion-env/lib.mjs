@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..');
 
-const TARGETS = new Set(['contracts', 'server', 'dapp', 'admin']);
+const TARGETS = new Set(['contracts', 'server', 'dapp', 'admin', 'kimiui']);
 const DEFAULT_ENV = 'testnet-live';
 
 function normalizeValue(rawValue) {
@@ -275,6 +275,21 @@ export function buildDerivedEnv({ manifest, target, baseEnv }) {
           baseEnv,
           manifest,
         ),
+      };
+    case 'kimiui':
+      return {
+        PROMOTION_ENV: manifest.environment,
+        VITE_API_BASE_URL: manifest.infra.server.publicApiBaseUrl,
+        VITE_PROMOTION_RPC_URL: manifest.chain.rpcUrl,
+        VITE_PROMOTION_CHAIN_ID: String(manifest.chain.id),
+        VITE_WALLETCONNECT_PROJECT_ID: resolveWalletConnectProjectId(
+          baseEnv,
+          manifest,
+        ),
+        VITE_PAYMENT_TOKEN_ADDRESS: manifest.contracts.paymentTokenAddress || '',
+        VITE_NFT_SALE_ADDRESS: manifest.contracts.nftSaleAddress || '',
+        VITE_MERKLE_CLAIM_ADDRESS: manifest.contracts.merkleDistributorAddress || '',
+        VITE_SETTLEMENT_ADDRESS: manifest.contracts.settlementAddress || '',
       };
     case 'contracts':
       return {
