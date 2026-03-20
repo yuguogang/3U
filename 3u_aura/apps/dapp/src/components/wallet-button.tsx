@@ -18,6 +18,11 @@ import {
 } from "@/queries/auth.query";
 import { queryClient } from "@/lib/query.client";
 import { DEVICES, SignatureScenarios } from "3u-aura-common";
+import {
+  normalizeReferralCode,
+  PENDING_REFERRAL_CODE_STORAGE_KEY,
+  resolvePendingReferralCode,
+} from "@/lib/referral";
 
 function shortenAddress(addr: string) {
   if (!addr) return "";
@@ -27,14 +32,6 @@ function shortenAddress(addr: string) {
 function isSameAddress(a?: string | null, b?: string | null) {
   if (!a || !b) return false;
   return a.toLowerCase() === b.toLowerCase();
-}
-
-const PENDING_REFERRAL_CODE_STORAGE_KEY = "aura:pending-referral-code";
-
-function normalizeReferralCode(value?: string | null) {
-  if (!value) return null;
-  const trimmed = value.trim().toUpperCase();
-  return trimmed.length > 0 ? trimmed : null;
 }
 
 export function WalletButton() {
@@ -79,18 +76,18 @@ export function WalletButton() {
   const { data: userProfile } = useUserProfileQuery(
     isAuthenticated && hasHydrated,
   );
+  const referralCodeFromUrl = normalizeReferralCode(searchParams.get("ref"));
 
   useEffect(() => {
-    const referralCode = normalizeReferralCode(searchParams.get("ref"));
-    if (!referralCode || typeof window === "undefined") {
+    if (!referralCodeFromUrl || typeof window === "undefined") {
       return;
     }
 
     window.sessionStorage.setItem(
       PENDING_REFERRAL_CODE_STORAGE_KEY,
-      referralCode,
+      referralCodeFromUrl,
     );
-  }, [pathname, searchParams]);
+  }, [pathname, referralCodeFromUrl]);
 
   // 同步用户信息到 store
   useEffect(() => {
@@ -153,11 +150,7 @@ export function WalletButton() {
     setIsSigning(true);
     try {
       const pendingReferralCode =
-        typeof window === "undefined"
-          ? null
-          : normalizeReferralCode(
-              window.sessionStorage.getItem(PENDING_REFERRAL_CODE_STORAGE_KEY),
-            );
+        resolvePendingReferralCode(referralCodeFromUrl);
 
       // 1) 拉取服务端生成的待签名消息（包含 nonce/过期时间）
       const { message } = await signatureMessageMutation.mutateAsync({

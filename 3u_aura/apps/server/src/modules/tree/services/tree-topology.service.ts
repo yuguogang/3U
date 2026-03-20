@@ -6,6 +6,7 @@ import {
   ReferralPlacementView,
   TeamPosition,
 } from '3u-aura-common';
+import { ReferralService } from '../../referral';
 import { AuditSeamService, TransactionOrchestratorService } from '../../shared';
 import { PlacementPolicyEngine } from '../engines/placement-policy.engine';
 import { TeamClosureRepository } from '../repositories/team-closure.repository';
@@ -19,7 +20,44 @@ export class TreeTopologyService {
     private readonly transactionOrchestrator: TransactionOrchestratorService,
     private readonly placementPolicyEngine: PlacementPolicyEngine,
     private readonly teamClosureRepository: TeamClosureRepository,
+    private readonly referralService: ReferralService,
   ) {}
+
+  async initializeRootUserTx(
+    userId: string,
+    tx: Prisma.TransactionClient,
+  ): Promise<void> {
+    const rootUser = await this.teamClosureRepository.findParentForPlacement(
+      userId,
+      tx,
+    );
+    this.placementPolicyEngine.assertParentExists(rootUser);
+
+    if (rootUser.inviterId || rootUser.parentId) {
+      return;
+    }
+
+    const alreadyInitialized = await this.teamClosureRepository.hasSelfClosure(
+      rootUser.id,
+      tx,
+    );
+    if (alreadyInitialized) {
+      return;
+    }
+
+    await this.teamClosureRepository.ensureSelfClosure(rootUser.id, tx);
+    await this.auditSeam.record({
+      action: 'tree.root.initialized',
+      targetId: rootUser.id,
+      targetType: 'User',
+      payload: {
+        parentId: null,
+        placementKey: null,
+        teamPosition: null,
+        userId: rootUser.id,
+      },
+    });
+  }
 
   async bindPlacementForInviter(
     user: TreeActor,
@@ -221,9 +259,15 @@ export class TreeTopologyService {
       tx,
     );
 
+    const shareReadyUser =
+      await this.referralService.issueInviteCodeIfMissingForUserTx(
+        boundUser.id,
+        tx,
+      );
+
     await this.teamClosureRepository.insertClosureRows(
       this.placementPolicyEngine.buildClosureRows(
-        boundUser.id,
+        shareReadyUser.id,
         parentAncestors,
       ),
       tx,
@@ -237,16 +281,16 @@ export class TreeTopologyService {
         parentId: params.parentId,
         placementKey,
         teamPosition: params.teamPosition,
-        userId: boundUser.id,
+        userId: shareReadyUser.id,
       },
     });
 
     return this.placementPolicyEngine.buildPlacementView({
-      inviterId: boundUser.inviterId,
+      inviterId: shareReadyUser.inviterId,
       parentId: params.parentId,
       placementKey,
       teamPosition: params.teamPosition,
-      userId: boundUser.id,
+      userId: shareReadyUser.id,
     });
   }
 }

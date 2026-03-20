@@ -58,8 +58,7 @@ describe('ReferralService', () => {
         inviterId: null,
         parentId: null,
         status: UserStatus.ACTIVE,
-      })
-      .mockResolvedValueOnce(null);
+      });
     referralRepository.bindInviter.mockResolvedValue({
       id: actor.id,
       inviteCode: null,
@@ -84,11 +83,6 @@ describe('ReferralService', () => {
     );
     expect(auditSeam.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'referral.bind-inviter.confirmed' }),
-    );
-    expect(referralRepository.assignInviteCode).toHaveBeenCalledWith(
-      actor.id,
-      'SHARE123',
-      expect.any(Object),
     );
     expect(result).toEqual({
       inviterId: 'inviter_1',
@@ -173,5 +167,36 @@ describe('ReferralService', () => {
         walletAddress: '0x2222222222222222222222222222222222222222',
       },
     ]);
+  });
+
+  it('issues an invite code only when explicitly requested later', async () => {
+    const { referralRepository, service } = createService();
+    referralRepository.findUserForBinding.mockResolvedValue({
+      id: actor.id,
+      inviteCode: null,
+      inviterId: 'inviter_1',
+      parentId: 'parent_1',
+      status: UserStatus.ACTIVE,
+    });
+    referralRepository.findInviterByInviteCode.mockResolvedValue(null);
+    referralRepository.assignInviteCode.mockResolvedValue({
+      id: actor.id,
+      inviteCode: 'SHARE123',
+      inviterId: 'inviter_1',
+      parentId: 'parent_1',
+      status: UserStatus.ACTIVE,
+    });
+
+    const result = await service.issueInviteCodeIfMissingForUserTx(
+      actor.id,
+      {} as any,
+    );
+
+    expect(referralRepository.assignInviteCode).toHaveBeenCalledWith(
+      actor.id,
+      'SHARE123',
+      expect.any(Object),
+    );
+    expect(result.inviteCode).toBe('SHARE123');
   });
 });

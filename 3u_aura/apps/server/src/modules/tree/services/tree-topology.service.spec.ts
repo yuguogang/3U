@@ -3,6 +3,10 @@ import { TeamPosition, UserStatus } from '3u-aura-common';
 import { PlacementPolicyEngine } from '../engines/placement-policy.engine';
 import { TreeTopologyService } from './tree-topology.service';
 
+jest.mock('nanoid', () => ({
+  nanoid: () => 'SHARE123',
+}));
+
 describe('TreeTopologyService', () => {
   const actor = { id: 'inviter_1' };
   const command = {
@@ -33,23 +37,28 @@ describe('TreeTopologyService', () => {
       listSelectableParents: jest.fn(),
       listAncestorRows: jest.fn(),
     };
+    const referralService = {
+      issueInviteCodeIfMissingForUserTx: jest.fn(),
+    };
 
     const service = new TreeTopologyService(
       auditSeam as any,
       transactionOrchestrator as any,
       new PlacementPolicyEngine(),
       teamClosureRepository as any,
+      referralService as any,
     );
 
     return {
       auditSeam,
+      referralService,
       service,
       teamClosureRepository,
     };
   };
 
   it('binds a placement and inserts closure rows', async () => {
-    const { auditSeam, service, teamClosureRepository } = createService();
+    const { auditSeam, referralService, service, teamClosureRepository } = createService();
     teamClosureRepository.findParentForPlacement
       .mockResolvedValueOnce({
         id: actor.id,
@@ -88,10 +97,23 @@ describe('TreeTopologyService', () => {
       status: UserStatus.ACTIVE,
       teamPosition: TeamPosition.LEFT,
     });
+    referralService.issueInviteCodeIfMissingForUserTx.mockResolvedValue({
+      id: command.placementUserId,
+      inviterId: actor.id,
+      inviteCode: 'SHARE123',
+      parentId: 'parent_1',
+      placementKey: 'parent_1:LEFT',
+      status: UserStatus.ACTIVE,
+      teamPosition: TeamPosition.LEFT,
+    });
 
     const result = await service.bindPlacementForInviter(actor, command);
 
     expect(teamClosureRepository.bindPlacement).toHaveBeenCalled();
+    expect(referralService.issueInviteCodeIfMissingForUserTx).toHaveBeenCalledWith(
+      command.placementUserId,
+      expect.any(Object),
+    );
     expect(teamClosureRepository.insertClosureRows).toHaveBeenCalledWith(
       [
         {
@@ -122,6 +144,46 @@ describe('TreeTopologyService', () => {
       teamPosition: TeamPosition.LEFT,
       userId: command.placementUserId,
     });
+  });
+
+  it('initializes self-closure for the explicit root user only once', async () => {
+    const { auditSeam, service, teamClosureRepository } = createService();
+    teamClosureRepository.findParentForPlacement.mockResolvedValue({
+      id: actor.id,
+      inviterId: null,
+      parentId: null,
+      status: UserStatus.ACTIVE,
+      walletAddress: '0x1111111111111111111111111111111111111111',
+    });
+    teamClosureRepository.hasSelfClosure.mockResolvedValue(false);
+
+    await service.initializeRootUserTx(actor.id, {} as any);
+
+    expect(teamClosureRepository.ensureSelfClosure).toHaveBeenCalledWith(
+      actor.id,
+      expect.any(Object),
+    );
+    expect(auditSeam.record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'tree.root.initialized' }),
+    );
+  });
+
+  it('does not initialize self-closure for a non-root user', async () => {
+    const { auditSeam, service, teamClosureRepository } = createService();
+    teamClosureRepository.findParentForPlacement.mockResolvedValue({
+      id: actor.id,
+      inviterId: 'root_1',
+      parentId: null,
+      status: UserStatus.ACTIVE,
+      walletAddress: '0x1111111111111111111111111111111111111111',
+    });
+
+    await service.initializeRootUserTx(actor.id, {} as any);
+
+    expect(teamClosureRepository.ensureSelfClosure).not.toHaveBeenCalled();
+    expect(auditSeam.record).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'tree.root.initialized' }),
+    );
   });
 
   it('returns idempotently for the same frozen placement', async () => {

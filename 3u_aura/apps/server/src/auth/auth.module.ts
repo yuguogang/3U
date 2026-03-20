@@ -14,12 +14,14 @@ import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { ReferralModule } from '@/modules/referral';
+import { TreeModule } from '@/modules/tree';
 
 @Module({
   imports: [
     ConfigModule,
     forwardRef(() => UserModule),
     ReferralModule,
+    TreeModule,
 
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({

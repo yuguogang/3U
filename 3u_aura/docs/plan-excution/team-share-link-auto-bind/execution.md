@@ -85,3 +85,37 @@
   - remaining warnings are existing/acceptable `img` usage warnings on `team-page.tsx` and `wallet-button.tsx`
 - `apps/dapp build`: passed with pre-existing wallet connector module warnings, but completed successfully
 - Local DApp dev server restarted on `http://localhost:3200`
+
+## Follow-up Bug Triage: Auto-bind Via Shared Link Still Missing `inviterId`
+
+- User reported that opening `/team?ref=<inviteCode>`, clearing storage, and reconnecting still created/logged in the child user without setting `inviterId`.
+- Verified shared schema and backend DTO/service path still accept `referralCode`; the drop was happening on the DApp side of the login/bootstrap path.
+- Root cause analysis:
+  - the login flow only relied on a session-storage handoff for `ref`
+  - if that handoff is missed or delayed, the sign-in request can still succeed without `referralCode`
+  - there was no authenticated fallback to auto-bind after profile hydration
+- Fix applied in `apps/dapp`:
+  - extracted shared referral helpers in `src/lib/referral.ts`
+  - `wallet-button.tsx` now resolves pending referral code from the live URL first, then falls back to session storage
+  - `team-page.tsx` now persists `?ref=` as well and performs a one-shot authenticated auto-bind recovery for users who are still unbound and unplaced
+  - `team-page.tsx` also hides `Bind Inviter` for the root user
+
+## Additional Commands Run (Follow-up Fix)
+
+- `sed -n '1,220p' apps/server/src/auth/dto/signature-signin.dto.ts`
+- `sed -n '1,260p' apps/server/src/auth/services/auth.service.ts`
+- `sed -n '1,220p' apps/dapp/src/api/auth.ts`
+- `sed -n '1,220p' apps/dapp/src/queries/auth.query.ts`
+- `sed -n '1,260p' apps/dapp/src/store/auth.store.ts`
+- `sed -n '1,260p' apps/dapp/src/lib/fetch.client.ts`
+- `sed -n '1,260p' apps/server/src/modules/referral/services/referral.service.ts`
+- `pnpm --dir apps/dapp typecheck`
+- `pnpm --dir apps/dapp lint`
+- `pnpm --dir apps/dapp build`
+
+## Follow-up Verification Results
+
+- `apps/dapp typecheck`: passed
+- `apps/dapp lint`: passed with 2 existing `img` warnings only
+- `apps/dapp build`: passed
+  - build still reports pre-existing wallet connector module warnings from wagmi/rainbowkit optional connectors

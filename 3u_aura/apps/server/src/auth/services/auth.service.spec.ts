@@ -44,6 +44,10 @@ describe('AuthService', () => {
     };
     const referralService = {
       bindInviterForUserTx: jest.fn(),
+      issueInviteCodeIfMissingForUserTx: jest.fn(),
+    };
+    const treeTopologyService = {
+      initializeRootUserTx: jest.fn(),
     };
 
     const service = new AuthService(
@@ -54,6 +58,7 @@ describe('AuthService', () => {
       jwtService as any,
       refreshTokenService as any,
       referralService as any,
+      treeTopologyService as any,
     );
 
     jest.spyOn(service, 'generateMessage').mockResolvedValue({
@@ -65,16 +70,18 @@ describe('AuthService', () => {
       db,
       referralService,
       service,
+      treeTopologyService,
       userService,
     };
   };
 
   it('creates a new referred user without issuing invite code before auto-bind', async () => {
-    const { db, referralService, service, userService } = createService();
+    const { db, referralService, service, treeTopologyService, userService } = createService();
     userService.findOne.mockResolvedValue(null);
 
     const tx = {
       user: {
+        count: jest.fn().mockResolvedValue(1),
         create: jest.fn().mockResolvedValue({
           id: 'user_1',
           walletAddress: basePayload.address,
@@ -84,7 +91,7 @@ describe('AuthService', () => {
         findUniqueOrThrow: jest.fn().mockResolvedValue({
           id: 'user_1',
           walletAddress: basePayload.address,
-          inviteCode: 'SHARE123',
+          inviteCode: null,
           status: UserStatus.ACTIVE,
         }),
       },
@@ -113,15 +120,16 @@ describe('AuthService', () => {
         auditAction: 'referral.bind-inviter.auto-onboarded',
       }),
     );
-    expect(result.inviteCode).toBe('SHARE123');
+    expect(result.inviteCode).toBeNull();
   });
 
   it('creates a new unreferred user without auto-binding', async () => {
-    const { db, referralService, service, userService } = createService();
+    const { db, referralService, service, treeTopologyService, userService } = createService();
     userService.findOne.mockResolvedValue(null);
 
     const tx = {
       user: {
+        count: jest.fn().mockResolvedValue(1),
         create: jest.fn().mockResolvedValue({
           id: 'user_2',
           walletAddress: basePayload.address,
@@ -143,7 +151,54 @@ describe('AuthService', () => {
     const result = await service.signinBySignature(basePayload);
 
     expect(referralService.bindInviterForUserTx).not.toHaveBeenCalled();
+    expect(referralService.issueInviteCodeIfMissingForUserTx).not.toHaveBeenCalled();
+    expect(treeTopologyService.initializeRootUserTx).not.toHaveBeenCalled();
     expect(result.inviteCode).toBeNull();
+  });
+
+  it('issues invite code for the first root user', async () => {
+    const { db, referralService, service, treeTopologyService, userService } = createService();
+    userService.findOne.mockResolvedValue(null);
+
+    const tx = {
+      user: {
+        count: jest.fn().mockResolvedValue(0),
+        create: jest.fn().mockResolvedValue({
+          id: 'user_root',
+          walletAddress: basePayload.address,
+          inviteCode: null,
+          status: UserStatus.ACTIVE,
+        }),
+        findUniqueOrThrow: jest.fn().mockResolvedValue({
+          id: 'user_root',
+          walletAddress: basePayload.address,
+          inviteCode: 'ROOT1234',
+          status: UserStatus.ACTIVE,
+        }),
+      },
+    };
+    db.$transaction.mockImplementation((operation: (tx: object) => Promise<unknown>) =>
+      operation(tx as any),
+    );
+    referralService.issueInviteCodeIfMissingForUserTx.mockResolvedValue({
+      id: 'user_root',
+      walletAddress: basePayload.address,
+      inviteCode: 'ROOT1234',
+      status: UserStatus.ACTIVE,
+    });
+
+    const result = await service.signinBySignature(basePayload);
+
+    expect(referralService.bindInviterForUserTx).not.toHaveBeenCalled();
+    expect(referralService.issueInviteCodeIfMissingForUserTx).toHaveBeenCalledWith(
+      'user_root',
+      tx,
+    );
+    expect(treeTopologyService.initializeRootUserTx).toHaveBeenCalledWith(
+      'user_root',
+      tx,
+    );
+    expect(result.inviteCode).toBe('ROOT1234');
   });
 
   it('rejects disabled users after sign-in verification', async () => {

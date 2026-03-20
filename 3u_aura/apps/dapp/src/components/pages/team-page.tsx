@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Link2, Network, Share2, Copy, Check, Wallet, TrendingUp, TrendingDown, Users, QrCode } from "lucide-react";
 import type {
   ReferralPendingPlacementView,
@@ -27,11 +28,17 @@ import {
 } from "@/queries/promotion.query";
 import { useUserProfileQuery } from "@/queries/user.query";
 import { useAuthStore } from "@/store/auth.store";
+import {
+  normalizeReferralCode,
+  PENDING_REFERRAL_CODE_STORAGE_KEY,
+  resolvePendingReferralCode,
+} from "@/lib/referral";
 
 const EMPTY_PENDING_PLACEMENTS: ReferralPendingPlacementView[] = [];
 const EMPTY_SELECTABLE_SLOTS: ReferralPlacementSlotView[] = [];
 
 export function TeamPage() {
+  const searchParams = useSearchParams();
   const { hasHydrated, isAuthenticated } = useAuthStore();
   const profileQuery = useUserProfileQuery(isAuthenticated && hasHydrated);
   const pendingPlacementQuery = usePendingPlacementsQuery(
@@ -49,6 +56,7 @@ export function TeamPage() {
     string | null
   >(null);
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
+  const autoBindAttemptKeyRef = useRef<string | null>(null);
   
   const user = profileQuery.data;
   const profile = user?.profile;
@@ -56,7 +64,13 @@ export function TeamPage() {
     pendingPlacementQuery.data ?? EMPTY_PENDING_PLACEMENTS;
   const selectableSlots =
     selectableSlotsQuery.data ?? EMPTY_SELECTABLE_SLOTS;
-  const hasShareAccess = Boolean(user?.inviterId && user?.inviteCode);
+  const referralCodeFromUrl = normalizeReferralCode(searchParams.get("ref"));
+  const isRootUser = Boolean(
+    user && !user.inviterId && !user.parentId && user.inviteCode,
+  );
+  const isTreeReady = Boolean(user?.parentId || isRootUser);
+  const isAwaitingOwnPlacement = Boolean(user?.inviterId && !user?.parentId);
+  const hasShareAccess = Boolean(isTreeReady && user?.inviteCode);
   const appOrigin =
     typeof window === "undefined" ? "" : window.location.origin;
   const shareLink = useMemo(() => {
@@ -82,6 +96,59 @@ export function TeamPage() {
       null,
     [selectedSlotKey, selectableSlots],
   );
+
+  useEffect(() => {
+    if (!referralCodeFromUrl || typeof window === "undefined") {
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      PENDING_REFERRAL_CODE_STORAGE_KEY,
+      referralCodeFromUrl,
+    );
+  }, [referralCodeFromUrl]);
+
+  useEffect(() => {
+    const pendingReferralCode = resolvePendingReferralCode(referralCodeFromUrl);
+    if (!pendingReferralCode || !hasHydrated || !isAuthenticated || !user) {
+      return;
+    }
+
+    // Root users and already-bound users should not be rebound automatically.
+    if (user.inviterId || user.parentId || user.inviteCode) {
+      return;
+    }
+
+    if (bindInviterMutation.isPending) {
+      return;
+    }
+
+    const attemptKey = `${user.id}:${pendingReferralCode}`;
+    if (autoBindAttemptKeyRef.current === attemptKey) {
+      return;
+    }
+
+    autoBindAttemptKeyRef.current = attemptKey;
+
+    bindInviterMutation.mutate(
+      { inviteCode: pendingReferralCode },
+      {
+        onSuccess: () => {
+          if (typeof window !== "undefined") {
+            window.sessionStorage.removeItem(
+              PENDING_REFERRAL_CODE_STORAGE_KEY,
+            );
+          }
+        },
+      },
+    );
+  }, [
+    bindInviterMutation,
+    hasHydrated,
+    isAuthenticated,
+    referralCodeFromUrl,
+    user,
+  ]);
 
   async function handleBindInviter() {
     await bindInviterMutation.mutateAsync({
@@ -320,6 +387,24 @@ export function TeamPage() {
                 </div>
               </GlassCard>
             </div>
+          ) : isAwaitingOwnPlacement ? (
+            <GlassCard className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                  <Share2 className="w-5 h-5 text-white/40" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">
+                    Share unlocks after your own placement
+                  </p>
+                  <p className="mt-1 text-sm text-white/50">
+                    Your inviter binding is already saved. Once your upstream places you
+                    into the tree, your own invite code, referral link, and QR code will
+                    unlock automatically.
+                  </p>
+                </div>
+              </div>
+            </GlassCard>
           ) : (
             <GlassCard className="p-4">
               <div className="flex items-start gap-3">
@@ -333,7 +418,8 @@ export function TeamPage() {
                   <p className="mt-1 text-sm text-white/50">
                     Users who first arrive through a referral link bind automatically. If
                     you entered directly, bind an inviter below first. Your own invite code,
-                    referral link, and QR code will appear after that binding succeeds.
+                    referral link, and QR code will appear after you are both bound and
+                    placed into the tree.
                   </p>
                 </div>
               </div>
@@ -342,7 +428,7 @@ export function TeamPage() {
         </section>
 
         {/* Bind Inviter */}
-        {!user?.inviterId && (
+        {!isRootUser && !user?.inviterId && (
           <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
             <h2 className="text-sm font-medium text-white/70 mb-3">Bind Inviter</h2>
             <GlassCard className="p-4">
@@ -450,7 +536,11 @@ export function TeamPage() {
               ) : selectableSlots.length === 0 ? (
                 <SectionEmptyState
                   title="No placement slots available"
-                  description="Try again after the latest topology updates have been processed."
+                  description={
+                    isAwaitingOwnPlacement
+                      ? "Your own account is still waiting for upstream placement, so your subtree is not ready to host descendants yet."
+                      : "Try again after the latest topology updates have been processed."
+                  }
                 />
               ) : (
                 selectableSlots.map((slot) => (

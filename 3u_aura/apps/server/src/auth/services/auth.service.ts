@@ -17,6 +17,7 @@ import { UserService } from '@/user';
 import { ConfigService } from '@nestjs/config';
 import { RefreshTokenService } from './refresh-token.service';
 import { ReferralService } from '@/modules/referral';
+import { TreeTopologyService } from '@/modules/tree';
 
 type AuthSignatureMessagePayload = {
   expired: number;
@@ -46,6 +47,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly refreshTokenService: RefreshTokenService,
     private readonly referralService: ReferralService,
+    private readonly treeTopologyService: TreeTopologyService,
   ) { }
 
   async verifySignature(
@@ -127,6 +129,7 @@ Expired: ${expired.format('YYYY/MM/DD HH:mm:ss')}`;
 
     if (!user) {
       user = await this.db.$transaction(async (tx) => {
+        const userCount = await tx.user.count();
         const createdUser = await tx.user.create({
           data: {
             walletAddress: getAddress(payload.address),
@@ -144,6 +147,15 @@ Expired: ${expired.format('YYYY/MM/DD HH:mm:ss')}`;
               auditAction: 'referral.bind-inviter.auto-onboarded',
               idempotentAuditAction: 'referral.bind-inviter.auto-onboarded.idempotent',
             },
+          );
+        } else if (userCount === 0) {
+          await this.referralService.issueInviteCodeIfMissingForUserTx(
+            createdUser.id,
+            tx,
+          );
+          await this.treeTopologyService.initializeRootUserTx(
+            createdUser.id,
+            tx,
           );
         }
 

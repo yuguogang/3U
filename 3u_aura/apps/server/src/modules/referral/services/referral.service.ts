@@ -69,27 +69,25 @@ export class ReferralService {
     const boundUser = inviterAlreadyBound
       ? bindingUser
       : await this.referralRepository.bindInviter(bindingUser.id, inviter.id, tx);
-    const shareReadyUser = await this.ensureInviteCode(boundUser, tx);
 
     await this.auditSeam.record({
       action: inviterAlreadyBound
         ? options?.idempotentAuditAction ?? 'referral.bind-inviter.idempotent'
         : options?.auditAction ?? 'referral.bind-inviter.confirmed',
-      targetId: shareReadyUser.id,
+      targetId: boundUser.id,
       targetType: 'User',
       payload: {
         inviteCode: inviter.inviteCode,
         inviterId: inviter.id,
-        issuedInviteCode: shareReadyUser.inviteCode ?? undefined,
-        userId: shareReadyUser.id,
+        userId: boundUser.id,
       },
     });
 
     return {
       inviterId: inviter.id,
       inviterInviteCode: inviter.inviteCode ?? undefined,
-      isPlacementPending: !shareReadyUser.parentId,
-      userId: shareReadyUser.id,
+      isPlacementPending: !boundUser.parentId,
+      userId: boundUser.id,
     };
   }
 
@@ -105,10 +103,15 @@ export class ReferralService {
     );
   }
 
-  private async ensureInviteCode(
-    user: ReferralBindingUser,
+  async issueInviteCodeIfMissingForUserTx(
+    userId: string,
     tx: Prisma.TransactionClient,
   ) {
+    const user = await this.referralRepository.findUserForBinding(userId, tx);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     if (user.inviteCode) {
       return user;
     }
