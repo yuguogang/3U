@@ -252,6 +252,8 @@ export function buildDerivedEnv({ manifest, target, baseEnv }) {
         NEXT_PUBLIC_PROMOTION_CHAIN_ID: String(manifest.chain.id),
         NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS:
           manifest.contracts.paymentTokenAddress || '',
+        NEXT_PUBLIC_CHECKIN_RECEIVER_ADDRESS:
+          manifest.roles.checkinReceiverAddress || '',
         NEXT_PUBLIC_FOUNDER_NFT_ADDRESS:
           manifest.contracts.founderNftAddress || '',
         NEXT_PUBLIC_NFT_SALE_ADDRESS: manifest.contracts.nftSaleAddress || '',
@@ -348,6 +350,7 @@ const REQUIRED_KEYS = {
     'NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID',
     'NEXT_PUBLIC_PROMOTION_CHAIN_ID',
     'NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS',
+    'NEXT_PUBLIC_CHECKIN_RECEIVER_ADDRESS',
     'NEXT_PUBLIC_FOUNDER_NFT_ADDRESS',
     'NEXT_PUBLIC_NFT_SALE_ADDRESS',
     'NEXT_PUBLIC_MERKLE_CLAIM_ADDRESS',

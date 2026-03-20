@@ -2,12 +2,66 @@ const INTEGER_GROUP_FORMATTER = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+function scientificToPlainString(value: string) {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized.includes("e")) {
+    return normalized;
+  }
+
+  const sign = normalized.startsWith("-") ? "-" : "";
+  const unsigned = sign ? normalized.slice(1) : normalized;
+  const [mantissa, exponentPart] = unsigned.split("e");
+  const exponent = Number.parseInt(exponentPart ?? "0", 10);
+  const [integerPart = "0", fractionPart = ""] = mantissa.split(".");
+  const digits = `${integerPart}${fractionPart}`.replace(/^0+(?=\d)/, "") || "0";
+  const decimalIndex = integerPart.length + exponent;
+
+  if (decimalIndex <= 0) {
+    return `${sign}0.${"0".repeat(Math.abs(decimalIndex))}${digits}`.replace(
+      /\.?0+$/,
+      "",
+    );
+  }
+
+  if (decimalIndex >= digits.length) {
+    return `${sign}${digits}${"0".repeat(decimalIndex - digits.length)}`;
+  }
+
+  return `${sign}${digits.slice(0, decimalIndex)}.${digits.slice(decimalIndex)}`;
+}
+
+export function parseAtomicToBigInt(
+  value: string | number | bigint | null | undefined,
+) {
+  if (value === null || value === undefined) {
+    return BigInt(0);
+  }
+
+  if (typeof value === "bigint") {
+    return value;
+  }
+
+  const raw = typeof value === "string" ? value.trim() : String(value);
+  if (!raw) {
+    return BigInt(0);
+  }
+
+  const plain = scientificToPlainString(raw);
+  const [integerPart = "0"] = plain.split(".");
+  const safeInteger = integerPart === "" || integerPart === "-" ? `${integerPart}0` : integerPart;
+
+  return BigInt(safeInteger);
+}
+
 function toDecimalParts(value: string, decimals: number) {
-  const normalized = value.trim() || "0";
+  const normalized = scientificToPlainString(value.trim() || "0");
   const sign = normalized.startsWith("-") ? "-" : "";
   const digits = sign ? normalized.slice(1) : normalized;
+  const integerDigits = digits.split(".")[0] || "0";
   const padded =
-    digits.length > decimals ? digits : digits.padStart(decimals + 1, "0");
+    integerDigits.length > decimals
+      ? integerDigits
+      : integerDigits.padStart(decimals + 1, "0");
   const integerPartRaw = padded.slice(0, padded.length - decimals) || "0";
   const fractionPartRaw = decimals > 0 ? padded.slice(-decimals) : "";
 
@@ -27,7 +81,10 @@ export function formatAtomicAmount(
     return "0";
   }
 
-  const input = typeof value === "string" ? value : String(value);
+  const input =
+    typeof value === "bigint"
+      ? value.toString()
+      : parseAtomicToBigInt(value).toString();
   const { fractionPartRaw, integerPartRaw, sign } = toDecimalParts(
     input,
     decimals,

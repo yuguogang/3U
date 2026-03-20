@@ -18,6 +18,9 @@ export const promotionChainId = Number.parseInt(
 );
 
 export const promotionContracts = {
+  checkinReceiverAddress: asAddress(
+    process.env.NEXT_PUBLIC_CHECKIN_RECEIVER_ADDRESS,
+  ),
   founderNftAddress: asAddress(process.env.NEXT_PUBLIC_FOUNDER_NFT_ADDRESS),
   merkleClaimAddress: asAddress(process.env.NEXT_PUBLIC_MERKLE_CLAIM_ADDRESS),
   nftSaleAddress: asAddress(process.env.NEXT_PUBLIC_NFT_SALE_ADDRESS),
@@ -66,6 +69,16 @@ export const erc20Abi = [
     name: "balanceOf",
     outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    name: "transfer",
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "nonpayable",
     type: "function",
   },
 ] as const;

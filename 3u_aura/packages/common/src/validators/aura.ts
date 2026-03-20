@@ -14,4 +14,5 @@ export const AuthSignatureSigninSchema = z.object({
     device: z.union([z.nativeEnum(DEVICES), z.string()]),
     name: z.string().optional(),
     chain: z.preprocess((v) => Number(v), z.number()).optional(),
+    referralCode: z.string().trim().min(1).max(32).optional(),
 });

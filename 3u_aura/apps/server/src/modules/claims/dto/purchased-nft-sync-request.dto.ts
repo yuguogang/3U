@@ -3,4 +3,6 @@ import { createZodDto } from 'nestjs-zod';
 
 export class PurchasedNftSyncRequestDto extends createZodDto(
   PromotionPurchasedNftSyncRequestSchema,
-) {}
+) {
+  declare txHash: string;
+}

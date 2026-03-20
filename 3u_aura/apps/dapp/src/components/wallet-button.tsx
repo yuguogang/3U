@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useAccount, useChainId, useConnect, useSignMessage } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { ChevronDown, Loader2, Wallet } from "lucide-react";
@@ -28,7 +29,17 @@ function isSameAddress(a?: string | null, b?: string | null) {
   return a.toLowerCase() === b.toLowerCase();
 }
 
+const PENDING_REFERRAL_CODE_STORAGE_KEY = "aura:pending-referral-code";
+
+function normalizeReferralCode(value?: string | null) {
+  if (!value) return null;
+  const trimmed = value.trim().toUpperCase();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 export function WalletButton() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { connectAsync, connectors, isPending: isConnecting } = useConnect();
@@ -68,6 +79,18 @@ export function WalletButton() {
   const { data: userProfile } = useUserProfileQuery(
     isAuthenticated && hasHydrated,
   );
+
+  useEffect(() => {
+    const referralCode = normalizeReferralCode(searchParams.get("ref"));
+    if (!referralCode || typeof window === "undefined") {
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      PENDING_REFERRAL_CODE_STORAGE_KEY,
+      referralCode,
+    );
+  }, [pathname, searchParams]);
 
   // 同步用户信息到 store
   useEffect(() => {
@@ -129,6 +152,13 @@ export function WalletButton() {
     if (!address || isSigning || isAuthenticated) return;
     setIsSigning(true);
     try {
+      const pendingReferralCode =
+        typeof window === "undefined"
+          ? null
+          : normalizeReferralCode(
+              window.sessionStorage.getItem(PENDING_REFERRAL_CODE_STORAGE_KEY),
+            );
+
       // 1) 拉取服务端生成的待签名消息（包含 nonce/过期时间）
       const { message } = await signatureMessageMutation.mutateAsync({
         address,
@@ -146,6 +176,7 @@ export function WalletButton() {
         chain: chainId,
         signature,
         device: DEVICES.BROWSER,
+        referralCode: pendingReferralCode ?? undefined,
       });
 
       // 4) 保存 accessToken（fetchClient 会自动注入 Authorization）
@@ -161,6 +192,10 @@ export function WalletButton() {
         });
         if (userData) {
           setUser(userData);
+        }
+
+        if (typeof window !== "undefined") {
+          window.sessionStorage.removeItem(PENDING_REFERRAL_CODE_STORAGE_KEY);
         }
       } catch (error) {
         console.error("Failed to fetch user profile:", error);

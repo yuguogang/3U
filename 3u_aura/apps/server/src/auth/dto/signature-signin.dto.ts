@@ -9,5 +9,6 @@ export class SignatureSigninDto extends createZodDto(
   declare chain?: number;
   declare device: DEVICES | string;
   declare name?: string;
+  declare referralCode?: string;
   declare signature: string;
 }

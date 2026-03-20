@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Link2, Network, Share2, Copy, Check, Wallet, TrendingUp, TrendingDown, Users } from "lucide-react";
+import { Link2, Network, Share2, Copy, Check, Wallet, TrendingUp, TrendingDown, Users, QrCode } from "lucide-react";
 import type {
   ReferralPendingPlacementView,
   ReferralPlacementSlotView,
@@ -43,7 +43,8 @@ export function TeamPage() {
   const bindInviterMutation = useBindInviterMutation();
   const bindPlacementMutation = useBindPlacementMutation();
   const [inviteCode, setInviteCode] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [selectedPlacementUserId, setSelectedPlacementUserId] = useState<
     string | null
   >(null);
@@ -55,6 +56,25 @@ export function TeamPage() {
     pendingPlacementQuery.data ?? EMPTY_PENDING_PLACEMENTS;
   const selectableSlots =
     selectableSlotsQuery.data ?? EMPTY_SELECTABLE_SLOTS;
+  const hasShareAccess = Boolean(user?.inviterId && user?.inviteCode);
+  const appOrigin =
+    typeof window === "undefined" ? "" : window.location.origin;
+  const shareLink = useMemo(() => {
+    if (!hasShareAccess || !user?.inviteCode || !appOrigin) {
+      return "";
+    }
+
+    return `${appOrigin}/team?ref=${encodeURIComponent(user.inviteCode)}`;
+  }, [appOrigin, hasShareAccess, user?.inviteCode]);
+  const qrCodeUrl = useMemo(() => {
+    if (!shareLink) {
+      return "";
+    }
+
+    return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
+      shareLink,
+    )}`;
+  }, [shareLink]);
 
   const selectedSlot = useMemo(
     () =>
@@ -84,11 +104,19 @@ export function TeamPage() {
     setSelectedSlotKey(null);
   }
 
-  const handleCopyInvite = () => {
+  const handleCopyInvite = async () => {
     if (user?.inviteCode) {
-      navigator.clipboard.writeText(user.inviteCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText(user.inviteCode);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    }
+  };
+
+  const handleCopyShareLink = async () => {
+    if (shareLink) {
+      await navigator.clipboard.writeText(shareLink);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
     }
   };
 
@@ -174,30 +202,143 @@ export function TeamPage() {
           </div>
         </section>
 
-        {/* Invite Code */}
+        {/* Share Center */}
         <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
-          <h2 className="text-sm font-medium text-white/70 mb-3">Your Invite Code</h2>
-          <GlassCard className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
-                  <Share2 className="w-5 h-5 text-aura-primary" />
+          <h2 className="text-sm font-medium text-white/70 mb-3">Share Center</h2>
+          {hasShareAccess ? (
+            <div className="space-y-3">
+              <GlassCard className="p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                      <Share2 className="w-5 h-5 text-aura-primary" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-mono font-semibold text-white">
+                        {user?.inviteCode}
+                      </p>
+                      <p className="text-xs text-white/50">
+                        Share this code or the full referral link below
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyInvite}
+                    className="h-9 border-white/10 hover:bg-white/5"
+                  >
+                    {copiedCode ? (
+                      <Check className="w-4 h-4 text-aura-success" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </GlassCard>
+
+              <GlassCard className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs uppercase tracking-[0.24em] text-white/40">
+                      Referral Link
+                    </p>
+                    <p className="mt-2 break-all text-sm text-white/80">
+                      {shareLink}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyShareLink}
+                    className="h-9 shrink-0 border-white/10 hover:bg-white/5"
+                  >
+                    {copiedLink ? (
+                      <Check className="w-4 h-4 text-aura-success" />
+                    ) : (
+                      <Link2 className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </GlassCard>
+
+              <GlassCard className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                    <QrCode className="w-5 h-5 text-aura-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-white">Referral QR Code</p>
+                    <p className="text-xs text-white/50">
+                      Scanning this code opens your referral link with the invite code embedded.
+                    </p>
+                    {qrCodeUrl ? (
+                      <>
+                        <div className="mt-4 inline-flex rounded-2xl border border-white/10 bg-white p-3">
+                          <a
+                            href={qrCodeUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label="Open referral QR code in a new tab"
+                          >
+                            <img
+                              alt="Referral QR code"
+                              className="h-40 w-40 rounded-lg"
+                              src={qrCodeUrl}
+                            />
+                          </a>
+                        </div>
+                        <div className="mt-3 flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleCopyShareLink}
+                            className="border-white/10 hover:bg-white/5"
+                          >
+                            {copiedLink ? (
+                              <Check className="w-4 h-4 text-aura-success" />
+                            ) : (
+                              <Copy className="w-4 h-4" />
+                            )}
+                            Copy Link
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            className="border-white/10 hover:bg-white/5"
+                          >
+                            <a href={qrCodeUrl} target="_blank" rel="noreferrer">
+                              <QrCode className="w-4 h-4" />
+                              Open QR
+                            </a>
+                          </Button>
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+              </GlassCard>
+            </div>
+          ) : (
+            <GlassCard className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                  <Share2 className="w-5 h-5 text-white/40" />
                 </div>
                 <div>
-                  <p className="text-lg font-mono font-semibold text-white">{user?.inviteCode || "---"}</p>
-                  <p className="text-xs text-white/50">Share to invite friends</p>
+                  <p className="text-sm font-medium text-white">
+                    Share unlocks after inviter binding
+                  </p>
+                  <p className="mt-1 text-sm text-white/50">
+                    Users who first arrive through a referral link bind automatically. If
+                    you entered directly, bind an inviter below first. Your own invite code,
+                    referral link, and QR code will appear after that binding succeeds.
+                  </p>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyInvite}
-                className="h-9 border-white/10 hover:bg-white/5"
-              >
-                {copied ? <Check className="w-4 h-4 text-aura-success" /> : <Copy className="w-4 h-4" />}
-              </Button>
-            </div>
-          </GlassCard>
+            </GlassCard>
+          )}
         </section>
 
         {/* Bind Inviter */}
@@ -209,9 +350,14 @@ export function TeamPage() {
                 <div className="relative flex-1">
                   <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                   <Input
-                    placeholder="Enter invite code"
+                    placeholder="Enter upstream invite code"
                     value={inviteCode}
-                    onChange={(e) => setInviteCode(e.target.value)}
+                    onChange={(e) => {
+                      if (bindInviterMutation.isError) {
+                        bindInviterMutation.reset();
+                      }
+                      setInviteCode(e.target.value);
+                    }}
                     className="h-10 pl-9 bg-white/5 border-white/10"
                   />
                 </div>
@@ -223,6 +369,13 @@ export function TeamPage() {
                   Bind
                 </Button>
               </div>
+              {bindInviterMutation.isError && (
+                <div className="mt-3 rounded-xl border border-aura-error/20 bg-aura-error/10 px-3 py-2 text-sm text-aura-error">
+                  {bindInviterMutation.error instanceof Error
+                    ? bindInviterMutation.error.message
+                    : "Inviter bind failed"}
+                </div>
+              )}
             </GlassCard>
           </section>
         )}
@@ -338,6 +491,13 @@ export function TeamPage() {
               >
                 {bindPlacementMutation.isPending ? "Confirming..." : "Confirm Placement"}
               </Button>
+              {bindPlacementMutation.isError && (
+                <div className="mt-3 rounded-xl border border-aura-error/20 bg-aura-error/10 px-3 py-2 text-sm text-aura-error">
+                  {bindPlacementMutation.error instanceof Error
+                    ? bindPlacementMutation.error.message
+                    : "Placement binding failed"}
+                </div>
+              )}
             </div>
           </section>
         )}

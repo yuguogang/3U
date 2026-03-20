@@ -67,6 +67,24 @@ export class ReferralRepository {
     });
   }
 
+  async assignInviteCode(
+    userId: string,
+    inviteCode: string,
+    executor: DbExecutor = this.db,
+  ): Promise<ReferralBindingUser> {
+    return executor.user.update({
+      where: { id: userId },
+      data: { inviteCode },
+      select: {
+        id: true,
+        inviteCode: true,
+        inviterId: true,
+        parentId: true,
+        status: true,
+      },
+    });
+  }
+
   async listPendingPlacementInvitees(
     inviterId: string,
     executor: DbExecutor = this.db,

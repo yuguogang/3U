@@ -14,6 +14,7 @@ import StatCard from "@/components/ui-custom/stat-card";
 import {
   formatAuraAtomic,
   formatDateTime,
+  parseAtomicToBigInt,
 } from "@/lib/promotion-format";
 import { useMyClaimsQuery } from "@/queries/claims.query";
 import { useCurrentEpochQuery } from "@/queries/promotion.query";
@@ -54,10 +55,10 @@ export function RewardsPage() {
   const totalAuraFromProfile = useMemo(() => {
     if (!profile) return BigInt(0);
     return (
-      BigInt(profile.totalAuraFromCheckin ?? "0") +
-      BigInt(profile.totalAuraFromDirect ?? "0") +
-      BigInt(profile.totalAuraFromIndirect ?? "0") +
-      BigInt(profile.totalAuraFromConsolation ?? "0")
+      parseAtomicToBigInt(profile.totalAuraFromCheckin) +
+      parseAtomicToBigInt(profile.totalAuraFromDirect) +
+      parseAtomicToBigInt(profile.totalAuraFromIndirect) +
+      parseAtomicToBigInt(profile.totalAuraFromConsolation)
     );
   }, [profile]);
 
@@ -89,7 +90,14 @@ export function RewardsPage() {
               <div>
                 <p className="text-xs text-white/50">From Referrals</p>
                 <p className="text-lg font-semibold text-white">
-                  {profile ? formatAuraAtomic((BigInt(profile.totalAuraFromDirect) + BigInt(profile.totalAuraFromIndirect)).toString()) : "0"}
+                  {profile
+                    ? formatAuraAtomic(
+                        (
+                          parseAtomicToBigInt(profile.totalAuraFromDirect) +
+                          parseAtomicToBigInt(profile.totalAuraFromIndirect)
+                        ).toString(),
+                      )
+                    : "0"}
                 </p>
               </div>
             </div>

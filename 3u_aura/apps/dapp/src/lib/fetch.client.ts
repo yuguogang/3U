@@ -26,15 +26,24 @@ export async function fetchClient<T>(
     if (search) url += (url.includes("?") ? "&" : "?") + search;
   }
 
-  const res = await fetch(url, {
-    ...rest,
-    ...(body !== undefined && { body: JSON.stringify(body) }),
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...headers,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...rest,
+      ...(body !== undefined && { body: JSON.stringify(body) }),
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...headers,
+      },
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error && error.message
+        ? error.message
+        : "Network request failed";
+    throw new Error(message);
+  }
 
   if (res.status === 401) {
     useAuthStore.getState().logout();
@@ -42,6 +51,18 @@ export async function fetchClient<T>(
   }
 
   if (!res.ok) {
+    const contentType = res.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      const payload = (await res.json()) as {
+        message?: string | string[];
+        error?: string;
+      };
+      const message = Array.isArray(payload.message)
+        ? payload.message.join(", ")
+        : payload.message;
+      throw new Error(message || payload.error || "Request failed");
+    }
+
     const message = await res.text();
     throw new Error(message || "Request failed");
   }

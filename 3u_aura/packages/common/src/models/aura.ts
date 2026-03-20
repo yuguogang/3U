@@ -122,4 +122,5 @@ export interface AuthSignatureSigninInput {
     device: DEVICES | string;
     name?: string;
     chain?: number;
+    referralCode?: string;
 }

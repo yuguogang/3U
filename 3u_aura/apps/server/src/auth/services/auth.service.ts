@@ -16,6 +16,7 @@ import { DbService, type User } from '@/db';
 import { UserService } from '@/user';
 import { ConfigService } from '@nestjs/config';
 import { RefreshTokenService } from './refresh-token.service';
+import { ReferralService } from '@/modules/referral';
 
 type AuthSignatureMessagePayload = {
   expired: number;
@@ -44,6 +45,7 @@ export class AuthService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly jwtService: JwtService,
     private readonly refreshTokenService: RefreshTokenService,
+    private readonly referralService: ReferralService,
   ) { }
 
   async verifySignature(
@@ -124,13 +126,50 @@ Expired: ${expired.format('YYYY/MM/DD HH:mm:ss')}`;
     });
 
     if (!user) {
-      user = await this.db.$transaction(async () => {
-        return this.userService.create({
+      user = await this.db.$transaction(async (tx) => {
+        const createdUser = await tx.user.create({
           data: {
             walletAddress: getAddress(payload.address),
             status: UserStatus.ACTIVE,
-            inviteCode: this.generateInviteCode(),
+            inviteCode: null,
           },
+        });
+
+        if (payload.referralCode?.trim()) {
+          await this.referralService.bindInviterForUserTx(
+            { id: createdUser.id },
+            { inviteCode: payload.referralCode.trim().toUpperCase() },
+            tx,
+            {
+              auditAction: 'referral.bind-inviter.auto-onboarded',
+              idempotentAuditAction: 'referral.bind-inviter.auto-onboarded.idempotent',
+            },
+          );
+        }
+
+        return tx.user.findUniqueOrThrow({
+          where: { id: createdUser.id },
+        });
+      });
+    } else if (
+      payload.referralCode?.trim() &&
+      !user.inviterId &&
+      !user.parentId
+    ) {
+      user = await this.db.$transaction(async (tx) => {
+        await this.referralService.bindInviterForUserTx(
+          { id: user!.id },
+          { inviteCode: payload.referralCode!.trim().toUpperCase() },
+          tx,
+          {
+            auditAction: 'referral.bind-inviter.auto-signin-recovered',
+            idempotentAuditAction:
+              'referral.bind-inviter.auto-signin-recovered.idempotent',
+          },
+        );
+
+        return tx.user.findUniqueOrThrow({
+          where: { id: user!.id },
         });
       });
     }
@@ -140,10 +179,6 @@ Expired: ${expired.format('YYYY/MM/DD HH:mm:ss')}`;
     }
 
     return user;
-  }
-
-  private generateInviteCode() {
-    return nanoid(8).toUpperCase();
   }
 
   async createRefreshTokenRecord(

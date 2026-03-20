@@ -3,6 +3,10 @@ import { UserStatus } from '3u-aura-common';
 import { ReferralService } from './referral.service';
 import { ReferralPolicyEngine } from '../engines/referral-policy.engine';
 
+jest.mock('nanoid', () => ({
+  nanoid: () => 'SHARE123',
+}));
+
 describe('ReferralService', () => {
   const actor = { id: 'user_1' };
   const command = { inviteCode: 'INVITER01' };
@@ -17,6 +21,7 @@ describe('ReferralService', () => {
       ),
     };
     const referralRepository = {
+      assignInviteCode: jest.fn(),
       bindInviter: jest.fn(),
       findInviterByInviteCode: jest.fn(),
       findUserForBinding: jest.fn(),
@@ -41,21 +46,30 @@ describe('ReferralService', () => {
     const { auditSeam, referralRepository, service } = createService();
     referralRepository.findUserForBinding.mockResolvedValue({
       id: actor.id,
-      inviteCode: 'USER1',
+      inviteCode: null,
       inviterId: null,
       parentId: null,
       status: UserStatus.ACTIVE,
     });
-    referralRepository.findInviterByInviteCode.mockResolvedValue({
-      id: 'inviter_1',
-      inviteCode: 'INVITER01',
-      inviterId: null,
-      parentId: null,
-      status: UserStatus.ACTIVE,
-    });
+    referralRepository.findInviterByInviteCode
+      .mockResolvedValueOnce({
+        id: 'inviter_1',
+        inviteCode: 'INVITER01',
+        inviterId: null,
+        parentId: null,
+        status: UserStatus.ACTIVE,
+      })
+      .mockResolvedValueOnce(null);
     referralRepository.bindInviter.mockResolvedValue({
       id: actor.id,
-      inviteCode: 'USER1',
+      inviteCode: null,
+      inviterId: 'inviter_1',
+      parentId: null,
+      status: UserStatus.ACTIVE,
+    });
+    referralRepository.assignInviteCode.mockResolvedValue({
+      id: actor.id,
+      inviteCode: 'SHARE123',
       inviterId: 'inviter_1',
       parentId: null,
       status: UserStatus.ACTIVE,
@@ -70,6 +84,11 @@ describe('ReferralService', () => {
     );
     expect(auditSeam.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'referral.bind-inviter.confirmed' }),
+    );
+    expect(referralRepository.assignInviteCode).toHaveBeenCalledWith(
+      actor.id,
+      'SHARE123',
+      expect.any(Object),
     );
     expect(result).toEqual({
       inviterId: 'inviter_1',
@@ -99,6 +118,7 @@ describe('ReferralService', () => {
     const result = await service.bindInviterForUser(actor, command);
 
     expect(referralRepository.bindInviter).not.toHaveBeenCalled();
+    expect(referralRepository.assignInviteCode).not.toHaveBeenCalled();
     expect(auditSeam.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'referral.bind-inviter.idempotent' }),
     );

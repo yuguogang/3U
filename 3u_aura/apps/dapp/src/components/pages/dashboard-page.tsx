@@ -20,6 +20,7 @@ import { GlassCard } from "@/components/ui-custom/glass-card";
 import StatCard from "@/components/ui-custom/stat-card";
 import {
   formatAuraAtomic,
+  parseAtomicToBigInt,
   formatUsdtAtomic,
 } from "@/lib/promotion-format";
 import {
@@ -51,10 +52,10 @@ export function DashboardPage() {
   const totalAura = useMemo(() => {
     if (!profile) return BigInt(0);
     return (
-      BigInt(profile.totalAuraFromCheckin ?? "0") +
-      BigInt(profile.totalAuraFromDirect ?? "0") +
-      BigInt(profile.totalAuraFromIndirect ?? "0") +
-      BigInt(profile.totalAuraFromConsolation ?? "0")
+      parseAtomicToBigInt(profile.totalAuraFromCheckin) +
+      parseAtomicToBigInt(profile.totalAuraFromDirect) +
+      parseAtomicToBigInt(profile.totalAuraFromIndirect) +
+      parseAtomicToBigInt(profile.totalAuraFromConsolation)
     );
   }, [profile]);
 
