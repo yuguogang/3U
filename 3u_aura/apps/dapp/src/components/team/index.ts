@@ -1,4 +1,6 @@
+export * from "./pending-member-card";
 export * from "./team-tree-node-card";
+export * from "./team-tree-node-details-sheet";
 export * from "./team-tree-pending-summary";
 export * from "./team-tree-placement-legend";
 export * from "./team-tree-utils";

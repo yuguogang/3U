@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Link2, Share2, Copy, Check, Wallet, TrendingUp, TrendingDown, QrCode } from "lucide-react";
+import { Link2, Share2, Copy, Check, TrendingUp, TrendingDown, QrCode, Sparkles } from "lucide-react";
 import type {
   ReferralPendingPlacementView,
   TeamPosition,
@@ -16,6 +16,7 @@ import {
   TeamTreePendingSummary,
   TeamTreePlacementLegend,
   TeamTreeView,
+  PendingMemberCard,
 } from "@/components/team";
 import {
   SectionCardSkeleton,
@@ -59,6 +60,7 @@ export function TeamPage() {
   const [selectedPlacementUserId, setSelectedPlacementUserId] = useState<
     string | null
   >(null);
+  const [draggingPendingUserId, setDraggingPendingUserId] = useState<string | null>(null);
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
   const [treeDepth, setTreeDepth] = useState(4);
   const autoBindAttemptKeyRef = useRef<string | null>(null);
@@ -225,6 +227,23 @@ export function TeamPage() {
     setSelectedSlotKey(`${node.userId}:${position}`);
   }
 
+  function handlePendingMemberSelect(userId: string | null) {
+    setSelectedPlacementUserId(userId);
+    if (!userId) {
+      setSelectedSlotKey(null);
+    }
+  }
+
+  function handleDropPendingOnSlot(
+    node: TeamTreeNodeView,
+    position: TeamPosition,
+    pendingUserId: string,
+  ) {
+    setDraggingPendingUserId(null);
+    setSelectedPlacementUserId(pendingUserId);
+    setSelectedSlotKey(`${node.userId}:${position}`);
+  }
+
   const handleCopyInvite = async () => {
     if (user?.inviteCode) {
       await navigator.clipboard.writeText(user.inviteCode);
@@ -312,7 +331,7 @@ export function TeamPage() {
               <div>
                 <h2 className="text-sm font-medium text-white/70">Tree Snapshot</h2>
                 <p className="mt-1 text-xs text-white/45">
-                  Current subtree view for placement decisions. Open child sides can be placed.
+                  Compact subtree view for placement decisions. Tap nodes for details, expand branches on demand, and place pending members into any open subtree slot.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -385,11 +404,14 @@ export function TeamPage() {
                 ) : (
                   <TeamTreeView
                     snapshot={treeSnapshot!}
+                    anchorUserId={user?.id}
                     maxDepth={treeDepth}
                     focusedUserId={selectedPlacementUserId ?? undefined}
+                    selectedPendingUserId={draggingPendingUserId ?? selectedPlacementUserId}
                     selectedParentId={selectedSlot?.parentId}
                     selectedPlacementKey={selectedSlotKey}
                     onSelectOpenSlot={handleTreeSlotSelect}
+                    onDropPendingOnSlot={handleDropPendingOnSlot}
                   />
                 )}
               </div>
@@ -618,34 +640,28 @@ export function TeamPage() {
                 description="Newly joined referrals waiting for placement will appear here."
               />
             ) : (
-              pendingPlacements.map((p) => (
-                <GlassCard
-                  key={p.userId}
-                  variant={selectedPlacementUserId === p.userId ? "highlight" : "default"}
-                  className="p-3"
-                  onClick={() => setSelectedPlacementUserId(p.userId)}
-                  hoverEffect
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
-                        <Wallet className="w-5 h-5 text-white/40" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">
-                          {formatWalletAddress(p.walletAddress)}
-                        </p>
-                        <p className="text-[10px] text-white/40">
-                          Joined {new Date(p.registeredAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    {selectedPlacementUserId === p.userId && (
-                      <Check className="w-4 h-4 text-aura-primary" />
-                    )}
-                  </div>
-                </GlassCard>
-              ))
+              <div className="grid grid-cols-2 gap-2">
+                {pendingPlacements.map((p) => (
+                  <PendingMemberCard
+                    key={p.userId}
+                    userId={p.userId}
+                    walletAddress={p.walletAddress}
+                    registeredAt={p.registeredAt}
+                    dragging={draggingPendingUserId === p.userId}
+                    selected={selectedPlacementUserId === p.userId}
+                    onClick={() =>
+                      handlePendingMemberSelect(
+                        selectedPlacementUserId === p.userId ? null : p.userId,
+                      )
+                    }
+                    onDragStart={(userId) => {
+                      setDraggingPendingUserId(userId);
+                      setSelectedPlacementUserId(userId);
+                    }}
+                    onDragEnd={() => setDraggingPendingUserId(null)}
+                  />
+                ))}
+              </div>
             )}
           </div>
         </section>
@@ -656,6 +672,17 @@ export function TeamPage() {
             <h2 className="text-sm font-medium text-white/70 mb-3">Placement Confirmation</h2>
             <GlassCard className="p-4">
               <div className="space-y-3">
+                <div className="rounded-2xl border border-aura-primary/15 bg-aura-primary/8 px-3 py-2 text-sm text-white/70">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-aura-primary" />
+                    {draggingPendingUserId
+                      ? "Drop the pending member onto any glowing LEFT or RIGHT slot, then confirm the final placement."
+                      : selectedPlacementUserId
+                        ? "Choose a glowing LEFT or RIGHT slot in the tree. The summary below will update before you confirm."
+                        : "Select a pending member first, then choose a subtree slot."}
+                  </div>
+                </div>
+
                 <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3">
                   <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
                     Pending Member
@@ -679,10 +706,13 @@ export function TeamPage() {
                       <p className="text-xs text-white/50">
                         {selectedSlot.teamPosition === "LEFT" ? "Left" : "Right"} child slot
                       </p>
+                      <p className="text-xs text-white/40">
+                        This keeps referral and placement semantics intact: direct referral remains unchanged, while the subtree parent and side define the actual binary-tree mount.
+                      </p>
                     </div>
                   ) : (
                     <p className="mt-2 text-sm text-white/50">
-                      Tap an open LEFT or RIGHT pill on the tree above.
+                      Tap or drop onto an arrow slot in the tree above to choose the target.
                     </p>
                   )}
                 </div>

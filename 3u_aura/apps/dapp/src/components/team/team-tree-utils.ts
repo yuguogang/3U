@@ -21,6 +21,7 @@ export type TeamTreeNodeLike = {
   ensAvatarUrl?: string | null;
   nftTierLabel?: string;
   rewardLabel?: string;
+  childCount?: number;
 };
 
 export type TeamTreeNodeBranch = TeamTreeNodeLike & {
@@ -75,7 +76,7 @@ export function buildTreeBranches(nodes: TeamTreeNodeLike[], rootUserId?: string
   const roots: TeamTreeNodeBranch[] = [];
 
   for (const node of nodes) {
-    map.set(node.userId, { ...node, children: [] });
+    map.set(node.userId, { ...node, childCount: 0, children: [] });
   }
 
   for (const node of map.values()) {
@@ -97,6 +98,7 @@ export function buildTreeBranches(nodes: TeamTreeNodeLike[], rootUserId?: string
   }
 
   const sortChildren = (branch: TeamTreeNodeBranch) => {
+    branch.childCount = branch.children.length;
     branch.children.sort((a, b) => {
       const positionOrder = (position?: TeamPosition) => {
         if (position === TeamPosition.LEFT) return 0;
@@ -120,5 +122,8 @@ export function buildTreeBranches(nodes: TeamTreeNodeLike[], rootUserId?: string
   });
 
   roots.forEach(sortChildren);
+  roots.forEach((root) => {
+    root.childCount = root.children.length;
+  });
   return roots;
 }
