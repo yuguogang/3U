@@ -8,9 +8,10 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { BindPlacementDto } from './dto';
+import { BindPlacementDto, TreeSnapshotQueryDto } from './dto';
 import { TreeTopologyService } from './services/tree-topology.service';
 
 @Controller('tree')
@@ -21,6 +22,14 @@ export class TreeController {
   @Get('placement/selectable-slots')
   async getSelectableSlots(@CurrentUser() user: User) {
     return this.treeTopologyService.listSelectableSlotsForInviter(user);
+  }
+
+  @Get('subtree')
+  async getTreeSnapshot(
+    @CurrentUser() user: User,
+    @Query() query: TreeSnapshotQueryDto,
+  ) {
+    return this.treeTopologyService.getTreeSnapshotForInviter(user, query);
   }
 
   @Post('placement/bind')

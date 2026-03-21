@@ -6,6 +6,7 @@ import type {
   PromotionCheckinRequest,
   ReferralBindInviterInput,
   ReferralBindPlacementInput,
+  TeamTreeSnapshotQuery,
 } from "3u-aura-common";
 import {
   apiBindInviter,
@@ -14,6 +15,7 @@ import {
   apiGetCurrentEpoch,
   apiGetPendingPlacements,
   apiGetSelectableSlots,
+  apiGetTeamTreeSnapshot,
   apiIssueReferralMintSignature,
   apiPrepareReferralMintPreview,
   apiSubmitCheckin,
@@ -25,6 +27,9 @@ export const promotionQueryKeys = {
   currentEpoch: ["promotion", "epoch", "current"] as const,
   pendingPlacements: ["promotion", "team", "pending-placements"] as const,
   selectableSlots: ["promotion", "team", "selectable-slots"] as const,
+  treeSnapshotRoot: ["promotion", "team", "tree-snapshot"] as const,
+  treeSnapshot: (depth?: number) =>
+    ["promotion", "team", "tree-snapshot", depth ?? "all"] as const,
 };
 
 export function useCurrentEpochQuery() {
@@ -61,6 +66,17 @@ export function useSelectableSlotsQuery(enabled: boolean = true) {
   });
 }
 
+export function useTeamTreeSnapshotQuery(
+  query?: TeamTreeSnapshotQuery,
+  enabled: boolean = true,
+) {
+  return useQuery({
+    enabled,
+    queryFn: () => apiGetTeamTreeSnapshot(query),
+    queryKey: promotionQueryKeys.treeSnapshot(query?.depth),
+  });
+}
+
 export function useSubmitCheckinMutation() {
   const queryClient = useQueryClient();
 
@@ -88,6 +104,9 @@ export function useBindInviterMutation() {
         queryClient.invalidateQueries({
           queryKey: promotionQueryKeys.pendingPlacements,
         }),
+        queryClient.invalidateQueries({
+          queryKey: promotionQueryKeys.treeSnapshotRoot,
+        }),
       ]);
     },
   });
@@ -106,6 +125,9 @@ export function useBindPlacementMutation() {
         }),
         queryClient.invalidateQueries({
           queryKey: promotionQueryKeys.selectableSlots,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: promotionQueryKeys.treeSnapshotRoot,
         }),
       ]);
     },

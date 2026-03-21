@@ -51,6 +51,22 @@ export type ReferralBindPlacementInput = z.infer<
   typeof ReferralBindPlacementSchema
 >;
 
+export const TeamTreeSnapshotQuerySchema = z.object({
+  depth: z
+    .preprocess(
+      (value) =>
+        value === undefined || value === null || value === ''
+          ? undefined
+          : Number(value),
+      z.number().int().min(0).max(12),
+    )
+    .optional(),
+});
+
+export type TeamTreeSnapshotQuery = z.infer<
+  typeof TeamTreeSnapshotQuerySchema
+>;
+
 export const NftEligibilityQuerySchema = z
   .object({
     userId: z.string().trim().min(1).optional(),

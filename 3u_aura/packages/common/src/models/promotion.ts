@@ -50,6 +50,31 @@ export interface ReferralPlacementSlotView {
   teamPosition: TeamPosition;
 }
 
+export interface TeamTreeNodeView {
+  userId: string;
+  walletAddress: string;
+  inviteCode?: string;
+  inviterId?: string;
+  parentId?: string;
+  placementKey?: string;
+  teamPosition?: TeamPosition;
+  depth: number;
+  isRoot: boolean;
+  hasPurchasedNft: boolean;
+  hasReferralNft: boolean;
+  totalAuraAtomic: string;
+  leftTeamVolume: string;
+  rightTeamVolume: string;
+  smallLegVolume: string;
+  openChildPositions: TeamPosition[];
+}
+
+export interface TeamTreeSnapshotView {
+  rootUserId: string;
+  requestedDepth?: number;
+  nodes: TeamTreeNodeView[];
+}
+
 export interface NftEligibilityView {
   userId: string;
   status: NftEligibilityStatus;

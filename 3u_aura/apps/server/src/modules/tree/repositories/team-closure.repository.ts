@@ -20,6 +20,31 @@ type TreeSelectableParent = Pick<
   depth: number;
 };
 
+type TreeSnapshotNode = Pick<
+  User,
+  | 'id'
+  | 'walletAddress'
+  | 'inviteCode'
+  | 'inviterId'
+  | 'parentId'
+  | 'placementKey'
+  | 'status'
+  | 'teamPosition'
+> & {
+  depth: number;
+  profile: null | {
+    hasPurchasedNft: boolean;
+    hasReferralNft: boolean;
+    leftTeamVolume: Prisma.Decimal;
+    rightTeamVolume: Prisma.Decimal;
+    smallLegVolume: Prisma.Decimal;
+    totalAuraFromCheckin: Prisma.Decimal;
+    totalAuraFromConsolation: Prisma.Decimal;
+    totalAuraFromDirect: Prisma.Decimal;
+    totalAuraFromIndirect: Prisma.Decimal;
+  };
+};
+
 @Injectable()
 export class TeamClosureRepository {
   constructor(private readonly db: DbService) {}
@@ -133,6 +158,53 @@ export class TeamClosureRepository {
             parentId: true,
             status: true,
             walletAddress: true,
+          },
+        },
+      },
+    });
+
+    return rows.map((row) => ({
+      depth: row.depth,
+      ...row.descendant,
+    }));
+  }
+
+  async listSubtreeNodes(
+    ancestorId: string,
+    options?: { depth?: number },
+    executor: DbExecutor = this.db,
+  ): Promise<TreeSnapshotNode[]> {
+    const rows = await executor.teamClosure.findMany({
+      where: {
+        ancestorId,
+        ...(options?.depth !== undefined ? { depth: { lte: options.depth } } : {}),
+      },
+      orderBy: [{ depth: 'asc' }, { descendantId: 'asc' }],
+      select: {
+        depth: true,
+        descendant: {
+          select: {
+            id: true,
+            walletAddress: true,
+            inviteCode: true,
+            inviterId: true,
+            parentId: true,
+            placementKey: true,
+            status: true,
+            teamPosition: true,
+            profile: {
+              select: {
+                hasPurchasedNft: true,
+                hasReferralNft: true,
+                leftTeamVolume: true,
+                rightTeamVolume: true,
+                smallLegVolume: true,
+                totalAuraFromCheckin: true,
+                totalAuraFromConsolation: true,
+                totalAuraFromDirect: true,
+                totalAuraFromIndirect: true,
+              },
+            },
           },
         },
       },

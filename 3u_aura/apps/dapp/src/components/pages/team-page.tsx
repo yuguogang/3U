@@ -2,21 +2,28 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Link2, Network, Share2, Copy, Check, Wallet, TrendingUp, TrendingDown, Users, QrCode } from "lucide-react";
+import { Link2, Share2, Copy, Check, Wallet, TrendingUp, TrendingDown, QrCode } from "lucide-react";
 import type {
   ReferralPendingPlacementView,
-  ReferralPlacementSlotView,
+  TeamPosition,
+  TeamTreeNodeView,
 } from "3u-aura-common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MobileLayout } from "@/components/layout/mobile-layout";
 import { GlassCard } from "@/components/ui-custom/glass-card";
 import {
+  TeamTreePendingSummary,
+  TeamTreePlacementLegend,
+  TeamTreeView,
+} from "@/components/team";
+import {
   SectionCardSkeleton,
   SectionEmptyState,
   SectionErrorState,
 } from "@/components/ui-custom/section-state";
 import {
+  formatAuraAtomic,
   formatUsdtAtomic,
   formatWalletAddress,
 } from "@/lib/promotion-format";
@@ -24,7 +31,7 @@ import {
   useBindInviterMutation,
   useBindPlacementMutation,
   usePendingPlacementsQuery,
-  useSelectableSlotsQuery,
+  useTeamTreeSnapshotQuery,
 } from "@/queries/promotion.query";
 import { useUserProfileQuery } from "@/queries/user.query";
 import { useAuthStore } from "@/store/auth.store";
@@ -33,18 +40,15 @@ import {
   PENDING_REFERRAL_CODE_STORAGE_KEY,
   resolvePendingReferralCode,
 } from "@/lib/referral";
+import { buildTeamTree } from "@/lib/team-tree";
 
 const EMPTY_PENDING_PLACEMENTS: ReferralPendingPlacementView[] = [];
-const EMPTY_SELECTABLE_SLOTS: ReferralPlacementSlotView[] = [];
 
 export function TeamPage() {
   const searchParams = useSearchParams();
   const { hasHydrated, isAuthenticated } = useAuthStore();
   const profileQuery = useUserProfileQuery(isAuthenticated && hasHydrated);
   const pendingPlacementQuery = usePendingPlacementsQuery(
-    isAuthenticated && hasHydrated,
-  );
-  const selectableSlotsQuery = useSelectableSlotsQuery(
     isAuthenticated && hasHydrated,
   );
   const bindInviterMutation = useBindInviterMutation();
@@ -56,14 +60,13 @@ export function TeamPage() {
     string | null
   >(null);
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
+  const [treeDepth, setTreeDepth] = useState(4);
   const autoBindAttemptKeyRef = useRef<string | null>(null);
   
   const user = profileQuery.data;
   const profile = user?.profile;
   const pendingPlacements =
     pendingPlacementQuery.data ?? EMPTY_PENDING_PLACEMENTS;
-  const selectableSlots =
-    selectableSlotsQuery.data ?? EMPTY_SELECTABLE_SLOTS;
   const referralCodeFromUrl = normalizeReferralCode(searchParams.get("ref"));
   const isRootUser = Boolean(
     user && !user.inviterId && !user.parentId && user.inviteCode,
@@ -71,6 +74,60 @@ export function TeamPage() {
   const isTreeReady = Boolean(user?.parentId || isRootUser);
   const isAwaitingOwnPlacement = Boolean(user?.inviterId && !user?.parentId);
   const hasShareAccess = Boolean(isTreeReady && user?.inviteCode);
+  const treeSnapshotQuery = useTeamTreeSnapshotQuery(
+    { depth: treeDepth },
+    isAuthenticated && hasHydrated && isTreeReady,
+  );
+  const treeRoot = useMemo(
+    () =>
+      buildTeamTree(
+        treeSnapshotQuery.data?.nodes,
+        treeSnapshotQuery.data?.rootUserId,
+      ),
+    [treeSnapshotQuery.data],
+  );
+  const selectedPlacementUser = useMemo(
+    () =>
+      pendingPlacements.find((item) => item.userId === selectedPlacementUserId) ??
+      null,
+    [pendingPlacements, selectedPlacementUserId],
+  );
+  const selectedSlot = useMemo(() => {
+    if (!selectedSlotKey) {
+      return null;
+    }
+
+    const [parentId, teamPosition] = selectedSlotKey.split(":");
+    if (!parentId || !teamPosition) {
+      return null;
+    }
+
+    if (teamPosition !== "LEFT" && teamPosition !== "RIGHT") {
+      return null;
+    }
+
+    const parentNode = treeSnapshotQuery.data?.nodes.find(
+      (node) => node.userId === parentId,
+    );
+    if (!parentNode) {
+      return null;
+    }
+
+    return {
+      parentId,
+      parentNode,
+      teamPosition: teamPosition as TeamPosition,
+    };
+  }, [selectedSlotKey, treeSnapshotQuery.data?.nodes]);
+  const totalTreeAura = useMemo(() => {
+    const nodes = treeSnapshotQuery.data?.nodes ?? [];
+    return nodes.reduce(
+      (sum, node) => sum + BigInt(node.totalAuraAtomic),
+      BigInt(0),
+    );
+  }, [treeSnapshotQuery.data?.nodes]);
+  const placedCount = Math.max((treeSnapshotQuery.data?.nodes.length ?? 1) - 1, 0);
+  const treeSnapshot = treeSnapshotQuery.data;
   const appOrigin =
     typeof window === "undefined" ? "" : window.location.origin;
   const shareLink = useMemo(() => {
@@ -89,13 +146,6 @@ export function TeamPage() {
       shareLink,
     )}`;
   }, [shareLink]);
-
-  const selectedSlot = useMemo(
-    () =>
-      selectableSlots.find((slot) => slot.placementKey === selectedSlotKey) ??
-      null,
-    [selectedSlotKey, selectableSlots],
-  );
 
   useEffect(() => {
     if (!referralCodeFromUrl || typeof window === "undefined") {
@@ -171,6 +221,10 @@ export function TeamPage() {
     setSelectedSlotKey(null);
   }
 
+  function handleTreeSlotSelect(node: TeamTreeNodeView, position: TeamPosition) {
+    setSelectedSlotKey(`${node.userId}:${position}`);
+  }
+
   const handleCopyInvite = async () => {
     if (user?.inviteCode) {
       await navigator.clipboard.writeText(user.inviteCode);
@@ -196,29 +250,11 @@ export function TeamPage() {
         {/* Team Overview */}
         <section className="animate-fade-in">
           <div className="space-y-3">
-            <GlassCard variant="highlight" className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm text-white/50">Total Members</p>
-                  <p className="text-2xl font-bold text-white font-mono">
-                    {(pendingPlacements.length + 1).toString()}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-aura-primary/10 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-aura-primary" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/[0.08]">
-                <div>
-                  <p className="text-xs text-white/50">Pending</p>
-                  <p className="text-lg font-semibold text-white">{pendingPlacements.length}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-white/50">Placed</p>
-                  <p className="text-lg font-semibold text-white">0</p>
-                </div>
-              </div>
-            </GlassCard>
+            <TeamTreePendingSummary
+              pendingCount={pendingPlacements.length}
+              placedCount={placedCount}
+              rootLabel={isRootUser ? "Root Team" : "Subtree Team"}
+            />
 
             <div className="grid grid-cols-2 gap-3">
               <GlassCard className="p-3">
@@ -268,6 +304,99 @@ export function TeamPage() {
             </GlassCard>
           </div>
         </section>
+
+        {/* Tree Snapshot */}
+        {isTreeReady && (
+          <section className="animate-slide-up" style={{ animationDelay: "0.08s" }}>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-medium text-white/70">Tree Snapshot</h2>
+                <p className="mt-1 text-xs text-white/45">
+                  Current subtree view for placement decisions. Open child sides can be placed.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={treeDepth <= 2}
+                  onClick={() => setTreeDepth((current) => Math.max(2, current - 1))}
+                  className="h-8 border-white/10 px-3 text-xs hover:bg-white/5"
+                >
+                  Depth -1
+                </Button>
+                <span className="text-xs text-white/50">D{treeDepth}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={treeDepth >= 8}
+                  onClick={() => setTreeDepth((current) => Math.min(8, current + 1))}
+                  className="h-8 border-white/10 px-3 text-xs hover:bg-white/5"
+                >
+                  Depth +1
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <TeamTreePlacementLegend />
+
+              <GlassCard className="p-4">
+              <div className="grid grid-cols-3 gap-3 border-b border-white/[0.08] pb-4">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
+                    Visible Nodes
+                  </p>
+                  <p className="mt-2 text-xl font-semibold text-white font-mono">
+                    {treeSnapshotQuery.data?.nodes.length ?? 0}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
+                    Pending
+                  </p>
+                  <p className="mt-2 text-xl font-semibold text-white font-mono">
+                    {pendingPlacements.length}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
+                    Tree AURA
+                  </p>
+                  <p className="mt-2 text-xl font-semibold text-white">
+                    {formatAuraAtomic(totalTreeAura.toString())}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                {treeSnapshotQuery.isLoading ? (
+                  <SectionCardSkeleton rows={3} />
+                ) : treeSnapshotQuery.error instanceof Error ? (
+                  <SectionErrorState
+                    title="Unable to load tree snapshot"
+                    description={treeSnapshotQuery.error.message}
+                  />
+                ) : !treeRoot ? (
+                  <SectionEmptyState
+                    title="Tree snapshot unavailable"
+                    description="Reconnect and refresh after your latest placement changes."
+                  />
+                ) : (
+                  <TeamTreeView
+                    snapshot={treeSnapshot!}
+                    maxDepth={treeDepth}
+                    focusedUserId={selectedPlacementUserId ?? undefined}
+                    selectedParentId={selectedSlot?.parentId}
+                    selectedPlacementKey={selectedSlotKey}
+                    onSelectOpenSlot={handleTreeSlotSelect}
+                  />
+                )}
+              </div>
+              </GlassCard>
+            </div>
+          </section>
+        )}
 
         {/* Share Center */}
         <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
@@ -521,59 +650,45 @@ export function TeamPage() {
           </div>
         </section>
 
-        {/* Placement Slots */}
+        {/* Placement Confirmation */}
         {selectedPlacementUserId && (
           <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
-            <h2 className="text-sm font-medium text-white/70 mb-3">Select Placement Slot</h2>
-            <div className="grid grid-cols-1 gap-2">
-              {selectableSlotsQuery.isLoading ? (
-                <SectionCardSkeleton rows={2} />
-              ) : selectableSlotsQuery.error instanceof Error ? (
-                <SectionErrorState
-                  title="Unable to load placement slots"
-                  description={selectableSlotsQuery.error.message}
-                />
-              ) : selectableSlots.length === 0 ? (
-                <SectionEmptyState
-                  title="No placement slots available"
-                  description={
-                    isAwaitingOwnPlacement
-                      ? "Your own account is still waiting for upstream placement, so your subtree is not ready to host descendants yet."
-                      : "Try again after the latest topology updates have been processed."
-                  }
-                />
-              ) : (
-                selectableSlots.map((slot) => (
-                  <GlassCard
-                    key={slot.placementKey}
-                    variant={selectedSlotKey === slot.placementKey ? "highlight" : "default"}
-                    className="p-3"
-                    onClick={() => setSelectedSlotKey(slot.placementKey)}
-                    hoverEffect
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                          <Network className="w-4 h-4 text-white/40" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-white">
-                            Parent: {formatWalletAddress(slot.parentWalletAddress)}
-                          </p>
-                          <p className="text-[10px] text-white/40">
-                            Position: {slot.teamPosition === "LEFT" ? "Left" : "Right"}
-                          </p>
-                        </div>
-                      </div>
-                      {selectedSlotKey === slot.placementKey && (
-                        <Check className="w-4 h-4 text-aura-primary" />
-                      )}
+            <h2 className="text-sm font-medium text-white/70 mb-3">Placement Confirmation</h2>
+            <GlassCard className="p-4">
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
+                    Pending Member
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-white">
+                    {selectedPlacementUser
+                      ? formatWalletAddress(selectedPlacementUser.walletAddress)
+                      : "Select a pending member above"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
+                    Selected Slot
+                  </p>
+                  {selectedSlot ? (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-sm font-semibold text-white">
+                        Parent {formatWalletAddress(selectedSlot.parentNode.walletAddress)}
+                      </p>
+                      <p className="text-xs text-white/50">
+                        {selectedSlot.teamPosition === "LEFT" ? "Left" : "Right"} child slot
+                      </p>
                     </div>
-                  </GlassCard>
-                ))
-              )}
-            </div>
-            <div className="mt-4">
+                  ) : (
+                    <p className="mt-2 text-sm text-white/50">
+                      Tap an open LEFT or RIGHT pill on the tree above.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4">
               <Button
                 className="w-full bg-aura-primary hover:bg-aura-primary-dark font-bold"
                 disabled={!selectedSlotKey || bindPlacementMutation.isPending}
@@ -588,7 +703,8 @@ export function TeamPage() {
                     : "Placement binding failed"}
                 </div>
               )}
-            </div>
+              </div>
+            </GlassCard>
           </section>
         )}
       </div>

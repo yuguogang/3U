@@ -4,6 +4,8 @@ import {
   ReferralBindPlacementInput,
   ReferralPlacementSlotView,
   ReferralPlacementView,
+  TeamTreeSnapshotQuery,
+  TeamTreeSnapshotView,
   TeamPosition,
 } from '3u-aura-common';
 import { ReferralService } from '../../referral';
@@ -169,6 +171,80 @@ export class TreeTopologyService {
           }),
         );
     });
+  }
+
+  async getTreeSnapshotForInviter(
+    user: TreeActor,
+    query: TeamTreeSnapshotQuery,
+  ): Promise<TeamTreeSnapshotView> {
+    const inviter = await this.teamClosureRepository.findParentForPlacement(
+      user.id,
+    );
+    this.placementPolicyEngine.assertInviterActorExists(inviter);
+
+    if (inviter.status !== UserStatus.ACTIVE) {
+      throw new ConflictException('Inviter account is not active');
+    }
+
+    const inviterHasSelfClosure =
+      await this.teamClosureRepository.hasSelfClosure(inviter.id);
+    const inviterIsRoot = inviter.parentId === null && inviter.inviterId === null;
+
+    if (!inviterHasSelfClosure && !inviterIsRoot) {
+      throw new ConflictException(
+        'Current user is not yet initialized inside the tree',
+      );
+    }
+
+    const subtreeNodes = await this.teamClosureRepository.listSubtreeNodes(
+      inviter.id,
+      query,
+    );
+    const occupiedPositions =
+      await this.teamClosureRepository.listOccupiedChildPositions(
+        subtreeNodes.map((node) => node.id),
+      );
+    const occupiedByParent = new Map<string, Set<TeamPosition>>();
+
+    for (const row of occupiedPositions) {
+      const parentSet = occupiedByParent.get(row.parentId) ?? new Set<TeamPosition>();
+      parentSet.add(row.teamPosition);
+      occupiedByParent.set(row.parentId, parentSet);
+    }
+
+    return {
+      rootUserId: inviter.id,
+      requestedDepth: query.depth,
+      nodes: subtreeNodes.map((node) => {
+        const occupied = occupiedByParent.get(node.id) ?? new Set<TeamPosition>();
+        const totalAuraAtomic =
+          BigInt(node.profile?.totalAuraFromCheckin?.toFixed(0) ?? '0') +
+          BigInt(node.profile?.totalAuraFromDirect?.toFixed(0) ?? '0') +
+          BigInt(node.profile?.totalAuraFromIndirect?.toFixed(0) ?? '0') +
+          BigInt(node.profile?.totalAuraFromConsolation?.toFixed(0) ?? '0');
+
+        return {
+          userId: node.id,
+          walletAddress: node.walletAddress,
+          inviteCode: node.inviteCode ?? undefined,
+          inviterId: node.inviterId ?? undefined,
+          parentId: node.parentId ?? undefined,
+          placementKey: node.placementKey ?? undefined,
+          teamPosition: node.teamPosition ?? undefined,
+          depth: node.depth,
+          isRoot: node.id === inviter.id,
+          hasPurchasedNft: node.profile?.hasPurchasedNft ?? false,
+          hasReferralNft: node.profile?.hasReferralNft ?? false,
+          totalAuraAtomic: totalAuraAtomic.toString(),
+          leftTeamVolume: node.profile?.leftTeamVolume?.toFixed(0) ?? '0',
+          rightTeamVolume: node.profile?.rightTeamVolume?.toFixed(0) ?? '0',
+          smallLegVolume: node.profile?.smallLegVolume?.toFixed(0) ?? '0',
+          openChildPositions: [TeamPosition.LEFT, TeamPosition.RIGHT].filter(
+            (position) => !occupied.has(position),
+          ),
+        };
+      }),
+    };
   }
 
   private async bindPlacementWithinTree(

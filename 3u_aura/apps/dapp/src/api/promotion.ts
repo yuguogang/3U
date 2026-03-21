@@ -12,6 +12,8 @@ import type {
   ReferralPlacementSlotView,
   ReferralPlacementView,
   ReferralSignaturePreview,
+  TeamTreeSnapshotQuery,
+  TeamTreeSnapshotView,
   WeeklyEpochBoundaryView,
 } from "3u-aura-common";
 
@@ -35,6 +37,12 @@ export async function apiGetPendingPlacements() {
 
 export async function apiGetSelectableSlots() {
   return fetchClient<ReferralPlacementSlotView[]>("/api/v1/tree/placement/selectable-slots");
+}
+
+export async function apiGetTeamTreeSnapshot(query?: TeamTreeSnapshotQuery) {
+  return fetchClient<TeamTreeSnapshotView>("/api/v1/tree/subtree", {
+    query,
+  });
 }
 
 export async function apiBindPlacement(input: ReferralBindPlacementInput) {

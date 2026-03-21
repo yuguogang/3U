@@ -34,6 +34,7 @@ describe('TreeTopologyService', () => {
       hasSelfClosure: jest.fn(),
       insertClosureRows: jest.fn().mockResolvedValue(undefined),
       listOccupiedChildPositions: jest.fn(),
+      listSubtreeNodes: jest.fn(),
       listSelectableParents: jest.fn(),
       listAncestorRows: jest.fn(),
     };
@@ -349,5 +350,101 @@ describe('TreeTopologyService', () => {
         teamPosition: TeamPosition.LEFT,
       },
     ]);
+  });
+
+  it('returns subtree nodes with open positions and reward summary', async () => {
+    const { service, teamClosureRepository } = createService();
+    teamClosureRepository.findParentForPlacement.mockResolvedValue({
+      id: actor.id,
+      inviterId: null,
+      parentId: null,
+      status: UserStatus.ACTIVE,
+      walletAddress: '0x1111111111111111111111111111111111111111',
+    });
+    teamClosureRepository.hasSelfClosure.mockResolvedValue(true);
+    teamClosureRepository.listSubtreeNodes.mockResolvedValue([
+      {
+        id: actor.id,
+        walletAddress: '0x1111111111111111111111111111111111111111',
+        inviteCode: 'ROOTCODE',
+        inviterId: null,
+        parentId: null,
+        placementKey: null,
+        status: UserStatus.ACTIVE,
+        teamPosition: null,
+        depth: 0,
+        profile: {
+          hasPurchasedNft: true,
+          hasReferralNft: false,
+          leftTeamVolume: { toFixed: () => '1000' },
+          rightTeamVolume: { toFixed: () => '2000' },
+          smallLegVolume: { toFixed: () => '1000' },
+          totalAuraFromCheckin: { toFixed: () => '10' },
+          totalAuraFromDirect: { toFixed: () => '20' },
+          totalAuraFromIndirect: { toFixed: () => '30' },
+          totalAuraFromConsolation: { toFixed: () => '40' },
+        },
+      },
+      {
+        id: 'node_2',
+        walletAddress: '0x2222222222222222222222222222222222222222',
+        inviteCode: null,
+        inviterId: actor.id,
+        parentId: actor.id,
+        placementKey: `${actor.id}:LEFT`,
+        status: UserStatus.ACTIVE,
+        teamPosition: TeamPosition.LEFT,
+        depth: 1,
+        profile: null,
+      },
+    ]);
+    teamClosureRepository.listOccupiedChildPositions.mockResolvedValue([
+      { parentId: actor.id, teamPosition: TeamPosition.LEFT },
+    ]);
+
+    const result = await service.getTreeSnapshotForInviter(actor, { depth: 3 });
+
+    expect(result).toEqual({
+      rootUserId: actor.id,
+      requestedDepth: 3,
+      nodes: [
+        {
+          userId: actor.id,
+          walletAddress: '0x1111111111111111111111111111111111111111',
+          inviteCode: 'ROOTCODE',
+          inviterId: undefined,
+          parentId: undefined,
+          placementKey: undefined,
+          teamPosition: undefined,
+          depth: 0,
+          isRoot: true,
+          hasPurchasedNft: true,
+          hasReferralNft: false,
+          totalAuraAtomic: '100',
+          leftTeamVolume: '1000',
+          rightTeamVolume: '2000',
+          smallLegVolume: '1000',
+          openChildPositions: [TeamPosition.RIGHT],
+        },
+        {
+          userId: 'node_2',
+          walletAddress: '0x2222222222222222222222222222222222222222',
+          inviteCode: undefined,
+          inviterId: actor.id,
+          parentId: actor.id,
+          placementKey: `${actor.id}:LEFT`,
+          teamPosition: TeamPosition.LEFT,
+          depth: 1,
+          isRoot: false,
+          hasPurchasedNft: false,
+          hasReferralNft: false,
+          totalAuraAtomic: '0',
+          leftTeamVolume: '0',
+          rightTeamVolume: '0',
+          smallLegVolume: '0',
+          openChildPositions: [TeamPosition.LEFT, TeamPosition.RIGHT],
+        },
+      ],
+    });
   });
 });
