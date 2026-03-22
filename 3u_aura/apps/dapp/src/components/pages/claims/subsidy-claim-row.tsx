@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui-custom/glass-card";
 import { Gem } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatUsdtAtomic } from "@/lib/promotion-format";
-import type { PromotionNftSubsidyClaimView, ClaimStatus } from "3u-aura-common";
+import type { PromotionNftSubsidyClaimView } from "3u-aura-common";
 
 interface SubsidyClaimRowProps {
   claim: PromotionNftSubsidyClaimView;
@@ -14,19 +15,12 @@ interface SubsidyClaimRowProps {
   onClaim: (claim: PromotionNftSubsidyClaimView) => void;
 }
 
-const STATUS_LABELS: Partial<Record<ClaimStatus, string>> = {
-  CLAIMABLE: "Claimable",
-  CLAIMED: "Claimed",
-  PENDING: "Claimable",
-  FAILED: "Failed",
-  VOIDED: "Voided",
-};
-
 export function SubsidyClaimRow({
   claim,
   isPending,
   onClaim,
 }: SubsidyClaimRowProps) {
+  const t = useTranslations("Common");
   const isClaimable = claim.status === "PENDING";
   const isClaimed = claim.status === "CLAIMED";
 
@@ -39,9 +33,9 @@ export function SubsidyClaimRow({
           </div>
           <div className="min-w-0">
             <p className="text-sm font-medium text-white truncate">
-              NFT #{claim.tokenId} Subsidy
+              {t("claims.rows.subsidyTitle", { tokenId: claim.tokenId })}
             </p>
-            <p className="text-[10px] text-white/40">Epoch #{claim.epochNo}</p>
+            <p className="text-[10px] text-white/40">{t("claims.rows.epoch", { epochNo: claim.epochNo })}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -58,7 +52,7 @@ export function SubsidyClaimRow({
               disabled={isPending}
               onClick={() => onClaim(claim)}
             >
-              {isPending ? "..." : "Claim"}
+              {isPending ? t("shared.status.processingShort") : t("shared.buttons.claim")}
             </Button>
           ) : (
             <span
@@ -69,7 +63,7 @@ export function SubsidyClaimRow({
                   : "bg-white/5 text-white/40"
               )}
             >
-              {STATUS_LABELS[claim.status] ?? claim.status}
+              {t(`shared.promotion.claimStatus.${claim.status === "PENDING" ? "CLAIMABLE" : claim.status}`)}
             </span>
           )}
         </div>

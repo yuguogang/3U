@@ -35,5 +35,434 @@
       "TEAM_ACTIVITY": "團隊動態",
       "UPCOMING_LAUNCH": "即將上線"
     }
+  },
+  "shared": {
+    "buttons": {
+      "view": "查看",
+      "details": "詳情",
+      "share": "分享",
+      "dismiss": "關閉",
+      "claim": "領取",
+      "bind": "綁定",
+      "copyLink": "複製連結",
+      "openQr": "開啟二維碼"
+    },
+    "status": {
+      "loading": "載入中...",
+      "checking": "檢查中...",
+      "processingShort": "...",
+      "wrongNetwork": "網路錯誤",
+      "unknown": "未知"
+    },
+    "units": {
+      "aura": "AURA",
+      "usdt": "USDT"
+    },
+    "promotion": {
+      "epochStatus": {
+        "PENDING": "待開始",
+        "OPEN": "進行中",
+        "CALCULATING": "結算中",
+        "ROOT_POSTED": "根已提交",
+        "SETTLED": "已結算",
+        "CANCELLED": "已取消"
+      },
+      "eligibilityStatus": {
+        "INELIGIBLE": "未達標",
+        "ELIGIBLE": "已達標",
+        "PENDING_APPROVAL": "待審核",
+        "APPROVED": "已通過",
+        "SIGNED": "已簽名",
+        "MINTED": "已鑄造",
+        "REJECTED": "已拒絕",
+        "EXPIRED": "已過期",
+        "REVOKED": "已撤銷",
+        "LOCKED": "未解鎖"
+      },
+      "rewardType": {
+        "LOTTERY_USDT": "抽獎 USDT",
+        "RANKING_USDT": "排行 USDT",
+        "CONSOLATION_AURA": "安慰獎 AURA",
+        "NFT_WEEKLY_USDT": "NFT 週補貼 USDT",
+        "TOKEN_DIVIDEND_USDT": "代幣分紅 USDT",
+        "MANUAL": "手動發放"
+      },
+      "claimStatus": {
+        "PENDING": "處理中",
+        "CLAIMABLE": "可領取",
+        "CLAIMED": "已領取",
+        "FAILED": "失敗",
+        "VOIDED": "已作廢"
+      },
+      "claimType": {
+        "MERKLE_LOTTERY": "抽獎獎勵",
+        "MERKLE_RANKING": "排行獎勵",
+        "NFT_SUBSIDY": "NFT 補貼",
+        "TOKEN_DIVIDEND": "代幣分紅",
+        "TOKEN_GENESIS": "創世領取"
+      },
+      "position": {
+        "LEFT": "左區",
+        "RIGHT": "右區"
+      },
+      "relation": {
+        "self": "自己",
+        "direct": "直推",
+        "descendant": "子樹"
+      },
+      "tree": {
+        "placeLeft": "放到左區",
+        "placeRight": "放到右區",
+        "collapseSubtree": "收起子樹",
+        "expandSubtree": "展開子樹",
+        "collapseNodeDetails": "收起節點詳情",
+        "depth": "深度 {depth}",
+        "focus": "聚焦",
+        "children": "子節點",
+        "smallLeg": "小區業績 {amount}",
+        "dropTarget": "投放目標",
+        "occupied": "已占用",
+        "parent": "上級 {parentId}",
+        "noParent": "無上級",
+        "nftFallback": "NFT {tier}",
+        "inviteCode": "邀請碼 {code}",
+        "empty": "空位",
+        "leafNode": "葉子節點",
+        "expandChildren": "展開 {count} 個子節點"
+      }
+    }
+  },
+  "dashboard": {
+    "eyebrow": "推廣儀表板",
+    "title": "AURA HUB",
+    "hero": {
+      "totalAura": "累計獲得 AURA",
+      "approxUsd": "≈ $0.00 USD",
+      "weeklyChange": "+0.0%",
+      "thisWeek": "本週"
+    },
+    "auth": {
+      "title": "需要錢包登入",
+      "description": "請先連接錢包並完成簽名，才能查看你的專屬儀表板與獎勵資料。"
+    },
+    "stats": {
+      "currentEpoch": {
+        "label": "當前週期"
+      },
+      "smallLeg": {
+        "label": "小區業績",
+        "subValue": "當前進度"
+      }
+    },
+    "milestones": {
+      "title": "里程碑與提醒",
+      "pendingPlacements": {
+        "title": "待安置成員",
+        "description": "還有 {count} 人等待入樹"
+      },
+      "nftEligibility": {
+        "title": "NFT 達標狀態"
+      }
+    },
+    "features": {
+      "title": "功能入口",
+      "checkin": {
+        "title": "每日簽到",
+        "description": "每天獲得 1000 AURA"
+      },
+      "team": {
+        "title": "我的團隊",
+        "description": "查看網路結構"
+      },
+      "rewards": {
+        "title": "獎勵明細",
+        "description": "查看收益資料"
+      },
+      "nft": {
+        "title": "NFT 市場",
+        "description": "購買並領取 NFT"
+      },
+      "claims": {
+        "title": "獎勵領取",
+        "description": "查看待領取獎勵"
+      },
+      "lottery": {
+        "title": "抽獎資格",
+        "description": "{count} 張券"
+      }
+    },
+    "referral": {
+      "title": "邀請好友",
+      "description": "直推可獲得 10% 獎勵"
+    }
+  },
+  "team": {
+    "eyebrow": "推廣 / 團隊",
+    "title": "我的團隊",
+    "overview": {
+      "leftLeg": "左區",
+      "rightLeg": "右區",
+      "usdtVolume": "USDT 業績",
+      "smallLegVolume": "小區業績",
+      "rootTeam": "根團隊",
+      "subtreeTeam": "當前子樹"
+    },
+    "summary": {
+      "pending": "待安置",
+      "placed": "已安置",
+      "flow": "狀態",
+      "live": "即時",
+      "note": "待安置成員需要放入目前子樹內任意一個可用的 LEFT 或 RIGHT 空位。"
+    },
+    "legend": {
+      "title": "安置圖例",
+      "description": "這棵樹始終保持二元結構。直推成員和更深層的子樹成員會用不同視覺提示顯示，待安置成員可以拖拽或點擊放入任意可用空位。",
+      "root": "根節點",
+      "direct": "直推",
+      "hasTeam": "有團隊",
+      "subtree": "子樹",
+      "leaf": "葉子節點",
+      "placeLeft": "放左區",
+      "placeRight": "放右區",
+      "dragPending": "拖曳待安置",
+      "occupied": "已占用",
+      "selected": "已選取"
+    },
+    "tree": {
+      "title": "樹快照",
+      "description": "這是為安置決策準備的緊湊子樹視圖。點擊節點看詳情、聚焦可見子樹繼續下鑽、按需展開分支，並把待安置成員放到任意開放空位。",
+      "depthDown": "深度 -1",
+      "depthUp": "深度 +1",
+      "depthBadge": "D{depth}",
+      "visibleNodes": "可見節點",
+      "pending": "待安置",
+      "treeAura": "樹內 AURA",
+      "errorTitle": "樹快照載入失敗",
+      "snapshotUnavailableTitle": "樹快照暫不可用",
+      "snapshotUnavailableDescription": "請在最新安置完成後重新連接並刷新頁面。",
+      "focusedSubtree": "已聚焦子樹",
+      "inviterRoot": "邀請根節點",
+      "backToRoot": "返回根節點",
+      "viewingRoot": "目前正在查看你的子樹根節點。打開任意節點卡片並聚焦，即可繼續深入。",
+      "hints": {
+        "inspect": "點擊節點查看詳情",
+        "focus": "打開節點後可聚焦該子樹繼續向下查看",
+        "expand": "只展開你目前需要的分支",
+        "drag": "把待安置成員拖到高亮空位，或先點選成員再選空位"
+      },
+      "emptyTitle": "樹快照為空",
+      "emptyDescription": "目前這個子樹還沒有返回任何節點。"
+    },
+    "share": {
+      "title": "分享中心",
+      "codeDescription": "可以分享這個邀請碼，或直接分享下面的完整邀請連結。",
+      "referralLink": "邀請連結",
+      "qrTitle": "邀請二維碼",
+      "qrDescription": "掃碼後會直接打開包含你邀請碼的邀請連結。",
+      "openQrAria": "在新標籤頁打開邀請二維碼",
+      "qrAlt": "邀請二維碼",
+      "awaitingPlacementTitle": "完成自身安置後即可開啟分享",
+      "awaitingPlacementDescription": "你的邀請人綁定已經保存。等上級把你放入樹中後，你的邀請碼、邀請連結和二維碼會自動解鎖。",
+      "awaitingBindingTitle": "完成邀請人綁定後即可開啟分享",
+      "awaitingBindingDescription": "透過邀請連結進入的使用者會自動綁定邀請人。如果你是直接進入頁面，請先在下方綁定邀請人。等綁定並完成入樹後，你的邀請碼、邀請連結和二維碼就會出現。"
+    },
+    "bindInviter": {
+      "title": "綁定邀請人",
+      "placeholder": "輸入上級邀請碼",
+      "fallbackError": "綁定邀請人失敗"
+    },
+    "pending": {
+      "title": "待安置列表",
+      "totalBadge": "共 {count} 人",
+      "errorTitle": "待安置列表載入失敗",
+      "emptyTitle": "暫無待安置成員",
+      "emptyDescription": "新加入且等待安置的推薦成員會顯示在這裡。",
+      "dragOrTap": "拖曳或點擊放置"
+    },
+    "confirmation": {
+      "title": "安置確認",
+      "instructionsDragging": "把待安置成員拖到任意高亮的 LEFT 或 RIGHT 空位後，再確認最終安置。",
+      "instructionsSelected": "在樹裡選擇一個高亮的 LEFT 或 RIGHT 空位。下方摘要會在確認前即時更新。",
+      "instructionsIdle": "先選擇一個待安置成員，再選擇子樹空位。",
+      "pendingMember": "待安置成員",
+      "selectPendingFirst": "請先在上方選擇一個待安置成員",
+      "selectedSlot": "當前空位",
+      "parent": "父節點 {wallet}",
+      "leftChildSlot": "左子節點空位",
+      "rightChildSlot": "右子節點空位",
+      "slotDescription": "這樣能保持推薦關係和安置關係都正確：直推關係不變，真正掛載的位置由子樹父節點和左右側決定。",
+      "selectSlotHint": "點擊或拖放到上方樹中的箭頭空位來選擇目標。",
+      "confirming": "確認中...",
+      "confirmButton": "確認安置",
+      "fallbackError": "安置綁定失敗"
+    }
+  },
+  "checkin": {
+    "eyebrow": "推廣 / 簽到",
+    "title": "每日簽到",
+    "hero": {
+      "waitingForPayment": "等待支付確認...",
+      "finalizing": "簽到提交中...",
+      "success": "成功！",
+      "successReward": "+1000 AURA",
+      "payAndCheckIn": "支付並簽到",
+      "checkedToday": "今天仍可繼續簽到",
+      "tapToSend": "點擊發送 3 USDT"
+    },
+    "direct": {
+      "title": "直接簽到",
+      "description": "點擊上方紅色圓形按鈕，可直接從錢包發送 3 USDT。轉帳確認後，頁面會自動提交這筆交易雜湊並完成今日簽到。",
+      "checkedTodayNotice": "你今天已經簽到過。當天額外簽到仍然允許，但不會增加連續簽到天數。",
+      "waitingWallet": "等待錢包確認...",
+      "submitting": "正在提交簽到...",
+      "button": "支付 3 USDT 並簽到",
+      "walletWarning": "請連接錢包、完成登入，並切換到鏈 {chainId} 後再使用直接簽到。"
+    },
+    "manual": {
+      "title": "手動補錄",
+      "description": "如果你已經發送了 3 USDT，但自動提交流程失敗，可以在這裡貼上交易雜湊來補錄本次簽到。",
+      "placeholder": "在這裡貼上 3 USDT 轉帳雜湊",
+      "submitting": "提交中...",
+      "button": "提交現有交易雜湊"
+    },
+    "errors": {
+      "submissionTitle": "提交失敗",
+      "transferTitle": "錢包轉帳失敗",
+      "transferDescription": "USDT 轉帳尚未確認。如果你已經在另一個錢包視窗裡完成了轉帳，請使用下方手動補錄。"
+    },
+    "stats": {
+      "streak": {
+        "label": "連續簽到",
+        "subValue": "繼續保持"
+      },
+      "total": {
+        "label": "總簽到次數",
+        "subValue": "累計"
+      }
+    },
+    "lottery": {
+      "title": "每週抽獎券",
+      "progress": "{current}/7 天",
+      "remaining": "再簽到 {count} 天即可獲得一張抽獎券"
+    },
+    "calendar": {
+      "title": "本月簽到"
+    }
+  },
+  "rewards": {
+    "eyebrow": "推廣 / 獎勵",
+    "title": "我的獎勵",
+    "summary": {
+      "totalAura": "累計獲得 AURA",
+      "fromCheckin": "簽到獲得",
+      "fromReferrals": "推薦獲得"
+    },
+    "stats": {
+      "currentEpoch": {
+        "label": "當前週期"
+      },
+      "pendingClaims": {
+        "label": "待領取獎勵",
+        "subValue": "可以領取"
+      }
+    },
+    "schedule": {
+      "title": "週期時間",
+      "startTime": "開始時間",
+      "endTime": "結束時間",
+      "settlementNote": "每週日 UTC 00:00 進行結算"
+    },
+    "feed": {
+      "title": "最近獎勵",
+      "totalBadge": "共 {count} 條",
+      "errorTitle": "獎勵載入失敗",
+      "emptyTitle": "還沒有獎勵記錄",
+      "emptyDescription": "你的簽到獎勵、推薦獎勵和週期獎勵在入帳後會顯示在這裡。"
+    }
+  },
+  "claims": {
+    "eyebrow": "推廣 / 領取",
+    "title": "獎勵領取",
+    "summary": {
+      "claimableNow": "目前可領",
+      "totalHistory": "歷史紀錄",
+      "recordsFound": "已找到紀錄"
+    },
+    "wrongNetwork": {
+      "description": "請切換到推廣鏈（ID: {chainId}）後再領取獎勵。"
+    },
+    "sync": {
+      "title": "同步錯誤",
+      "merkleFallbackError": "同步 Merkle 領取結果失敗",
+      "subsidyFallbackError": "同步補貼領取結果失敗"
+    },
+    "sections": {
+      "merkle": {
+        "title": "抽獎與排行",
+        "badgeClaimable": "{count} 條可領",
+        "badgeTotal": "共 {count} 條",
+        "emptyTitle": "暫無獎勵領取紀錄",
+        "emptyDescription": "完成簽到並參與抽獎後，就會開始累積可領取獎勵。"
+      },
+      "subsidy": {
+        "title": "NFT 補貼",
+        "badgeClaimable": "{count} 條可領",
+        "badgeTotal": "共 {count} 條",
+        "emptyTitle": "暫無補貼領取紀錄",
+        "emptyDescription": "購買 Founder NFT 後即可開始獲得每週補貼。"
+      }
+    },
+    "rows": {
+      "epoch": "週期 #{epochNo}",
+      "subsidyTitle": "NFT #{tokenId} 補貼"
+    }
+  },
+  "nft": {
+    "eyebrow": "推廣 / NFT",
+    "title": "Founder NFT",
+    "stats": {
+      "purchasedMinted": "已售 NFT",
+      "referralMinted": "已發推薦 NFT"
+    },
+    "summary": {
+      "owned": "已持有",
+      "claimable": "可領取"
+    },
+    "wrongNetwork": {
+      "description": "請把錢包切換到推廣鏈（ID: {chainId}）後再與 NFT 互動。"
+    },
+    "purchased": {
+      "sectionTitle": "購買型 NFT",
+      "cardTitle": "Founder NFT（售賣）",
+      "cardDescription": "享有專屬權益和每週 USDT 補貼。",
+      "price": "價格",
+      "yourBalance": "你的餘額",
+      "approving": "授權中...",
+      "approveButton": "授權 USDT",
+      "purchasing": "購買中...",
+      "buyButton": "立即購買",
+      "success": "購買成功，請到錢包中查看。"
+    },
+    "referral": {
+      "sectionTitle": "推薦 NFT",
+      "cardTitle": "里程碑 NFT",
+      "cardDescription": "透過團隊成長達標後獲得。",
+      "personalCheckins": "個人簽到",
+      "smallLegVolume": "小區業績",
+      "minting": "鑄造中...",
+      "button": "領取里程碑 NFT",
+      "success": "NFT 鑄造成功！"
+    },
+    "benefits": {
+      "title": "NFT 持有人權益",
+      "weeklySubsidies": {
+        "title": "每週補貼",
+        "description": "購買型 NFT 持有人在推廣階段每週可獲得 30 USDT 補貼。"
+      },
+      "revenueSharing": {
+        "title": "收益分成",
+        "description": "AURA 代幣上線後，所有 Founder NFT 持有人共享 60% 的交易稅分成。"
+      }
+    }
   }
 }

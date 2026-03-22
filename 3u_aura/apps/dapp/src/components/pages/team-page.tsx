@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ArrowLeft, Check, Copy, Crosshair, Link2, QrCode, Share2, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import type {
   ReferralPendingPlacementView,
@@ -47,6 +48,7 @@ import { buildTreeNodePath, getTreeNodeLabel } from "@/components/team/team-tree
 const EMPTY_PENDING_PLACEMENTS: ReferralPendingPlacementView[] = [];
 
 export function TeamPage() {
+  const t = useTranslations("Common");
   const searchParams = useSearchParams();
   const { hasHydrated, isAuthenticated } = useAuthStore();
   const profileQuery = useUserProfileQuery(isAuthenticated && hasHydrated);
@@ -137,8 +139,8 @@ export function TeamPage() {
     focusTrail.length > 0
       ? getTreeNodeLabel(focusTrail[focusTrail.length - 1]!)
       : isRootUser
-        ? "Root Team"
-        : "Subtree Team";
+        ? t("team.overview.rootTeam")
+        : t("team.overview.subtreeTeam");
   const appOrigin =
     typeof window === "undefined" ? "" : window.location.origin;
   const shareLink = useMemo(() => {
@@ -328,8 +330,8 @@ export function TeamPage() {
 
   return (
     <MobileLayout
-      eyebrow="Promotion / Team"
-      title="My Team"
+      eyebrow={t("team.eyebrow")}
+      title={t("team.title")}
     >
       <div className="space-y-6">
         {/* Team Overview */}
@@ -345,31 +347,31 @@ export function TeamPage() {
               <GlassCard className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-green-400" />
-                  <span className="text-xs text-white/50">Left Leg</span>
+                  <span className="text-xs text-white/50">{t("team.overview.leftLeg")}</span>
                 </div>
                 <p className="text-lg font-semibold text-white font-mono">
                   {profile ? formatUsdtAtomic(profile.leftTeamVolume) : "0"}
                 </p>
-                <p className="text-xs text-white/40">USDT Volume</p>
+                <p className="text-xs text-white/40">{t("team.overview.usdtVolume")}</p>
               </GlassCard>
               <GlassCard className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingDown className="w-4 h-4 text-blue-400" />
-                  <span className="text-xs text-white/50">Right Leg</span>
+                  <span className="text-xs text-white/50">{t("team.overview.rightLeg")}</span>
                 </div>
                 <p className="text-lg font-semibold text-white font-mono">
                   {profile ? formatUsdtAtomic(profile.rightTeamVolume) : "0"}
                 </p>
-                <p className="text-xs text-white/40">USDT Volume</p>
+                <p className="text-xs text-white/40">{t("team.overview.usdtVolume")}</p>
               </GlassCard>
             </div>
 
             <GlassCard variant="highlight" className="p-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-sm text-white/50">Small Leg Volume</p>
+                  <p className="text-sm text-white/50">{t("team.overview.smallLegVolume")}</p>
                   <p className="text-2xl font-bold text-white font-mono">
-                    {profile ? formatUsdtAtomic(profile.smallLegVolume) : "0"} <span className="text-xs text-white/50 font-sans">USDT</span>
+                    {profile ? formatUsdtAtomic(profile.smallLegVolume) : "0"} <span className="text-xs text-white/50 font-sans">{t("shared.units.usdt")}</span>
                   </p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-aura-primary/10 flex items-center justify-center">
@@ -378,11 +380,11 @@ export function TeamPage() {
               </div>
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/[0.08]">
                 <div>
-                  <p className="text-xs text-white/50">Left Leg</p>
+                  <p className="text-xs text-white/50">{t("team.overview.leftLeg")}</p>
                   <p className="text-lg font-semibold text-white">{profile ? formatUsdtAtomic(profile.leftTeamVolume) : "0"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-white/50">Right Leg</p>
+                  <p className="text-xs text-white/50">{t("team.overview.rightLeg")}</p>
                   <p className="text-lg font-semibold text-white">{profile ? formatUsdtAtomic(profile.rightTeamVolume) : "0"}</p>
                 </div>
               </div>
@@ -395,9 +397,9 @@ export function TeamPage() {
           <section className="animate-slide-up" style={{ animationDelay: "0.08s" }}>
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-sm font-medium text-white/70">Tree Snapshot</h2>
+                <h2 className="text-sm font-medium text-white/70">{t("team.tree.title")}</h2>
                 <p className="mt-1 text-xs text-white/45">
-                  Compact subtree view for placement decisions. Tap nodes for details, focus visible subtrees to go deeper, expand branches on demand, and place pending members into any open subtree slot.
+                  {t("team.tree.description")}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -408,9 +410,9 @@ export function TeamPage() {
                   onClick={() => setTreeDepth((current) => Math.max(2, current - 1))}
                   className="h-8 border-white/10 px-3 text-xs hover:bg-white/5"
                 >
-                  Depth -1
+                  {t("team.tree.depthDown")}
                 </Button>
-                <span className="text-xs text-white/50">D{treeDepth}</span>
+                <span className="text-xs text-white/50">{t("team.tree.depthBadge", { depth: treeDepth })}</span>
                 <Button
                   variant="outline"
                   size="sm"
@@ -418,7 +420,7 @@ export function TeamPage() {
                   onClick={() => setTreeDepth((current) => Math.min(8, current + 1))}
                   className="h-8 border-white/10 px-3 text-xs hover:bg-white/5"
                 >
-                  Depth +1
+                  {t("team.tree.depthUp")}
                 </Button>
               </div>
             </div>
@@ -430,7 +432,7 @@ export function TeamPage() {
               <div className="grid grid-cols-3 gap-3 border-b border-white/[0.08] pb-4">
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
-                    Visible Nodes
+                    {t("team.tree.visibleNodes")}
                   </p>
                   <p className="mt-2 text-xl font-semibold text-white font-mono">
                     {treeSnapshotQuery.data?.nodes.length ?? 0}
@@ -438,7 +440,7 @@ export function TeamPage() {
                 </div>
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
-                    Pending
+                    {t("team.tree.pending")}
                   </p>
                   <p className="mt-2 text-xl font-semibold text-white font-mono">
                     {pendingPlacements.length}
@@ -446,7 +448,7 @@ export function TeamPage() {
                 </div>
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
-                    Tree AURA
+                    {t("team.tree.treeAura")}
                   </p>
                   <p className="mt-2 text-xl font-semibold text-white">
                     {formatAuraAtomic(totalTreeAura.toString())}
@@ -459,13 +461,13 @@ export function TeamPage() {
                   <SectionCardSkeleton rows={3} />
                 ) : treeSnapshotQuery.error instanceof Error ? (
                   <SectionErrorState
-                    title="Unable to load tree snapshot"
+                    title={t("team.tree.errorTitle")}
                     description={treeSnapshotQuery.error.message}
                   />
                 ) : !treeRoot ? (
                   <SectionEmptyState
-                    title="Tree snapshot unavailable"
-                    description="Reconnect and refresh after your latest placement changes."
+                    title={t("team.tree.snapshotUnavailableTitle")}
+                    description={t("team.tree.snapshotUnavailableDescription")}
                   />
                 ) : (
                   <div className="space-y-4">
@@ -473,7 +475,9 @@ export function TeamPage() {
                       <div className="flex flex-wrap items-center gap-2 text-xs text-white/55">
                         <span className="inline-flex items-center gap-1 rounded-full border border-aura-primary/20 bg-aura-primary/10 px-3 py-1.5 text-aura-primary">
                           <Crosshair className="h-3.5 w-3.5" />
-                          {focusTrail.length > 0 ? "Focused subtree" : "Inviter root"}
+                          {focusTrail.length > 0
+                            ? t("team.tree.focusedSubtree")
+                            : t("team.tree.inviterRoot")}
                         </span>
                         {focusTrail.length > 0 ? (
                           <>
@@ -483,7 +487,7 @@ export function TeamPage() {
                               className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-white/70 transition hover:bg-white/[0.08]"
                             >
                               <ArrowLeft className="h-3.5 w-3.5" />
-                              Back to root
+                              {t("team.tree.backToRoot")}
                             </button>
                             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                               {focusTrail.map((node, index) => (
@@ -501,7 +505,7 @@ export function TeamPage() {
                           </>
                         ) : (
                           <span className="text-white/45">
-                            Viewing your current subtree root. Open a node card and focus it to continue deeper.
+                            {t("team.tree.viewingRoot")}
                           </span>
                         )}
                       </div>
@@ -529,7 +533,7 @@ export function TeamPage() {
 
         {/* Share Center */}
         <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
-          <h2 className="text-sm font-medium text-white/70 mb-3">Share Center</h2>
+          <h2 className="text-sm font-medium text-white/70 mb-3">{t("team.share.title")}</h2>
           {hasShareAccess ? (
             <div className="space-y-3">
               <GlassCard className="p-4">
@@ -543,7 +547,7 @@ export function TeamPage() {
                         {user?.inviteCode}
                       </p>
                       <p className="text-xs text-white/50">
-                        Share this code or the full referral link below
+                        {t("team.share.codeDescription")}
                       </p>
                     </div>
                   </div>
@@ -566,7 +570,7 @@ export function TeamPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-xs uppercase tracking-[0.24em] text-white/40">
-                      Referral Link
+                      {t("team.share.referralLink")}
                     </p>
                     <p className="mt-2 break-all text-sm text-white/80">
                       {shareLink}
@@ -593,9 +597,9 @@ export function TeamPage() {
                     <QrCode className="w-5 h-5 text-aura-primary" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-white">Referral QR Code</p>
+                    <p className="text-sm font-medium text-white">{t("team.share.qrTitle")}</p>
                     <p className="text-xs text-white/50">
-                      Scanning this code opens your referral link with the invite code embedded.
+                      {t("team.share.qrDescription")}
                     </p>
                     {qrCodeUrl ? (
                       <>
@@ -604,10 +608,10 @@ export function TeamPage() {
                             href={qrCodeUrl}
                             target="_blank"
                             rel="noreferrer"
-                            aria-label="Open referral QR code in a new tab"
+                            aria-label={t("team.share.openQrAria")}
                           >
                             <img
-                              alt="Referral QR code"
+                              alt={t("team.share.qrAlt")}
                               className="h-40 w-40 rounded-lg"
                               src={qrCodeUrl}
                             />
@@ -625,7 +629,7 @@ export function TeamPage() {
                             ) : (
                               <Copy className="w-4 h-4" />
                             )}
-                            Copy Link
+                            {t("shared.buttons.copyLink")}
                           </Button>
                           <Button
                             variant="outline"
@@ -635,7 +639,7 @@ export function TeamPage() {
                           >
                             <a href={qrCodeUrl} target="_blank" rel="noreferrer">
                               <QrCode className="w-4 h-4" />
-                              Open QR
+                              {t("shared.buttons.openQr")}
                             </a>
                           </Button>
                         </div>
@@ -653,12 +657,10 @@ export function TeamPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white">
-                    Share unlocks after your own placement
+                    {t("team.share.awaitingPlacementTitle")}
                   </p>
                   <p className="mt-1 text-sm text-white/50">
-                    Your inviter binding is already saved. Once your upstream places you
-                    into the tree, your own invite code, referral link, and QR code will
-                    unlock automatically.
+                    {t("team.share.awaitingPlacementDescription")}
                   </p>
                 </div>
               </div>
@@ -671,13 +673,10 @@ export function TeamPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white">
-                    Share unlocks after inviter binding
+                    {t("team.share.awaitingBindingTitle")}
                   </p>
                   <p className="mt-1 text-sm text-white/50">
-                    Users who first arrive through a referral link bind automatically. If
-                    you entered directly, bind an inviter below first. Your own invite code,
-                    referral link, and QR code will appear after you are both bound and
-                    placed into the tree.
+                    {t("team.share.awaitingBindingDescription")}
                   </p>
                 </div>
               </div>
@@ -688,13 +687,13 @@ export function TeamPage() {
         {/* Bind Inviter */}
         {!isRootUser && !user?.inviterId && (
           <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
-            <h2 className="text-sm font-medium text-white/70 mb-3">Bind Inviter</h2>
+            <h2 className="text-sm font-medium text-white/70 mb-3">{t("team.bindInviter.title")}</h2>
             <GlassCard className="p-4">
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                   <Input
-                    placeholder="Enter upstream invite code"
+                    placeholder={t("team.bindInviter.placeholder")}
                     value={inviteCode}
                     onChange={(e) => {
                       if (bindInviterMutation.isError) {
@@ -710,14 +709,14 @@ export function TeamPage() {
                   disabled={!inviteCode.trim() || bindInviterMutation.isPending}
                   className="bg-aura-primary hover:bg-aura-primary-dark"
                 >
-                  Bind
+                  {t("shared.buttons.bind")}
                 </Button>
               </div>
               {bindInviterMutation.isError && (
                 <div className="mt-3 rounded-xl border border-aura-error/20 bg-aura-error/10 px-3 py-2 text-sm text-aura-error">
                   {bindInviterMutation.error instanceof Error
                     ? bindInviterMutation.error.message
-                    : "Inviter bind failed"}
+                    : t("team.bindInviter.fallbackError")}
                 </div>
               )}
             </GlassCard>
@@ -727,9 +726,9 @@ export function TeamPage() {
         {/* Pending Placements */}
         <section className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-medium text-white/70">Pending Placements</h2>
+            <h2 className="text-sm font-medium text-white/70">{t("team.pending.title")}</h2>
             <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold">
-              {pendingPlacements.length} Total
+              {t("team.pending.totalBadge", { count: pendingPlacements.length })}
             </span>
           </div>
           
@@ -738,13 +737,13 @@ export function TeamPage() {
               <SectionCardSkeleton rows={2} />
             ) : pendingPlacementQuery.error instanceof Error ? (
               <SectionErrorState
-                title="Unable to load pending placements"
+                title={t("team.pending.errorTitle")}
                 description={pendingPlacementQuery.error.message}
               />
             ) : pendingPlacements.length === 0 ? (
               <SectionEmptyState
-                title="No pending placements"
-                description="Newly joined referrals waiting for placement will appear here."
+                title={t("team.pending.emptyTitle")}
+                description={t("team.pending.emptyDescription")}
               />
             ) : (
               <div className="grid grid-cols-2 gap-2">
@@ -776,50 +775,56 @@ export function TeamPage() {
         {/* Placement Confirmation */}
         {selectedPlacementUserId && (
           <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
-            <h2 className="text-sm font-medium text-white/70 mb-3">Placement Confirmation</h2>
+            <h2 className="text-sm font-medium text-white/70 mb-3">{t("team.confirmation.title")}</h2>
             <GlassCard className="p-4">
               <div className="space-y-3">
                 <div className="rounded-2xl border border-aura-primary/15 bg-aura-primary/8 px-3 py-2 text-sm text-white/70">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-aura-primary" />
                     {draggingPendingUserId
-                      ? "Drop the pending member onto any glowing LEFT or RIGHT slot, then confirm the final placement."
+                      ? t("team.confirmation.instructionsDragging")
                       : selectedPlacementUserId
-                        ? "Choose a glowing LEFT or RIGHT slot in the tree. The summary below will update before you confirm."
-                        : "Select a pending member first, then choose a subtree slot."}
+                        ? t("team.confirmation.instructionsSelected")
+                        : t("team.confirmation.instructionsIdle")}
                   </div>
                 </div>
 
                 <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3">
                   <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
-                    Pending Member
+                    {t("team.confirmation.pendingMember")}
                   </p>
                   <p className="mt-2 text-sm font-semibold text-white">
                     {selectedPlacementUser
                       ? formatWalletAddress(selectedPlacementUser.walletAddress)
-                      : "Select a pending member above"}
+                      : t("team.confirmation.selectPendingFirst")}
                   </p>
                 </div>
 
                 <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3">
                   <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
-                    Selected Slot
+                    {t("team.confirmation.selectedSlot")}
                   </p>
                   {selectedSlot ? (
                     <div className="mt-2 space-y-1">
                       <p className="text-sm font-semibold text-white">
-                        Parent {formatWalletAddress(selectedSlot.parentNode.walletAddress)}
+                        {t("team.confirmation.parent", {
+                          wallet: formatWalletAddress(selectedSlot.parentNode.walletAddress),
+                        })}
                       </p>
                       <p className="text-xs text-white/50">
-                        {selectedSlot.teamPosition === "LEFT" ? "Left" : "Right"} child slot
+                        {t(
+                          selectedSlot.teamPosition === "LEFT"
+                            ? "team.confirmation.leftChildSlot"
+                            : "team.confirmation.rightChildSlot",
+                        )}
                       </p>
                       <p className="text-xs text-white/40">
-                        This keeps referral and placement semantics intact: direct referral remains unchanged, while the subtree parent and side define the actual binary-tree mount.
+                        {t("team.confirmation.slotDescription")}
                       </p>
                     </div>
                   ) : (
                     <p className="mt-2 text-sm text-white/50">
-                      Tap or drop onto an arrow slot in the tree above to choose the target.
+                      {t("team.confirmation.selectSlotHint")}
                     </p>
                   )}
                 </div>
@@ -831,13 +836,15 @@ export function TeamPage() {
                 disabled={!selectedSlotKey || bindPlacementMutation.isPending}
                 onClick={handleBindPlacement}
               >
-                {bindPlacementMutation.isPending ? "Confirming..." : "Confirm Placement"}
+                {bindPlacementMutation.isPending
+                  ? t("team.confirmation.confirming")
+                  : t("team.confirmation.confirmButton")}
               </Button>
               {bindPlacementMutation.isError && (
                 <div className="mt-3 rounded-xl border border-aura-error/20 bg-aura-error/10 px-3 py-2 text-sm text-aura-error">
                   {bindPlacementMutation.error instanceof Error
                     ? bindPlacementMutation.error.message
-                    : "Placement binding failed"}
+                    : t("team.confirmation.fallbackError")}
                 </div>
               )}
               </div>

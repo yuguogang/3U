@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Gift, History } from "lucide-react";
 import StatCard from "@/components/ui-custom/stat-card";
 
@@ -17,19 +18,20 @@ export function ClaimsSummary({
   totalClaimableAmount,
   currency,
 }: ClaimsSummaryProps) {
+  const t = useTranslations("Common");
   return (
     <div className="grid grid-cols-2 gap-3">
       <StatCard
-        label="Claimable Now"
+        label={t("claims.summary.claimableNow")}
         value={claimableCount}
         subValue={claimableCount > 0 ? `~${totalClaimableAmount} ${currency}` : undefined}
         icon={<Gift className="w-5 h-5" />}
         highlight={claimableCount > 0}
       />
       <StatCard
-        label="Total History"
+        label={t("claims.summary.totalHistory")}
         value={totalCount}
-        subValue="Records found"
+        subValue={t("claims.summary.recordsFound")}
         icon={<History className="w-5 h-5" />}
       />
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Coins, Trophy, Clock, Zap, Gift } from "lucide-react";
 import { RewardType } from "3u-aura-common";
 import { MobileLayout } from "@/components/layout/mobile-layout";
@@ -24,6 +25,8 @@ import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 
 export function RewardsPage() {
+  const locale = useLocale();
+  const t = useTranslations("Common");
   const { hasHydrated, isAuthenticated } = useAuthStore();
   const profileQuery = useUserProfileQuery(isAuthenticated && hasHydrated);
   const rewardsQuery = useMyRewardsQuery(isAuthenticated && hasHydrated);
@@ -61,11 +64,14 @@ export function RewardsPage() {
       parseAtomicToBigInt(profile.totalAuraFromConsolation)
     );
   }, [profile]);
+  const epochStatusLabel = epochQuery.data?.status
+    ? t(`shared.promotion.epochStatus.${epochQuery.data.status}`)
+    : t("shared.status.loading");
 
   return (
     <MobileLayout
-      eyebrow="Promotion / Rewards"
-      title="My Rewards"
+      eyebrow={t("rewards.eyebrow")}
+      title={t("rewards.title")}
     >
       <div className="space-y-6">
         {/* Total Rewards Card */}
@@ -73,7 +79,7 @@ export function RewardsPage() {
           <GlassCard variant="highlight" className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm text-white/50 mb-1">Total Accumulated AURA</p>
+                <p className="text-sm text-white/50 mb-1">{t("rewards.summary.totalAura")}</p>
                 <h2 className="text-3xl font-bold font-mono text-white">
                   {formatAuraAtomic(totalAuraFromProfile.toString())}
                 </h2>
@@ -84,11 +90,11 @@ export function RewardsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/[0.08]">
               <div>
-                <p className="text-xs text-white/50">From Check-in</p>
+                <p className="text-xs text-white/50">{t("rewards.summary.fromCheckin")}</p>
                 <p className="text-lg font-semibold text-white">{profile ? formatAuraAtomic(profile.totalAuraFromCheckin) : "0"}</p>
               </div>
               <div>
-                <p className="text-xs text-white/50">From Referrals</p>
+                <p className="text-xs text-white/50">{t("rewards.summary.fromReferrals")}</p>
                 <p className="text-lg font-semibold text-white">
                   {profile
                     ? formatAuraAtomic(
@@ -108,15 +114,15 @@ export function RewardsPage() {
         <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
           <div className="grid grid-cols-2 gap-3">
             <StatCard
-              label="Current Epoch"
+              label={t("rewards.stats.currentEpoch.label")}
               value={`#${epochQuery.data?.epochNo || 0}`}
-              subValue={epochQuery.data?.status || "Loading..."}
+              subValue={epochStatusLabel}
               icon={<Clock className="w-5 h-5" />}
             />
             <StatCard
-              label="Pending Claims"
+              label={t("rewards.stats.pendingClaims.label")}
               value={claimsQuery.data?.merkleClaims.length ?? 0}
-              subValue="Ready to claim"
+              subValue={t("rewards.stats.pendingClaims.subValue")}
               icon={<Gift className="w-5 h-5" />}
               highlight={!!claimsQuery.data?.merkleClaims.length}
             />
@@ -125,21 +131,21 @@ export function RewardsPage() {
 
         {/* Epoch Details */}
         <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
-          <h2 className="text-sm font-medium text-white/70 mb-3">Epoch Schedule</h2>
+          <h2 className="text-sm font-medium text-white/70 mb-3">{t("rewards.schedule.title")}</h2>
           <GlassCard className="p-4">
             <div className="space-y-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-white/50">Start Time</span>
+                <span className="text-white/50">{t("rewards.schedule.startTime")}</span>
                 <span className="text-white font-mono">{formatDateTime(epochQuery.data?.startAt)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-white/50">End Time</span>
+                <span className="text-white/50">{t("rewards.schedule.endTime")}</span>
                 <span className="text-white font-mono">{formatDateTime(epochQuery.data?.endAt)}</span>
               </div>
               <div className="pt-4 border-t border-white/[0.08]">
                 <div className="flex items-center gap-2 text-xs text-aura-primary">
                   <Zap className="w-3 h-3" />
-                  <span>Settlement happens every Sunday at 00:00 UTC</span>
+                  <span>{t("rewards.schedule.settlementNote")}</span>
                 </div>
               </div>
             </div>
@@ -149,9 +155,9 @@ export function RewardsPage() {
         {/* Reward Feed */}
         <section className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-medium text-white/70">Recent Rewards</h2>
+            <h2 className="text-sm font-medium text-white/70">{t("rewards.feed.title")}</h2>
             <span className="px-2 py-0.5 rounded-full bg-white/5 text-white/40 text-[10px] font-bold">
-              {rewardsQuery.data?.length ?? 0} Total
+              {t("rewards.feed.totalBadge", { count: rewardsQuery.data?.length ?? 0 })}
             </span>
           </div>
           
@@ -160,13 +166,13 @@ export function RewardsPage() {
               <SectionCardSkeleton rows={3} />
             ) : rewardsQuery.error instanceof Error ? (
               <SectionErrorState
-                title="Unable to load rewards"
+                title={t("rewards.feed.errorTitle")}
                 description={rewardsQuery.error.message}
               />
             ) : !rewardsQuery.data || rewardsQuery.data.length === 0 ? (
               <SectionEmptyState
-                title="No rewards yet"
-                description="Your check-in, referral, and epoch rewards will show up here once they are recorded."
+                title={t("rewards.feed.emptyTitle")}
+                description={t("rewards.feed.emptyDescription")}
               />
             ) : (
               rewardsQuery.data.map((reward) => {
@@ -188,13 +194,21 @@ export function RewardsPage() {
                         )} />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-white">{reward.rewardType}</p>
-                        <p className="text-[10px] text-white/40">{new Date(reward.createdAt).toLocaleString()}</p>
+                        <p className="text-sm font-medium text-white">
+                          {t(`shared.promotion.rewardType.${reward.rewardType}`)}
+                        </p>
+                        <p className="text-[10px] text-white/40">
+                          {new Date(reward.createdAt).toLocaleString(locale)}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-white">+{formatAuraAtomic(reward.amountAura)} AURA</p>
-                      <p className="text-[10px] text-white/40">{reward.claimStatus}</p>
+                      <p className="text-sm font-bold text-white">
+                        +{formatAuraAtomic(reward.amountAura)} {t("shared.units.aura")}
+                      </p>
+                      <p className="text-[10px] text-white/40">
+                        {t(`shared.promotion.claimStatus.${reward.claimStatus}`)}
+                      </p>
                     </div>
                   </div>
                 </GlassCard>

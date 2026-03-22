@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   AlertCircle,
   Hash,
@@ -33,6 +34,8 @@ import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 
 export function CheckinPage() {
+  const locale = useLocale();
+  const t = useTranslations("Common");
   const CHECKIN_AMOUNT_ATOMIC = "3000000";
   const chainId = useChainId();
   const { address, isConnected } = useAccount();
@@ -186,9 +189,19 @@ export function CheckinPage() {
       };
     });
   }, [checkedInToday]);
+  const weekdayLabels = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(locale, { weekday: "narrow" });
+    const sunday = new Date(Date.UTC(2024, 0, 7));
+    return Array.from({ length: 7 }, (_, index) =>
+      formatter.format(new Date(sunday.getTime() + index * 24 * 60 * 60 * 1000)),
+    );
+  }, [locale]);
 
   return (
-    <MobileLayout eyebrow="Promotion / Check-In" title="Daily Check-in">
+    <MobileLayout
+      eyebrow={t("checkin.eyebrow")}
+      title={t("checkin.title")}
+    >
       <div className="space-y-6">
         {/* Big Check-in Button */}
         <section className="flex flex-col items-center py-8">
@@ -221,7 +234,9 @@ export function CheckinPage() {
               <div className="flex flex-col items-center">
                 <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mb-3" />
                 <span className="text-white font-medium">
-                  {isTransferring ? "Waiting for payment..." : "Finalizing check-in..."}
+                  {isTransferring
+                    ? t("checkin.hero.waitingForPayment")
+                    : t("checkin.hero.finalizing")}
                 </span>
               </div>
             ) : checkinMutation.isSuccess ? (
@@ -229,17 +244,17 @@ export function CheckinPage() {
                 <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-3">
                   <Check className="w-8 h-8 text-white" />
                 </div>
-                <span className="text-white font-bold text-lg">Success!</span>
-                <span className="text-white/80 text-sm">+1000 AURA</span>
+                <span className="text-white font-bold text-lg">{t("checkin.hero.success")}</span>
+                <span className="text-white/80 text-sm">{t("checkin.hero.successReward")}</span>
               </div>
             ) : canCheckin ? (
               <div className="flex flex-col items-center">
                 <Wallet className="w-12 h-12 text-white mb-3" />
-                <span className="text-white font-bold text-xl">Pay & Check In</span>
+                <span className="text-white font-bold text-xl">{t("checkin.hero.payAndCheckIn")}</span>
                 <span className="text-white/70 text-sm mt-1">
                   {checkedInToday
-                    ? "You can still check in today"
-                    : "Tap to send 3 USDT"}
+                    ? t("checkin.hero.checkedToday")
+                    : t("checkin.hero.tapToSend")}
                 </span>
               </div>
             ) : null}
@@ -258,14 +273,14 @@ export function CheckinPage() {
                     <ArrowRight className="mt-0.5 h-4 w-4 text-aura-primary" />
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-white">
-                        Direct check-in
+                        {t("checkin.direct.title")}
                       </p>
                       <p className="text-xs leading-relaxed text-white/60">
-                        Tap the red circle above to send 3 USDT directly from your wallet. After the transfer confirms, the page will automatically submit the tx hash to complete today&apos;s check-in.
+                        {t("checkin.direct.description")}
                       </p>
                       {checkedInToday && (
                         <p className="text-[11px] leading-relaxed text-white/45">
-                          You already checked in today. Additional same-day check-ins are still allowed, but they do not increase consecutive days.
+                          {t("checkin.direct.checkedTodayNotice")}
                         </p>
                       )}
                     </div>
@@ -279,10 +294,10 @@ export function CheckinPage() {
                   disabled={!directPayReady || isProcessing}
                 >
                   {isTransferring
-                    ? "Waiting for wallet confirmation..."
+                    ? t("checkin.direct.waitingWallet")
                     : isSubmittingCheckin
-                      ? "Submitting check-in..."
-                      : "Pay 3 USDT & Check In"}
+                      ? t("checkin.direct.submitting")
+                      : t("checkin.direct.button")}
                 </Button>
 
                 {!directPayReady && (
@@ -290,7 +305,7 @@ export function CheckinPage() {
                     <div className="flex items-center gap-3 text-amber-200">
                       <AlertCircle className="h-4 w-4" />
                       <p className="text-xs font-medium">
-                        Connect wallet, sign in, and switch to chain {promotionChainId} to use direct check-in.
+                        {t("checkin.direct.walletWarning", { chainId: promotionChainId })}
                       </p>
                     </div>
                   </div>
@@ -300,10 +315,10 @@ export function CheckinPage() {
                   <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
                     <div className="mb-3 space-y-1">
                       <p className="text-sm font-medium text-white">
-                        Manual recovery
+                        {t("checkin.manual.title")}
                       </p>
                       <p className="text-xs leading-relaxed text-white/50">
-                        If you already sent 3 USDT but automatic submission failed, paste the tx hash here to recover this check-in.
+                        {t("checkin.manual.description")}
                       </p>
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -313,7 +328,7 @@ export function CheckinPage() {
                         </div>
                         <Input
                           ref={manualInputRef}
-                          placeholder="Paste 3 USDT transaction hash here"
+                          placeholder={t("checkin.manual.placeholder")}
                           value={txHash}
                           onChange={(e) => setTxHash(e.target.value)}
                           className="h-12 pl-11 bg-white/5 border-white/10 rounded-xl focus:border-aura-primary/50 transition-all"
@@ -327,8 +342,8 @@ export function CheckinPage() {
                         disabled={!isWalletReady || !txHash.trim() || isProcessing}
                       >
                         {isSubmittingCheckin
-                          ? "Submitting..."
-                          : "Submit Existing TX Hash"}
+                          ? t("checkin.manual.submitting")
+                          : t("checkin.manual.button")}
                       </Button>
                     </form>
                   </div>
@@ -339,7 +354,7 @@ export function CheckinPage() {
                 <div className="mt-4 rounded-xl border border-aura-error/20 bg-aura-error/5 p-4 animate-in fade-in slide-in-from-top-2">
                   <div className="flex items-center gap-3 text-aura-error">
                     <AlertCircle className="h-4 w-4" />
-                    <p className="text-xs font-medium">Submission failed</p>
+                    <p className="text-xs font-medium">{t("checkin.errors.submissionTitle")}</p>
                   </div>
                   <p className="mt-1 text-[10px] text-aura-error/70 leading-relaxed">
                     {checkinMutation.error.message}
@@ -351,10 +366,10 @@ export function CheckinPage() {
                 <div className="mt-4 rounded-xl border border-aura-error/20 bg-aura-error/5 p-4 animate-in fade-in slide-in-from-top-2">
                   <div className="flex items-center gap-3 text-aura-error">
                     <AlertCircle className="h-4 w-4" />
-                    <p className="text-xs font-medium">Wallet transfer failed</p>
+                    <p className="text-xs font-medium">{t("checkin.errors.transferTitle")}</p>
                   </div>
                   <p className="mt-1 text-[10px] text-aura-error/70 leading-relaxed">
-                    The USDT transfer was not confirmed. If you already sent it from another wallet window, use manual recovery below.
+                    {t("checkin.errors.transferDescription")}
                   </p>
                 </div>
               )}
@@ -365,16 +380,16 @@ export function CheckinPage() {
         {/* Stats Cards */}
         <section className="grid grid-cols-2 gap-3">
           <StatCard
-            label="Consecutive Days"
+            label={t("checkin.stats.streak.label")}
             value={profile?.currentStreakDays ?? 0}
-            subValue="Keep it up!"
+            subValue={t("checkin.stats.streak.subValue")}
             icon={<TrendingUp className="w-5 h-5" />}
             trend="up"
           />
           <StatCard
-            label="Total Check-ins"
+            label={t("checkin.stats.total.label")}
             value={profile?.totalCheckinCount ?? 0}
-            subValue="Lifetime"
+            subValue={t("checkin.stats.total.subValue")}
             icon={<Calendar className="w-5 h-5" />}
           />
         </section>
@@ -385,10 +400,12 @@ export function CheckinPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Coins className="w-4 h-4 text-aura-primary" />
-                <span className="text-sm text-white">Weekly Lottery Ticket</span>
+                <span className="text-sm text-white">{t("checkin.lottery.title")}</span>
               </div>
               <span className="text-xs text-aura-primary">
-                {(profile?.currentStreakDays || 0) % 7}/7 days
+                {t("checkin.lottery.progress", {
+                  current: (profile?.currentStreakDays || 0) % 7,
+                })}
               </span>
             </div>
             <div className="h-2 bg-white/10 rounded-full overflow-hidden">
@@ -400,18 +417,19 @@ export function CheckinPage() {
               />
             </div>
             <p className="text-xs text-white/40 mt-2">
-              Check in for {7 - ((profile?.currentStreakDays || 0) % 7)} more
-              days to earn a lottery ticket
+              {t("checkin.lottery.remaining", {
+                count: 7 - ((profile?.currentStreakDays || 0) % 7),
+              })}
             </p>
           </GlassCard>
         </section>
 
         {/* Calendar */}
         <section>
-          <h2 className="text-sm font-medium text-white/70 mb-3">This Month</h2>
+          <h2 className="text-sm font-medium text-white/70 mb-3">{t("checkin.calendar.title")}</h2>
           <GlassCard className="p-4">
             <div className="grid grid-cols-7 gap-2">
-              {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
+              {weekdayLabels.map((day, i) => (
                 <div
                   key={i}
                   className="text-center text-xs text-white/40 py-1"

@@ -1,6 +1,7 @@
 "use client";
 
 import { type HTMLAttributes, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronDown, Workflow } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TeamPosition, type TeamTreeSnapshotView } from "3u-aura-common";
@@ -66,6 +67,7 @@ function TreeBranch({
     pendingUserId: string,
   ) => void;
 }) {
+  const t = useTranslations("Common");
   const hasChildren = node.children.length > 0;
   const isExpanded = expandedNodeIds[node.userId] ?? false;
   const isFocused = focusedUserId === node.userId;
@@ -124,7 +126,7 @@ function TreeBranch({
               <div className="min-w-[11rem]">
                 <div className="mb-2 flex items-center justify-center">
                   <span className="rounded-full border border-emerald-400/15 bg-emerald-400/8 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-300/85">
-                    Left
+                    {t("shared.promotion.position.LEFT")}
                   </span>
                 </div>
                 {leftChild ? (
@@ -146,7 +148,7 @@ function TreeBranch({
                   />
                 ) : (
                   <div className="flex min-h-[72px] min-w-[11rem] items-center justify-center rounded-2xl border border-dashed border-white/8 bg-white/[0.015] text-[11px] text-white/28">
-                    Empty
+                    {t("shared.promotion.tree.empty")}
                   </div>
                 )}
               </div>
@@ -154,7 +156,7 @@ function TreeBranch({
               <div className="min-w-[11rem]">
                 <div className="mb-2 flex items-center justify-center">
                   <span className="rounded-full border border-sky-400/15 bg-sky-400/8 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-sky-200/85">
-                    Right
+                    {t("shared.promotion.position.RIGHT")}
                   </span>
                 </div>
                 {rightChild ? (
@@ -176,7 +178,7 @@ function TreeBranch({
                   />
                 ) : (
                   <div className="flex min-h-[72px] min-w-[11rem] items-center justify-center rounded-2xl border border-dashed border-white/8 bg-white/[0.015] text-[11px] text-white/28">
-                    Empty
+                    {t("shared.promotion.tree.empty")}
                   </div>
                 )}
               </div>
@@ -213,14 +215,13 @@ function TreeBranch({
             className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/45 transition hover:bg-white/[0.06]"
           >
             <ChevronDown className="-rotate-90 h-3.5 w-3.5" />
-            Expand {node.children.length} child
-            {node.children.length === 1 ? "" : "ren"}
+            {t("shared.promotion.tree.expandChildren", { count: node.children.length })}
           </button>
         )
       ) : (
         <div className="flex items-center justify-center gap-2 py-3 text-xs text-white/30">
           <Workflow className="h-3.5 w-3.5" />
-          Leaf node
+          {t("shared.promotion.tree.leafNode")}
         </div>
       )}
     </div>
@@ -242,6 +243,7 @@ export function TeamTreeView({
   onDropPendingOnSlot,
   ...props
 }: TeamTreeViewProps) {
+  const t = useTranslations("Common");
   const [expansionOverrides, setExpansionOverrides] = useState<ExpandedTreeState>({});
   const [expandedDetailNodeId, setExpandedDetailNodeId] = useState<string | null>(null);
 
@@ -274,16 +276,16 @@ export function TeamTreeView({
       >
         <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-white/45">
           <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
-            Tap a node to inspect details
+            {t("team.tree.hints.inspect")}
           </span>
           <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
-            Open a node, then focus its subtree to go deeper
+            {t("team.tree.hints.focus")}
           </span>
           <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
-            Expand only the branches you need
+            {t("team.tree.hints.expand")}
           </span>
           <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
-            Drag a pending member onto a glowing slot or tap-select it first
+            {t("team.tree.hints.drag")}
           </span>
         </div>
 
@@ -320,9 +322,9 @@ export function TeamTreeView({
             ))
           ) : (
             <div className="min-w-[320px] rounded-[28px] border border-white/8 bg-white/[0.015] p-5">
-              <p className="text-sm font-medium text-white">Tree snapshot is empty</p>
+              <p className="text-sm font-medium text-white">{t("team.tree.emptyTitle")}</p>
               <p className="mt-2 text-xs text-white/45">
-                No nodes were returned for this subtree yet.
+                {t("team.tree.emptyDescription")}
               </p>
             </div>
           )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   ShieldAlert,
   Gem,
@@ -48,6 +49,7 @@ type PendingClaimSync = {
 };
 
 export function ClaimsPage() {
+  const t = useTranslations("Common");
   const chainId = useChainId();
   const { hasHydrated, isAuthenticated } = useAuthStore();
   const claimsQuery = useMyClaimsQuery(isAuthenticated && hasHydrated);
@@ -123,10 +125,10 @@ export function ClaimsPage() {
         setSyncError(
           error instanceof Error
             ? error.message
-            : "Failed to sync merkle claim result",
+            : t("claims.sync.merkleFallbackError"),
         );
       });
-  }, [claimSyncMutation, merkleHash, merkleReceipt.isSuccess, pendingMerkleSync]);
+  }, [claimSyncMutation, merkleHash, merkleReceipt.isSuccess, pendingMerkleSync, t]);
 
   useEffect(() => {
     if (
@@ -153,10 +155,10 @@ export function ClaimsPage() {
         setSyncError(
           error instanceof Error
             ? error.message
-            : "Failed to sync subsidy claim result",
+            : t("claims.sync.subsidyFallbackError"),
         );
       });
-  }, [claimSyncMutation, subsidyHash, subsidyReceipt.isSuccess, pendingSubsidySync]);
+  }, [claimSyncMutation, subsidyHash, subsidyReceipt.isSuccess, pendingSubsidySync, t]);
 
   async function handleClaimMerkle(claim: PromotionMerkleClaimView) {
     if (!isCorrectChain || !promotionContracts.merkleClaimAddress) return;
@@ -189,7 +191,10 @@ export function ClaimsPage() {
   }
 
   return (
-    <MobileLayout eyebrow="Promotion / Claims" title="Claim Rewards">
+    <MobileLayout
+      eyebrow={t("claims.eyebrow")}
+      title={t("claims.title")}
+    >
       <div className="space-y-6">
         {/* ─── Section 1: Summary ─── */}
         <section className="animate-fade-in">
@@ -210,11 +215,10 @@ export function ClaimsPage() {
           <GlassCard className="border border-amber-400/20 bg-amber-400/5 p-5">
             <div className="flex items-center gap-3 text-amber-200">
               <ShieldAlert className="h-5 w-5 shrink-0" />
-              <p className="text-sm font-medium">Wrong Network</p>
+              <p className="text-sm font-medium">{t("shared.status.wrongNetwork")}</p>
             </div>
             <p className="mt-2 text-xs text-amber-100/60 leading-relaxed">
-              Please switch to the promotion chain (ID: {promotionChainId}) to claim
-              your rewards.
+              {t("claims.wrongNetwork.description", { chainId: promotionChainId })}
             </p>
           </GlassCard>
         )}
@@ -223,7 +227,7 @@ export function ClaimsPage() {
           <GlassCard className="border border-aura-error/20 bg-aura-error/5 p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-aura-error shrink-0" />
             <div className="space-y-1">
-              <p className="text-sm font-medium text-aura-error">Sync Error</p>
+              <p className="text-sm font-medium text-aura-error">{t("claims.sync.title")}</p>
               <p className="text-xs text-aura-error/70">{syncError}</p>
               <Button
                 size="sm"
@@ -231,7 +235,7 @@ export function ClaimsPage() {
                 className="h-7 text-[10px] mt-2 border-aura-error/20"
                 onClick={() => setSyncError(null)}
               >
-                Dismiss
+                {t("shared.buttons.dismiss")}
               </Button>
             </div>
           </GlassCard>
@@ -242,12 +246,16 @@ export function ClaimsPage() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-medium text-white/70 flex items-center gap-2">
               <Trophy className="w-4 h-4 text-aura-primary" />
-              <span>Lottery &amp; Ranking</span>
+              <span>{t("claims.sections.merkle.title")}</span>
             </h2>
             <span className="text-[10px] text-white/40">
               {claimSummary.claimableMerkle > 0
-                ? `${claimSummary.claimableMerkle} claimable`
-                : `${merkleClaims.length} total`}
+                ? t("claims.sections.merkle.badgeClaimable", {
+                    count: claimSummary.claimableMerkle,
+                  })
+                : t("claims.sections.merkle.badgeTotal", {
+                    count: merkleClaims.length,
+                  })}
             </span>
           </div>
 
@@ -257,9 +265,9 @@ export function ClaimsPage() {
             <GlassCard className="p-6">
               <div className="flex flex-col items-center gap-2 text-center">
                 <InboxIcon className="w-8 h-8 text-white/20" />
-                <p className="text-sm text-white/40">No reward claims found</p>
+                <p className="text-sm text-white/40">{t("claims.sections.merkle.emptyTitle")}</p>
                 <p className="text-[10px] text-white/20">
-                  Complete check-ins and lottery participation to earn rewards
+                  {t("claims.sections.merkle.emptyDescription")}
                 </p>
               </div>
             </GlassCard>
@@ -285,12 +293,16 @@ export function ClaimsPage() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-medium text-white/70 flex items-center gap-2">
               <Gem className="w-4 h-4 text-blue-400" />
-              <span>NFT Subsidies</span>
+              <span>{t("claims.sections.subsidy.title")}</span>
             </h2>
             <span className="text-[10px] text-white/40">
               {claimSummary.claimableSubsidy > 0
-                ? `${claimSummary.claimableSubsidy} claimable`
-                : `${nftSubsidyClaims.length} total`}
+                ? t("claims.sections.subsidy.badgeClaimable", {
+                    count: claimSummary.claimableSubsidy,
+                  })
+                : t("claims.sections.subsidy.badgeTotal", {
+                    count: nftSubsidyClaims.length,
+                  })}
             </span>
           </div>
 
@@ -300,9 +312,9 @@ export function ClaimsPage() {
             <GlassCard className="p-6">
               <div className="flex flex-col items-center gap-2 text-center">
                 <InboxIcon className="w-8 h-8 text-white/20" />
-                <p className="text-sm text-white/40">No subsidy claims found</p>
+                <p className="text-sm text-white/40">{t("claims.sections.subsidy.emptyTitle")}</p>
                 <p className="text-[10px] text-white/20">
-                  Purchase a Founder NFT to start earning weekly subsidies
+                  {t("claims.sections.subsidy.emptyDescription")}
                 </p>
               </div>
             </GlassCard>

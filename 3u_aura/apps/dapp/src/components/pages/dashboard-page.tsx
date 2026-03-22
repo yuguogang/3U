@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import {
   CalendarCheck2,
   Gem,
@@ -34,6 +35,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export function DashboardPage() {
+  const t = useTranslations("Common");
   const { address, isConnected } = useAccount();
   const { hasHydrated, isAuthenticated } = useAuthStore();
   const profileQuery = useUserProfileQuery(isAuthenticated && hasHydrated);
@@ -59,51 +61,57 @@ export function DashboardPage() {
     );
   }, [profile]);
 
+  const epochStatusLabel = epoch?.status
+    ? t(`shared.promotion.epochStatus.${epoch.status}`)
+    : t("shared.status.loading");
+  const eligibilityStatusLabel = eligibilityQuery.data?.status
+    ? t(`shared.promotion.eligibilityStatus.${eligibilityQuery.data.status}`)
+    : t("shared.status.checking");
   const featureCards = [
     {
       href: "/checkin",
-      title: "Daily Check-in",
-      description: "Earn 1000 AURA daily",
+      title: t("dashboard.features.checkin.title"),
+      description: t("dashboard.features.checkin.description"),
       icon: CalendarCheck2,
       color: "text-aura-primary",
       bgColor: "bg-aura-primary/10",
     },
     {
       href: "/team",
-      title: "My Team",
-      description: "View network",
+      title: t("dashboard.features.team.title"),
+      description: t("dashboard.features.team.description"),
       icon: Users,
       color: "text-blue-400",
       bgColor: "bg-blue-500/10",
     },
     {
       href: "/rewards",
-      title: "Rewards",
-      description: "View earnings",
+      title: t("dashboard.features.rewards.title"),
+      description: t("dashboard.features.rewards.description"),
       icon: Trophy,
       color: "text-yellow-400",
       bgColor: "bg-yellow-500/10",
     },
     {
       href: "/nft",
-      title: "NFT Market",
-      description: "Buy & Claim NFTs",
+      title: t("dashboard.features.nft.title"),
+      description: t("dashboard.features.nft.description"),
       icon: Gem,
       color: "text-purple-400",
       bgColor: "bg-purple-500/10",
     },
     {
       href: "/claims",
-      title: "Claims",
-      description: "Pending rewards",
+      title: t("dashboard.features.claims.title"),
+      description: t("dashboard.features.claims.description"),
       icon: Gift,
       color: "text-green-400",
       bgColor: "bg-green-500/10",
     },
     {
       href: "/", // Placeholder
-      title: "Lottery",
-      description: `0 tickets`,
+      title: t("dashboard.features.lottery.title"),
+      description: t("dashboard.features.lottery.description", { count: 0 }),
       icon: Zap,
       color: "text-orange-400",
       bgColor: "bg-orange-500/10",
@@ -111,23 +119,26 @@ export function DashboardPage() {
   ];
 
   return (
-    <MobileLayout eyebrow="Promotion Dashboard" title="AURA HUB">
+    <MobileLayout
+      eyebrow={t("dashboard.eyebrow")}
+      title={t("dashboard.title")}
+    >
       <div className="space-y-6">
         {/* Hero Stats */}
         <section className="animate-fade-in">
           <GlassCard variant="highlight" className="p-6">
             <div className="text-center">
               <p className="text-sm text-white/50 mb-2">
-                Total Accumulated AURA
+                {t("dashboard.hero.totalAura")}
               </p>
               <h1 className="text-4xl font-bold font-mono mb-1 bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
                 {formatAuraAtomic(totalAura.toString())}
               </h1>
-              <p className="text-sm text-white/40">≈ $0.00 USD</p>
+              <p className="text-sm text-white/40">{t("dashboard.hero.approxUsd")}</p>
               <div className="flex items-center justify-center gap-1 mt-3">
                 <TrendingUp className="w-4 h-4 text-aura-success" />
-                <span className="text-sm text-aura-success">+0.0%</span>
-                <span className="text-xs text-white/40 ml-1">this week</span>
+                <span className="text-sm text-aura-success">{t("dashboard.hero.weeklyChange")}</span>
+                <span className="text-xs text-white/40 ml-1">{t("dashboard.hero.thisWeek")}</span>
               </div>
             </div>
           </GlassCard>
@@ -137,11 +148,10 @@ export function DashboardPage() {
           <GlassCard className="border border-amber-400/20 bg-amber-400/5 p-5">
             <div className="mb-3 flex items-center gap-3 text-amber-200">
               <ShieldAlert className="h-5 w-5" />
-              <h2 className="text-sm font-semibold">Wallet sign-in required</h2>
+              <h2 className="text-sm font-semibold">{t("dashboard.auth.title")}</h2>
             </div>
             <p className="mb-4 text-xs leading-5 text-amber-100/60">
-              Please connect your wallet and sign the message to access your
-              personalized dashboard and rewards.
+              {t("dashboard.auth.description")}
             </p>
           </GlassCard>
         ) : null}
@@ -150,16 +160,16 @@ export function DashboardPage() {
         <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
           <div className="grid grid-cols-2 gap-3">
             <StatCard
-              label="Current Epoch"
+              label={t("dashboard.stats.currentEpoch.label")}
               value={`#${epoch?.epochNo || 0}`}
-              subValue={epoch?.status || "Loading..."}
+              subValue={epochStatusLabel}
               icon={<Clock className="w-5 h-5" />}
             />
             <StatCard
-              label="Small Leg Volume"
+              label={t("dashboard.stats.smallLeg.label")}
               value={profile ? formatUsdtAtomic(profile.smallLegVolume) : "0"}
               unit="USDT"
-              subValue="Current Progress"
+              subValue={t("dashboard.stats.smallLeg.subValue")}
               icon={<Users className="w-5 h-5" />}
               trend="up"
               change={{ value: 0, type: "neutral" }}
@@ -173,7 +183,7 @@ export function DashboardPage() {
           style={{ animationDelay: "0.2s" }}
         >
           <h2 className="text-sm font-medium text-white/70">
-            Milestones & Alerts
+            {t("dashboard.milestones.title")}
           </h2>
           <div className="grid grid-cols-1 gap-3">
             {pendingPlacementQuery.data &&
@@ -191,16 +201,17 @@ export function DashboardPage() {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white">
-                            Pending Placements
+                            {t("dashboard.milestones.pendingPlacements.title")}
                           </p>
                           <p className="text-xs text-blue-100/50">
-                            {pendingPlacementQuery.data.length} users waiting for
-                            tree placement
+                            {t("dashboard.milestones.pendingPlacements.description", {
+                              count: pendingPlacementQuery.data.length,
+                            })}
                           </p>
                         </div>
                       </div>
                       <span className="text-xs text-blue-400 font-medium">
-                        View
+                        {t("shared.buttons.view")}
                       </span>
                     </div>
                   </Link>
@@ -216,15 +227,15 @@ export function DashboardPage() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-white">
-                        NFT Eligibility
+                        {t("dashboard.milestones.nftEligibility.title")}
                       </p>
                       <p className="text-xs text-white/50">
-                        {eligibilityQuery.data?.status || "Checking..."}
+                        {eligibilityStatusLabel}
                       </p>
                     </div>
                   </div>
                   <span className="text-xs text-orange-400 font-medium">
-                    Details
+                    {t("shared.buttons.details")}
                   </span>
                 </div>
               </Link>
@@ -234,7 +245,7 @@ export function DashboardPage() {
 
         {/* Feature Cards Grid */}
         <section className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
-          <h2 className="text-sm font-medium text-white/70 mb-3">Features</h2>
+          <h2 className="text-sm font-medium text-white/70 mb-3">{t("dashboard.features.title")}</h2>
           <div className="grid grid-cols-2 gap-3">
             {featureCards.map((card) => {
               const Icon = card.icon;
@@ -266,10 +277,10 @@ export function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium text-white mb-1">
-                  Invite Friends
+                  {t("dashboard.referral.title")}
                 </h3>
                 <p className="text-xs text-white/50">
-                  Earn 10% from direct referrals
+                  {t("dashboard.referral.description")}
                 </p>
               </div>
               <Button
@@ -278,7 +289,7 @@ export function DashboardPage() {
                 asChild
               >
                 <Link href="/team">
-                  Share
+                  {t("shared.buttons.share")}
                   <Share2 className="w-4 h-4 ml-1.5" />
                 </Link>
               </Button>

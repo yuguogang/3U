@@ -35,5 +35,434 @@
       "TEAM_ACTIVITY": "团队动态",
       "UPCOMING_LAUNCH": "预备上线"
     }
+  },
+  "shared": {
+    "buttons": {
+      "view": "查看",
+      "details": "详情",
+      "share": "分享",
+      "dismiss": "关闭",
+      "claim": "领取",
+      "bind": "绑定",
+      "copyLink": "复制链接",
+      "openQr": "打开二维码"
+    },
+    "status": {
+      "loading": "加载中...",
+      "checking": "检查中...",
+      "processingShort": "...",
+      "wrongNetwork": "网络错误",
+      "unknown": "未知"
+    },
+    "units": {
+      "aura": "AURA",
+      "usdt": "USDT"
+    },
+    "promotion": {
+      "epochStatus": {
+        "PENDING": "待开始",
+        "OPEN": "进行中",
+        "CALCULATING": "结算中",
+        "ROOT_POSTED": "根已提交",
+        "SETTLED": "已结算",
+        "CANCELLED": "已取消"
+      },
+      "eligibilityStatus": {
+        "INELIGIBLE": "未达标",
+        "ELIGIBLE": "已达标",
+        "PENDING_APPROVAL": "待审核",
+        "APPROVED": "已通过",
+        "SIGNED": "已签名",
+        "MINTED": "已铸造",
+        "REJECTED": "已拒绝",
+        "EXPIRED": "已过期",
+        "REVOKED": "已撤销",
+        "LOCKED": "未解锁"
+      },
+      "rewardType": {
+        "LOTTERY_USDT": "抽奖 USDT",
+        "RANKING_USDT": "排行 USDT",
+        "CONSOLATION_AURA": "安慰奖 AURA",
+        "NFT_WEEKLY_USDT": "NFT 周补贴 USDT",
+        "TOKEN_DIVIDEND_USDT": "代币分红 USDT",
+        "MANUAL": "手动发放"
+      },
+      "claimStatus": {
+        "PENDING": "处理中",
+        "CLAIMABLE": "可领取",
+        "CLAIMED": "已领取",
+        "FAILED": "失败",
+        "VOIDED": "已作废"
+      },
+      "claimType": {
+        "MERKLE_LOTTERY": "抽奖奖励",
+        "MERKLE_RANKING": "排行奖励",
+        "NFT_SUBSIDY": "NFT 补贴",
+        "TOKEN_DIVIDEND": "代币分红",
+        "TOKEN_GENESIS": "创世领取"
+      },
+      "position": {
+        "LEFT": "左区",
+        "RIGHT": "右区"
+      },
+      "relation": {
+        "self": "自己",
+        "direct": "直推",
+        "descendant": "子树"
+      },
+      "tree": {
+        "placeLeft": "放到左区",
+        "placeRight": "放到右区",
+        "collapseSubtree": "收起子树",
+        "expandSubtree": "展开子树",
+        "collapseNodeDetails": "收起节点详情",
+        "depth": "深度 {depth}",
+        "focus": "聚焦",
+        "children": "子节点",
+        "smallLeg": "小区业绩 {amount}",
+        "dropTarget": "投放目标",
+        "occupied": "已占用",
+        "parent": "上级 {parentId}",
+        "noParent": "无上级",
+        "nftFallback": "NFT {tier}",
+        "inviteCode": "邀请码 {code}",
+        "empty": "空位",
+        "leafNode": "叶子节点",
+        "expandChildren": "展开 {count} 个子节点"
+      }
+    }
+  },
+  "dashboard": {
+    "eyebrow": "推广仪表盘",
+    "title": "AURA HUB",
+    "hero": {
+      "totalAura": "累计获得 AURA",
+      "approxUsd": "≈ $0.00 USD",
+      "weeklyChange": "+0.0%",
+      "thisWeek": "本周"
+    },
+    "auth": {
+      "title": "需要钱包登录",
+      "description": "请先连接钱包并完成签名，才能查看你的专属仪表盘和奖励数据。"
+    },
+    "stats": {
+      "currentEpoch": {
+        "label": "当前周期"
+      },
+      "smallLeg": {
+        "label": "小区业绩",
+        "subValue": "当前进度"
+      }
+    },
+    "milestones": {
+      "title": "里程碑与提醒",
+      "pendingPlacements": {
+        "title": "待安置成员",
+        "description": "还有 {count} 人等待入树"
+      },
+      "nftEligibility": {
+        "title": "NFT 达标状态"
+      }
+    },
+    "features": {
+      "title": "功能入口",
+      "checkin": {
+        "title": "每日签到",
+        "description": "每天获取 1000 AURA"
+      },
+      "team": {
+        "title": "我的团队",
+        "description": "查看网络结构"
+      },
+      "rewards": {
+        "title": "奖励明细",
+        "description": "查看收益数据"
+      },
+      "nft": {
+        "title": "NFT 市场",
+        "description": "购买并领取 NFT"
+      },
+      "claims": {
+        "title": "奖励领取",
+        "description": "查看待领取奖励"
+      },
+      "lottery": {
+        "title": "抽奖资格",
+        "description": "{count} 张券"
+      }
+    },
+    "referral": {
+      "title": "邀请好友",
+      "description": "直推可获得 10% 奖励"
+    }
+  },
+  "team": {
+    "eyebrow": "推广 / 团队",
+    "title": "我的团队",
+    "overview": {
+      "leftLeg": "左区",
+      "rightLeg": "右区",
+      "usdtVolume": "USDT 业绩",
+      "smallLegVolume": "小区业绩",
+      "rootTeam": "根团队",
+      "subtreeTeam": "当前子树"
+    },
+    "summary": {
+      "pending": "待安置",
+      "placed": "已安置",
+      "flow": "状态",
+      "live": "实时",
+      "note": "待安置成员需要放入当前子树内任意一个可用的 LEFT 或 RIGHT 空位。"
+    },
+    "legend": {
+      "title": "安置图例",
+      "description": "这棵树始终保持二叉结构。直推成员和更深层的子树成员会用不同视觉提示显示，待安置成员可以拖拽或点击放入任意可用空位。",
+      "root": "根节点",
+      "direct": "直推",
+      "hasTeam": "有团队",
+      "subtree": "子树",
+      "leaf": "叶子节点",
+      "placeLeft": "放左区",
+      "placeRight": "放右区",
+      "dragPending": "拖拽待安置",
+      "occupied": "已占用",
+      "selected": "已选中"
+    },
+    "tree": {
+      "title": "树快照",
+      "description": "这是为安置决策准备的紧凑子树视图。点击节点看详情、聚焦可见子树继续下钻、按需展开分支，并把待安置成员放到任意开放空位。",
+      "depthDown": "深度 -1",
+      "depthUp": "深度 +1",
+      "depthBadge": "D{depth}",
+      "visibleNodes": "可见节点",
+      "pending": "待安置",
+      "treeAura": "树内 AURA",
+      "errorTitle": "树快照加载失败",
+      "snapshotUnavailableTitle": "树快照暂不可用",
+      "snapshotUnavailableDescription": "请在最新安置完成后重新连接并刷新页面。",
+      "focusedSubtree": "已聚焦子树",
+      "inviterRoot": "邀请根节点",
+      "backToRoot": "返回根节点",
+      "viewingRoot": "当前正在查看你的子树根节点。打开任意节点卡片并聚焦，即可继续深入。",
+      "hints": {
+        "inspect": "点击节点查看详情",
+        "focus": "打开节点后可聚焦该子树继续向下查看",
+        "expand": "只展开你当前需要的分支",
+        "drag": "把待安置成员拖到高亮空位，或先点选成员再选空位"
+      },
+      "emptyTitle": "树快照为空",
+      "emptyDescription": "当前这个子树还没有返回任何节点。"
+    },
+    "share": {
+      "title": "分享中心",
+      "codeDescription": "可以分享这个邀请码，或直接分享下面的完整邀请链接。",
+      "referralLink": "邀请链接",
+      "qrTitle": "邀请二维码",
+      "qrDescription": "扫码后会直接打开包含你邀请码的邀请链接。",
+      "openQrAria": "在新标签页打开邀请二维码",
+      "qrAlt": "邀请二维码",
+      "awaitingPlacementTitle": "完成自身安置后即可开启分享",
+      "awaitingPlacementDescription": "你的邀请人绑定已经保存。等上级把你放入树中后，你的邀请码、邀请链接和二维码会自动解锁。",
+      "awaitingBindingTitle": "完成邀请人绑定后即可开启分享",
+      "awaitingBindingDescription": "通过邀请链接进入的用户会自动绑定邀请人。如果你是直接进入页面，请先在下方绑定邀请人。等绑定并完成入树后，你的邀请码、邀请链接和二维码就会出现。"
+    },
+    "bindInviter": {
+      "title": "绑定邀请人",
+      "placeholder": "输入上级邀请码",
+      "fallbackError": "绑定邀请人失败"
+    },
+    "pending": {
+      "title": "待安置列表",
+      "totalBadge": "共 {count} 人",
+      "errorTitle": "待安置列表加载失败",
+      "emptyTitle": "暂无待安置成员",
+      "emptyDescription": "新加入且等待安置的推荐成员会显示在这里。",
+      "dragOrTap": "拖拽或点击放置"
+    },
+    "confirmation": {
+      "title": "安置确认",
+      "instructionsDragging": "把待安置成员拖到任意高亮的 LEFT 或 RIGHT 空位后，再确认最终安置。",
+      "instructionsSelected": "在树里选择一个高亮的 LEFT 或 RIGHT 空位。下方摘要会在确认前实时更新。",
+      "instructionsIdle": "先选择一个待安置成员，再选择子树空位。",
+      "pendingMember": "待安置成员",
+      "selectPendingFirst": "请先在上方选择一个待安置成员",
+      "selectedSlot": "当前空位",
+      "parent": "父节点 {wallet}",
+      "leftChildSlot": "左子节点空位",
+      "rightChildSlot": "右子节点空位",
+      "slotDescription": "这样能保持推荐关系和安置关系都正确：直推关系不变，真正挂载的位置由子树父节点和左右侧决定。",
+      "selectSlotHint": "点击或拖放到上方树中的箭头空位来选择目标。",
+      "confirming": "确认中...",
+      "confirmButton": "确认安置",
+      "fallbackError": "安置绑定失败"
+    }
+  },
+  "checkin": {
+    "eyebrow": "推广 / 签到",
+    "title": "每日签到",
+    "hero": {
+      "waitingForPayment": "等待支付确认...",
+      "finalizing": "签到提交中...",
+      "success": "成功！",
+      "successReward": "+1000 AURA",
+      "payAndCheckIn": "支付并签到",
+      "checkedToday": "今天仍可继续签到",
+      "tapToSend": "点击发送 3 USDT"
+    },
+    "direct": {
+      "title": "直接签到",
+      "description": "点击上方红色圆形按钮，可直接从钱包发送 3 USDT。转账确认后，页面会自动提交这笔交易哈希并完成今日签到。",
+      "checkedTodayNotice": "你今天已经签到过。当天额外签到仍然允许，但不会增加连续签到天数。",
+      "waitingWallet": "等待钱包确认...",
+      "submitting": "正在提交签到...",
+      "button": "支付 3 USDT 并签到",
+      "walletWarning": "请连接钱包、完成登录，并切换到链 {chainId} 后再使用直接签到。"
+    },
+    "manual": {
+      "title": "手动补录",
+      "description": "如果你已经发送了 3 USDT，但自动提交流程失败，可以在这里粘贴交易哈希来补录本次签到。",
+      "placeholder": "在这里粘贴 3 USDT 转账哈希",
+      "submitting": "提交中...",
+      "button": "提交已有交易哈希"
+    },
+    "errors": {
+      "submissionTitle": "提交失败",
+      "transferTitle": "钱包转账失败",
+      "transferDescription": "USDT 转账尚未确认。如果你已经在另一个钱包窗口里完成了转账，请使用下方手动补录。"
+    },
+    "stats": {
+      "streak": {
+        "label": "连续签到",
+        "subValue": "继续保持"
+      },
+      "total": {
+        "label": "总签到次数",
+        "subValue": "累计"
+      }
+    },
+    "lottery": {
+      "title": "每周抽奖券",
+      "progress": "{current}/7 天",
+      "remaining": "再签到 {count} 天即可获得一张抽奖券"
+    },
+    "calendar": {
+      "title": "本月签到"
+    }
+  },
+  "rewards": {
+    "eyebrow": "推广 / 奖励",
+    "title": "我的奖励",
+    "summary": {
+      "totalAura": "累计获得 AURA",
+      "fromCheckin": "签到获得",
+      "fromReferrals": "推荐获得"
+    },
+    "stats": {
+      "currentEpoch": {
+        "label": "当前周期"
+      },
+      "pendingClaims": {
+        "label": "待领取奖励",
+        "subValue": "可以领取"
+      }
+    },
+    "schedule": {
+      "title": "周期时间",
+      "startTime": "开始时间",
+      "endTime": "结束时间",
+      "settlementNote": "每周日 UTC 00:00 进行结算"
+    },
+    "feed": {
+      "title": "最近奖励",
+      "totalBadge": "共 {count} 条",
+      "errorTitle": "奖励加载失败",
+      "emptyTitle": "还没有奖励记录",
+      "emptyDescription": "你的签到奖励、推荐奖励和周期奖励在入账后会显示在这里。"
+    }
+  },
+  "claims": {
+    "eyebrow": "推广 / 领取",
+    "title": "奖励领取",
+    "summary": {
+      "claimableNow": "当前可领",
+      "totalHistory": "历史记录",
+      "recordsFound": "已找到记录"
+    },
+    "wrongNetwork": {
+      "description": "请切换到推广链（ID: {chainId}）后再领取奖励。"
+    },
+    "sync": {
+      "title": "同步错误",
+      "merkleFallbackError": "同步 Merkle 领取结果失败",
+      "subsidyFallbackError": "同步补贴领取结果失败"
+    },
+    "sections": {
+      "merkle": {
+        "title": "抽奖与排行",
+        "badgeClaimable": "{count} 条可领",
+        "badgeTotal": "共 {count} 条",
+        "emptyTitle": "暂无奖励领取记录",
+        "emptyDescription": "完成签到并参与抽奖后，就会开始累积可领取奖励。"
+      },
+      "subsidy": {
+        "title": "NFT 补贴",
+        "badgeClaimable": "{count} 条可领",
+        "badgeTotal": "共 {count} 条",
+        "emptyTitle": "暂无补贴领取记录",
+        "emptyDescription": "购买 Founder NFT 后即可开始获得每周补贴。"
+      }
+    },
+    "rows": {
+      "epoch": "周期 #{epochNo}",
+      "subsidyTitle": "NFT #{tokenId} 补贴"
+    }
+  },
+  "nft": {
+    "eyebrow": "推广 / NFT",
+    "title": "Founder NFT",
+    "stats": {
+      "purchasedMinted": "已售 NFT",
+      "referralMinted": "已发推荐 NFT"
+    },
+    "summary": {
+      "owned": "已持有",
+      "claimable": "可领取"
+    },
+    "wrongNetwork": {
+      "description": "请把钱包切换到推广链（ID: {chainId}）后再与 NFT 交互。"
+    },
+    "purchased": {
+      "sectionTitle": "购买型 NFT",
+      "cardTitle": "Founder NFT（售卖）",
+      "cardDescription": "享有专属权益和每周 USDT 补贴。",
+      "price": "价格",
+      "yourBalance": "你的余额",
+      "approving": "授权中...",
+      "approveButton": "授权 USDT",
+      "purchasing": "购买中...",
+      "buyButton": "立即购买",
+      "success": "购买成功，请到钱包中查看。"
+    },
+    "referral": {
+      "sectionTitle": "推荐 NFT",
+      "cardTitle": "里程碑 NFT",
+      "cardDescription": "通过团队增长达标后获得。",
+      "personalCheckins": "个人签到",
+      "smallLegVolume": "小区业绩",
+      "minting": "铸造中...",
+      "button": "领取里程碑 NFT",
+      "success": "NFT 铸造成功！"
+    },
+    "benefits": {
+      "title": "NFT 持有人权益",
+      "weeklySubsidies": {
+        "title": "每周补贴",
+        "description": "购买型 NFT 持有人在推广阶段每周可获得 30 USDT 补贴。"
+      },
+      "revenueSharing": {
+        "title": "收益分成",
+        "description": "AURA 代币上线后，所有 Founder NFT 持有人共享 60% 的交易税分成。"
+      }
+    }
   }
 }

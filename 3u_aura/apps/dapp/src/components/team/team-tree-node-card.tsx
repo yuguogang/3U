@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import {
   ArrowDownLeft,
   ArrowDownRight,
@@ -84,10 +85,13 @@ function TreeChip({
   );
 }
 
-function getRelationToneLabel(relationTone: NodeRelationTone) {
-  if (relationTone === "self") return "You";
-  if (relationTone === "direct") return "Direct";
-  return "Subtree";
+function getRelationToneLabel(
+  relationTone: NodeRelationTone,
+  t: ReturnType<typeof useTranslations<"Common">>,
+) {
+  if (relationTone === "self") return t("shared.promotion.relation.self");
+  if (relationTone === "direct") return t("shared.promotion.relation.direct");
+  return t("shared.promotion.relation.descendant");
 }
 
 function getNodeVisualTone({
@@ -171,6 +175,7 @@ function SlotButton({
     pendingUserId: string,
   ) => void;
 }) {
+  const t = useTranslations("Common");
   const isSelected = selectedPlacementKey === `${node.userId}:${position}`;
   const isPlacementActive = Boolean(selectedPendingUserId);
   const sizeClass = compact ? "h-8 w-8" : "h-9 w-9";
@@ -178,7 +183,11 @@ function SlotButton({
   return (
     <button
       type="button"
-      aria-label={position === TeamPosition.LEFT ? "Place left" : "Place right"}
+      aria-label={
+        position === TeamPosition.LEFT
+          ? t("shared.promotion.tree.placeLeft")
+          : t("shared.promotion.tree.placeRight")
+      }
       onClick={() => onSelectOpenSlot?.(node, position)}
       onDragOver={(event) => {
         if (!onDropPendingOnSlot) return;
@@ -229,6 +238,7 @@ function CollapsedNode({
   TeamTreeNodeCardProps,
   "className" | "compact" | "detailsExpanded"
 >) {
+  const t = useTranslations("Common");
   const tone = getNodeVisualTone({ relationTone: relationTone ?? "descendant", isRoot: node.isRoot });
 
   return (
@@ -265,7 +275,11 @@ function CollapsedNode({
             type="button"
             onClick={onToggleBranch}
             className="absolute -bottom-1 -right-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#171214] text-white/65 transition hover:bg-white/[0.08]"
-            aria-label={branchExpanded ? "Collapse subtree" : "Expand subtree"}
+            aria-label={
+              branchExpanded
+                ? t("shared.promotion.tree.collapseSubtree")
+                : t("shared.promotion.tree.expandSubtree")
+            }
           >
             <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", branchExpanded ? "rotate-0" : "-rotate-90")} />
           </button>
@@ -318,6 +332,7 @@ function ExpandedNode({
   onSelectOpenSlot,
   onDropPendingOnSlot,
 }: TeamTreeNodeCardProps) {
+  const t = useTranslations("Common");
   const nodeLabel = getTreeNodeLabel(node);
   const walletLabel = formatCompactWallet(node.walletAddress);
   const auraLabel = formatAuraAtomic(node.totalAuraAtomic);
@@ -361,7 +376,7 @@ function ExpandedNode({
                   {node.isRoot ? (
                     <TreeChip tone="accent">
                       <Crown className="h-3 w-3" />
-                      Root
+                      {t("team.legend.root")}
                     </TreeChip>
                   ) : null}
                   <TreeChip tone={relationToneChip}>
@@ -372,7 +387,7 @@ function ExpandedNode({
                     ) : (
                       <UserRound className="h-3 w-3" />
                     )}
-                    {getRelationToneLabel(relationTone ?? "descendant")}
+                    {getRelationToneLabel(relationTone ?? "descendant", t)}
                   </TreeChip>
                 </div>
                 <p className="mt-1 text-xs text-white/45">{walletLabel}</p>
@@ -382,18 +397,22 @@ function ExpandedNode({
                 type="button"
                 onClick={onToggleDetails}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/60 transition hover:bg-white/[0.08]"
-                aria-label="Collapse node details"
+                aria-label={t("shared.promotion.tree.collapseNodeDetails")}
               >
                 <Minimize2 className="h-4 w-4" />
               </button>
             </div>
 
             <div className="mt-2 flex flex-wrap gap-1.5">
-              <TreeChip>Depth {node.depth}</TreeChip>
+              <TreeChip>{t("shared.promotion.tree.depth", { depth: node.depth })}</TreeChip>
               {node.teamPosition ? (
-                <TreeChip>{node.teamPosition === TeamPosition.LEFT ? "Left" : "Right"}</TreeChip>
+                <TreeChip>{t(`shared.promotion.position.${node.teamPosition}`)}</TreeChip>
               ) : null}
-              {node.inviteCode ? <TreeChip tone="accent">Invite {node.inviteCode}</TreeChip> : null}
+              {node.inviteCode ? (
+                <TreeChip tone="accent">
+                  {t("shared.promotion.tree.inviteCode", { code: node.inviteCode })}
+                </TreeChip>
+              ) : null}
               {canFocus ? (
                 <button
                   type="button"
@@ -401,7 +420,7 @@ function ExpandedNode({
                   className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-2 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-white/70 transition hover:bg-white/[0.08]"
                 >
                   <Crosshair className="h-3 w-3" />
-                  Focus
+                  {t("shared.promotion.tree.focus")}
                 </button>
               ) : null}
             </div>
@@ -410,19 +429,19 @@ function ExpandedNode({
 
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Aura</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">{t("shared.units.aura")}</p>
             <p className="mt-1 text-sm font-semibold text-white">{auraLabel}</p>
           </div>
           <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Left</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">{t("shared.promotion.position.LEFT")}</p>
             <p className="mt-1 text-sm font-semibold text-white">{leftVolume}</p>
           </div>
           <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Right</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">{t("shared.promotion.position.RIGHT")}</p>
             <p className="mt-1 text-sm font-semibold text-white">{rightVolume}</p>
           </div>
           <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Children</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">{t("shared.promotion.tree.children")}</p>
             <p className="mt-1 text-sm font-semibold text-white">{node.childCount ?? 0}</p>
           </div>
         </div>
@@ -430,13 +449,13 @@ function ExpandedNode({
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
           <div className="inline-flex items-center gap-2 text-xs text-white/55">
             <Sparkles className="h-3.5 w-3.5 text-aura-primary" />
-            <span>Small leg {smallLeg}</span>
+            <span>{t("shared.promotion.tree.smallLeg", { amount: smallLeg })}</span>
           </div>
           <div className="flex items-center gap-2">
             {selectedPendingUserId ? (
               <span className="inline-flex items-center gap-1 rounded-full border border-aura-primary/20 bg-aura-primary/10 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-aura-primary">
                 <GripVertical className="h-3 w-3" />
-                Drop target
+                {t("shared.promotion.tree.dropTarget")}
               </span>
             ) : null}
             {node.openChildPositions.length > 0 ? (
@@ -454,15 +473,23 @@ function ExpandedNode({
             ) : (
               <TreeChip tone="warning">
                 <LockKeyhole className="h-3 w-3" />
-                Occupied
+                {t("shared.promotion.tree.occupied")}
               </TreeChip>
             )}
           </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-white/40">
-          <span>{node.parentId ? `Parent ${formatCompactId(node.parentId)}` : "No parent"}</span>
-          <span>{node.rewardLabel?.trim() || `NFT ${node.nftTierLabel ?? "unknown"}`}</span>
+          <span>
+            {node.parentId
+              ? t("shared.promotion.tree.parent", { parentId: formatCompactId(node.parentId) })
+              : t("shared.promotion.tree.noParent")}
+          </span>
+          <span>
+            {node.rewardLabel?.trim() || t("shared.promotion.tree.nftFallback", {
+              tier: node.nftTierLabel ?? t("shared.status.unknown"),
+            })}
+          </span>
         </div>
       </div>
     </div>

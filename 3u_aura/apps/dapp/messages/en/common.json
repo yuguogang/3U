@@ -35,5 +35,434 @@
       "TEAM_ACTIVITY": "Team Activity",
       "UPCOMING_LAUNCH": "Upcoming Launch"
     }
+  },
+  "shared": {
+    "buttons": {
+      "view": "View",
+      "details": "Details",
+      "share": "Share",
+      "dismiss": "Dismiss",
+      "claim": "Claim",
+      "bind": "Bind",
+      "copyLink": "Copy Link",
+      "openQr": "Open QR"
+    },
+    "status": {
+      "loading": "Loading...",
+      "checking": "Checking...",
+      "processingShort": "...",
+      "wrongNetwork": "Wrong Network",
+      "unknown": "unknown"
+    },
+    "units": {
+      "aura": "AURA",
+      "usdt": "USDT"
+    },
+    "promotion": {
+      "epochStatus": {
+        "PENDING": "Pending",
+        "OPEN": "Open",
+        "CALCULATING": "Calculating",
+        "ROOT_POSTED": "Root posted",
+        "SETTLED": "Settled",
+        "CANCELLED": "Cancelled"
+      },
+      "eligibilityStatus": {
+        "INELIGIBLE": "Ineligible",
+        "ELIGIBLE": "Eligible",
+        "PENDING_APPROVAL": "Pending approval",
+        "APPROVED": "Approved",
+        "SIGNED": "Signed",
+        "MINTED": "Minted",
+        "REJECTED": "Rejected",
+        "EXPIRED": "Expired",
+        "REVOKED": "Revoked",
+        "LOCKED": "Locked"
+      },
+      "rewardType": {
+        "LOTTERY_USDT": "Lottery USDT",
+        "RANKING_USDT": "Ranking USDT",
+        "CONSOLATION_AURA": "Consolation AURA",
+        "NFT_WEEKLY_USDT": "NFT Weekly USDT",
+        "TOKEN_DIVIDEND_USDT": "Token Dividend USDT",
+        "MANUAL": "Manual"
+      },
+      "claimStatus": {
+        "PENDING": "Pending",
+        "CLAIMABLE": "Claimable",
+        "CLAIMED": "Claimed",
+        "FAILED": "Failed",
+        "VOIDED": "Voided"
+      },
+      "claimType": {
+        "MERKLE_LOTTERY": "Lottery Reward",
+        "MERKLE_RANKING": "Ranking Reward",
+        "NFT_SUBSIDY": "NFT Subsidy",
+        "TOKEN_DIVIDEND": "Token Dividend",
+        "TOKEN_GENESIS": "Genesis Claim"
+      },
+      "position": {
+        "LEFT": "Left",
+        "RIGHT": "Right"
+      },
+      "relation": {
+        "self": "You",
+        "direct": "Direct",
+        "descendant": "Subtree"
+      },
+      "tree": {
+        "placeLeft": "Place left",
+        "placeRight": "Place right",
+        "collapseSubtree": "Collapse subtree",
+        "expandSubtree": "Expand subtree",
+        "collapseNodeDetails": "Collapse node details",
+        "depth": "Depth {depth}",
+        "focus": "Focus",
+        "children": "Children",
+        "smallLeg": "Small leg {amount}",
+        "dropTarget": "Drop target",
+        "occupied": "Occupied",
+        "parent": "Parent {parentId}",
+        "noParent": "No parent",
+        "nftFallback": "NFT {tier}",
+        "inviteCode": "Invite {code}",
+        "empty": "Empty",
+        "leafNode": "Leaf node",
+        "expandChildren": "Expand {count} {count, plural, one {child} other {children}}"
+      }
+    }
+  },
+  "dashboard": {
+    "eyebrow": "Promotion Dashboard",
+    "title": "AURA HUB",
+    "hero": {
+      "totalAura": "Total Accumulated AURA",
+      "approxUsd": "≈ $0.00 USD",
+      "weeklyChange": "+0.0%",
+      "thisWeek": "this week"
+    },
+    "auth": {
+      "title": "Wallet sign-in required",
+      "description": "Please connect your wallet and sign the message to access your personalized dashboard and rewards."
+    },
+    "stats": {
+      "currentEpoch": {
+        "label": "Current Epoch"
+      },
+      "smallLeg": {
+        "label": "Small Leg Volume",
+        "subValue": "Current Progress"
+      }
+    },
+    "milestones": {
+      "title": "Milestones & Alerts",
+      "pendingPlacements": {
+        "title": "Pending Placements",
+        "description": "{count} {count, plural, one {user waiting} other {users waiting}} for tree placement"
+      },
+      "nftEligibility": {
+        "title": "NFT Eligibility"
+      }
+    },
+    "features": {
+      "title": "Features",
+      "checkin": {
+        "title": "Daily Check-In",
+        "description": "Earn 1000 AURA daily"
+      },
+      "team": {
+        "title": "My Team",
+        "description": "View network"
+      },
+      "rewards": {
+        "title": "Rewards",
+        "description": "View earnings"
+      },
+      "nft": {
+        "title": "NFT Market",
+        "description": "Buy & Claim NFTs"
+      },
+      "claims": {
+        "title": "Claims",
+        "description": "Pending rewards"
+      },
+      "lottery": {
+        "title": "Lottery",
+        "description": "{count} tickets"
+      }
+    },
+    "referral": {
+      "title": "Invite Friends",
+      "description": "Earn 10% from direct referrals"
+    }
+  },
+  "team": {
+    "eyebrow": "Promotion / Team",
+    "title": "My Team",
+    "overview": {
+      "leftLeg": "Left Leg",
+      "rightLeg": "Right Leg",
+      "usdtVolume": "USDT Volume",
+      "smallLegVolume": "Small Leg Volume",
+      "rootTeam": "Root Team",
+      "subtreeTeam": "Subtree Team"
+    },
+    "summary": {
+      "pending": "Pending",
+      "placed": "Placed",
+      "flow": "Flow",
+      "live": "Live",
+      "note": "Pending members should be placed into an open LEFT or RIGHT slot inside the subtree."
+    },
+    "legend": {
+      "title": "Placement Legend",
+      "description": "The tree stays binary. Direct referrals and deeper subtree members use different visual cues, and pending members can be dragged or tapped into any open subtree slot.",
+      "root": "Root",
+      "direct": "Direct",
+      "hasTeam": "Has team",
+      "subtree": "Subtree",
+      "leaf": "Leaf node",
+      "placeLeft": "Place left",
+      "placeRight": "Place right",
+      "dragPending": "Drag pending",
+      "occupied": "Occupied",
+      "selected": "Selected"
+    },
+    "tree": {
+      "title": "Tree Snapshot",
+      "description": "Compact subtree view for placement decisions. Tap nodes for details, focus visible subtrees to go deeper, expand branches on demand, and place pending members into any open subtree slot.",
+      "depthDown": "Depth -1",
+      "depthUp": "Depth +1",
+      "depthBadge": "D{depth}",
+      "visibleNodes": "Visible Nodes",
+      "pending": "Pending",
+      "treeAura": "Tree AURA",
+      "errorTitle": "Unable to load tree snapshot",
+      "snapshotUnavailableTitle": "Tree snapshot unavailable",
+      "snapshotUnavailableDescription": "Reconnect and refresh after your latest placement changes.",
+      "focusedSubtree": "Focused subtree",
+      "inviterRoot": "Inviter root",
+      "backToRoot": "Back to root",
+      "viewingRoot": "Viewing your current subtree root. Open a node card and focus it to continue deeper.",
+      "hints": {
+        "inspect": "Tap a node to inspect details",
+        "focus": "Open a node, then focus its subtree to go deeper",
+        "expand": "Expand only the branches you need",
+        "drag": "Drag a pending member onto a glowing slot or tap-select it first"
+      },
+      "emptyTitle": "Tree snapshot is empty",
+      "emptyDescription": "No nodes were returned for this subtree yet."
+    },
+    "share": {
+      "title": "Share Center",
+      "codeDescription": "Share this code or the full referral link below",
+      "referralLink": "Referral Link",
+      "qrTitle": "Referral QR Code",
+      "qrDescription": "Scanning this code opens your referral link with the invite code embedded.",
+      "openQrAria": "Open referral QR code in a new tab",
+      "qrAlt": "Referral QR code",
+      "awaitingPlacementTitle": "Share unlocks after your own placement",
+      "awaitingPlacementDescription": "Your inviter binding is already saved. Once your upstream places you into the tree, your own invite code, referral link, and QR code will unlock automatically.",
+      "awaitingBindingTitle": "Share unlocks after inviter binding",
+      "awaitingBindingDescription": "Users who first arrive through a referral link bind automatically. If you entered directly, bind an inviter below first. Your own invite code, referral link, and QR code will appear after you are both bound and placed into the tree."
+    },
+    "bindInviter": {
+      "title": "Bind Inviter",
+      "placeholder": "Enter upstream invite code",
+      "fallbackError": "Inviter bind failed"
+    },
+    "pending": {
+      "title": "Pending Placements",
+      "totalBadge": "{count} total",
+      "errorTitle": "Unable to load pending placements",
+      "emptyTitle": "No pending placements",
+      "emptyDescription": "Newly joined referrals waiting for placement will appear here.",
+      "dragOrTap": "Drag or tap to place"
+    },
+    "confirmation": {
+      "title": "Placement Confirmation",
+      "instructionsDragging": "Drop the pending member onto any glowing LEFT or RIGHT slot, then confirm the final placement.",
+      "instructionsSelected": "Choose a glowing LEFT or RIGHT slot in the tree. The summary below will update before you confirm.",
+      "instructionsIdle": "Select a pending member first, then choose a subtree slot.",
+      "pendingMember": "Pending Member",
+      "selectPendingFirst": "Select a pending member above",
+      "selectedSlot": "Selected Slot",
+      "parent": "Parent {wallet}",
+      "leftChildSlot": "Left child slot",
+      "rightChildSlot": "Right child slot",
+      "slotDescription": "This keeps referral and placement semantics intact: direct referral remains unchanged, while the subtree parent and side define the actual binary-tree mount.",
+      "selectSlotHint": "Tap or drop onto an arrow slot in the tree above to choose the target.",
+      "confirming": "Confirming...",
+      "confirmButton": "Confirm Placement",
+      "fallbackError": "Placement binding failed"
+    }
+  },
+  "checkin": {
+    "eyebrow": "Promotion / Check-In",
+    "title": "Daily Check-In",
+    "hero": {
+      "waitingForPayment": "Waiting for payment...",
+      "finalizing": "Finalizing check-in...",
+      "success": "Success!",
+      "successReward": "+1000 AURA",
+      "payAndCheckIn": "Pay & Check In",
+      "checkedToday": "You can still check in today",
+      "tapToSend": "Tap to send 3 USDT"
+    },
+    "direct": {
+      "title": "Direct check-in",
+      "description": "Tap the red circle above to send 3 USDT directly from your wallet. After the transfer confirms, the page will automatically submit the tx hash to complete today's check-in.",
+      "checkedTodayNotice": "You already checked in today. Additional same-day check-ins are still allowed, but they do not increase consecutive days.",
+      "waitingWallet": "Waiting for wallet confirmation...",
+      "submitting": "Submitting check-in...",
+      "button": "Pay 3 USDT & Check In",
+      "walletWarning": "Connect wallet, sign in, and switch to chain {chainId} to use direct check-in."
+    },
+    "manual": {
+      "title": "Manual recovery",
+      "description": "If you already sent 3 USDT but automatic submission failed, paste the tx hash here to recover this check-in.",
+      "placeholder": "Paste 3 USDT transaction hash here",
+      "submitting": "Submitting...",
+      "button": "Submit Existing TX Hash"
+    },
+    "errors": {
+      "submissionTitle": "Submission failed",
+      "transferTitle": "Wallet transfer failed",
+      "transferDescription": "The USDT transfer was not confirmed. If you already sent it from another wallet window, use manual recovery below."
+    },
+    "stats": {
+      "streak": {
+        "label": "Consecutive Days",
+        "subValue": "Keep it up!"
+      },
+      "total": {
+        "label": "Total Check-Ins",
+        "subValue": "Lifetime"
+      }
+    },
+    "lottery": {
+      "title": "Weekly Lottery Ticket",
+      "progress": "{current}/7 days",
+      "remaining": "Check in for {count} more {count, plural, one {day} other {days}} to earn a lottery ticket"
+    },
+    "calendar": {
+      "title": "This Month"
+    }
+  },
+  "rewards": {
+    "eyebrow": "Promotion / Rewards",
+    "title": "My Rewards",
+    "summary": {
+      "totalAura": "Total Accumulated AURA",
+      "fromCheckin": "From Check-In",
+      "fromReferrals": "From Referrals"
+    },
+    "stats": {
+      "currentEpoch": {
+        "label": "Current Epoch"
+      },
+      "pendingClaims": {
+        "label": "Pending Claims",
+        "subValue": "Ready to claim"
+      }
+    },
+    "schedule": {
+      "title": "Epoch Schedule",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "settlementNote": "Settlement happens every Sunday at 00:00 UTC"
+    },
+    "feed": {
+      "title": "Recent Rewards",
+      "totalBadge": "{count} total",
+      "errorTitle": "Unable to load rewards",
+      "emptyTitle": "No rewards yet",
+      "emptyDescription": "Your check-in, referral, and epoch rewards will show up here once they are recorded."
+    }
+  },
+  "claims": {
+    "eyebrow": "Promotion / Claims",
+    "title": "Claim Rewards",
+    "summary": {
+      "claimableNow": "Claimable Now",
+      "totalHistory": "Total History",
+      "recordsFound": "Records found"
+    },
+    "wrongNetwork": {
+      "description": "Please switch to the promotion chain (ID: {chainId}) to claim your rewards."
+    },
+    "sync": {
+      "title": "Sync Error",
+      "merkleFallbackError": "Failed to sync merkle claim result",
+      "subsidyFallbackError": "Failed to sync subsidy claim result"
+    },
+    "sections": {
+      "merkle": {
+        "title": "Lottery & Ranking",
+        "badgeClaimable": "{count} claimable",
+        "badgeTotal": "{count} total",
+        "emptyTitle": "No reward claims found",
+        "emptyDescription": "Complete check-ins and lottery participation to earn rewards"
+      },
+      "subsidy": {
+        "title": "NFT Subsidies",
+        "badgeClaimable": "{count} claimable",
+        "badgeTotal": "{count} total",
+        "emptyTitle": "No subsidy claims found",
+        "emptyDescription": "Purchase a Founder NFT to start earning weekly subsidies"
+      }
+    },
+    "rows": {
+      "epoch": "Epoch #{epochNo}",
+      "subsidyTitle": "NFT #{tokenId} Subsidy"
+    }
+  },
+  "nft": {
+    "eyebrow": "Promotion / NFT",
+    "title": "Founder NFT",
+    "stats": {
+      "purchasedMinted": "Purchased Minted",
+      "referralMinted": "Referral Minted"
+    },
+    "summary": {
+      "owned": "Owned",
+      "claimable": "Claimable"
+    },
+    "wrongNetwork": {
+      "description": "Please switch your wallet to the promotion chain (ID: {chainId}) to interact with NFTs."
+    },
+    "purchased": {
+      "sectionTitle": "Purchased NFT",
+      "cardTitle": "Founder NFT (Sale)",
+      "cardDescription": "Exclusive benefits and weekly USDT subsidies.",
+      "price": "Price",
+      "yourBalance": "Your Balance",
+      "approving": "Approving...",
+      "approveButton": "Approve USDT",
+      "purchasing": "Purchasing...",
+      "buyButton": "Buy Now",
+      "success": "Purchase successful! Check your wallet."
+    },
+    "referral": {
+      "sectionTitle": "Referral NFT",
+      "cardTitle": "Milestone NFT",
+      "cardDescription": "Earned through team growth.",
+      "personalCheckins": "Personal Check-Ins",
+      "smallLegVolume": "Small Leg Volume",
+      "minting": "Minting...",
+      "button": "Claim Milestone NFT",
+      "success": "NFT minted successfully!"
+    },
+    "benefits": {
+      "title": "NFT Holder Benefits",
+      "weeklySubsidies": {
+        "title": "Weekly Subsidies",
+        "description": "Purchased NFT holders receive 30 USDT weekly during the promotion phase."
+      },
+      "revenueSharing": {
+        "title": "Revenue Sharing",
+        "description": "All Founder NFT holders share 60% of transaction taxes after AURA token launch."
+      }
+    }
   }
 }

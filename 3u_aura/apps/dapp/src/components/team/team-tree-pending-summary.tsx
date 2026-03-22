@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Users, BadgeCheck, ArrowRightLeft } from "lucide-react";
 import { GlassCard } from "@/components/ui-custom/glass-card";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,7 @@ export function TeamTreePendingSummary({
   rootLabel?: string;
   className?: string;
 }) {
+  const t = useTranslations("Common");
   return (
     <GlassCard variant="highlight" className={cn("p-4", className)}>
       <div className="flex items-center justify-between gap-4">
@@ -28,24 +30,24 @@ export function TeamTreePendingSummary({
       </div>
       <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/[0.08] pt-4">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-white/35">Pending</p>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-white/35">{t("team.summary.pending")}</p>
           <p className="mt-1 text-lg font-semibold text-white">{pendingCount}</p>
         </div>
         <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-white/35">Placed</p>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-white/35">{t("team.summary.placed")}</p>
           <p className="mt-1 text-lg font-semibold text-white">{placedCount}</p>
         </div>
         <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-white/35">Flow</p>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-white/35">{t("team.summary.flow")}</p>
           <p className="mt-1 inline-flex items-center gap-1 text-lg font-semibold text-white">
             <ArrowRightLeft className="h-4 w-4 text-aura-primary" />
-            Live
+            {t("team.summary.live")}
           </p>
         </div>
       </div>
       <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/55">
         <BadgeCheck className="h-3.5 w-3.5 text-emerald-300" />
-        Pending members should be placed into an open LEFT or RIGHT slot inside the subtree.
+        {t("team.summary.note")}
       </div>
     </GlassCard>
   );

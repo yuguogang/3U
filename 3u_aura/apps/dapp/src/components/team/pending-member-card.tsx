@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCompactWallet } from "./team-tree-utils";
@@ -73,6 +74,8 @@ export function PendingMemberCard({
   onDragStart,
   onDragEnd,
 }: PendingMemberCardProps) {
+  const locale = useLocale();
+  const t = useTranslations("Common");
   return (
     <button
       type="button"
@@ -103,10 +106,10 @@ export function PendingMemberCard({
             {formatCompactWallet(walletAddress)}
           </p>
           <p className="text-[10px] text-white/40">
-            {new Date(registeredAt).toLocaleDateString()}
+            {new Date(registeredAt).toLocaleDateString(locale)}
           </p>
           <p className="text-[10px] uppercase tracking-[0.18em] text-aura-primary/70">
-            Drag or tap to place
+            {t("team.pending.dragOrTap")}
           </p>
         </div>
         {selected && (
