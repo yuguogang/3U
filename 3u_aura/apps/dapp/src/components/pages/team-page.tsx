@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Link2, Share2, Copy, Check, TrendingUp, TrendingDown, QrCode, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, Copy, Crosshair, Link2, QrCode, Share2, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import type {
   ReferralPendingPlacementView,
   TeamPosition,
@@ -42,6 +42,7 @@ import {
   resolvePendingReferralCode,
 } from "@/lib/referral";
 import { buildTeamTree } from "@/lib/team-tree";
+import { buildTreeNodePath, getTreeNodeLabel } from "@/components/team/team-tree-utils";
 
 const EMPTY_PENDING_PLACEMENTS: ReferralPendingPlacementView[] = [];
 
@@ -63,6 +64,7 @@ export function TeamPage() {
   const [draggingPendingUserId, setDraggingPendingUserId] = useState<string | null>(null);
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
   const [treeDepth, setTreeDepth] = useState(4);
+  const [focusTrail, setFocusTrail] = useState<TeamTreeNodeView[]>([]);
   const autoBindAttemptKeyRef = useRef<string | null>(null);
   
   const user = profileQuery.data;
@@ -76,8 +78,9 @@ export function TeamPage() {
   const isTreeReady = Boolean(user?.parentId || isRootUser);
   const isAwaitingOwnPlacement = Boolean(user?.inviterId && !user?.parentId);
   const hasShareAccess = Boolean(isTreeReady && user?.inviteCode);
+  const currentFocusUserId = focusTrail[focusTrail.length - 1]?.userId;
   const treeSnapshotQuery = useTeamTreeSnapshotQuery(
-    { depth: treeDepth },
+    { depth: treeDepth, focusUserId: currentFocusUserId },
     isAuthenticated && hasHydrated && isTreeReady,
   );
   const treeRoot = useMemo(
@@ -130,6 +133,12 @@ export function TeamPage() {
   }, [treeSnapshotQuery.data?.nodes]);
   const placedCount = Math.max((treeSnapshotQuery.data?.nodes.length ?? 1) - 1, 0);
   const treeSnapshot = treeSnapshotQuery.data;
+  const currentTreeLabel =
+    focusTrail.length > 0
+      ? getTreeNodeLabel(focusTrail[focusTrail.length - 1]!)
+      : isRootUser
+        ? "Root Team"
+        : "Subtree Team";
   const appOrigin =
     typeof window === "undefined" ? "" : window.location.origin;
   const shareLink = useMemo(() => {
@@ -202,6 +211,18 @@ export function TeamPage() {
     user,
   ]);
 
+  useEffect(() => {
+    if (!isTreeReady && focusTrail.length > 0) {
+      setFocusTrail([]);
+    }
+  }, [focusTrail.length, isTreeReady]);
+
+  useEffect(() => {
+    if (selectedSlotKey && !selectedSlot) {
+      setSelectedSlotKey(null);
+    }
+  }, [selectedSlot, selectedSlotKey]);
+
   async function handleBindInviter() {
     await bindInviterMutation.mutateAsync({
       inviteCode: inviteCode.trim(),
@@ -225,6 +246,51 @@ export function TeamPage() {
 
   function handleTreeSlotSelect(node: TeamTreeNodeView, position: TeamPosition) {
     setSelectedSlotKey(`${node.userId}:${position}`);
+  }
+
+  function handleFocusNode(node: TeamTreeNodeView) {
+    if (!treeSnapshot?.rootUserId || node.userId === treeSnapshot.rootUserId) {
+      return;
+    }
+
+    const relativePath = buildTreeNodePath(
+      treeSnapshot.nodes,
+      treeSnapshot.rootUserId,
+      node.userId,
+    );
+
+    if (!relativePath) {
+      return;
+    }
+
+    setFocusTrail((current) => {
+      const prefix = current.length > 0 ? current.slice(0, -1) : [];
+      return [...prefix, ...relativePath];
+    });
+    setDraggingPendingUserId(null);
+    setSelectedSlotKey(null);
+  }
+
+  function handleResetTreeFocus() {
+    setFocusTrail([]);
+    setDraggingPendingUserId(null);
+    setSelectedSlotKey(null);
+  }
+
+  function handleFocusTrailSelect(userId: string) {
+    const index = focusTrail.findIndex((node) => node.userId === userId);
+    if (index === -1) {
+      return;
+    }
+
+    if (index === 0) {
+      handleResetTreeFocus();
+      return;
+    }
+
+    setFocusTrail(focusTrail.slice(0, index + 1));
+    setDraggingPendingUserId(null);
+    setSelectedSlotKey(null);
   }
 
   function handlePendingMemberSelect(userId: string | null) {
@@ -272,7 +338,7 @@ export function TeamPage() {
             <TeamTreePendingSummary
               pendingCount={pendingPlacements.length}
               placedCount={placedCount}
-              rootLabel={isRootUser ? "Root Team" : "Subtree Team"}
+              rootLabel={currentTreeLabel}
             />
 
             <div className="grid grid-cols-2 gap-3">
@@ -331,7 +397,7 @@ export function TeamPage() {
               <div>
                 <h2 className="text-sm font-medium text-white/70">Tree Snapshot</h2>
                 <p className="mt-1 text-xs text-white/45">
-                  Compact subtree view for placement decisions. Tap nodes for details, expand branches on demand, and place pending members into any open subtree slot.
+                  Compact subtree view for placement decisions. Tap nodes for details, focus visible subtrees to go deeper, expand branches on demand, and place pending members into any open subtree slot.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -402,17 +468,58 @@ export function TeamPage() {
                     description="Reconnect and refresh after your latest placement changes."
                   />
                 ) : (
-                  <TeamTreeView
-                    snapshot={treeSnapshot!}
-                    anchorUserId={user?.id}
-                    maxDepth={treeDepth}
-                    focusedUserId={selectedPlacementUserId ?? undefined}
-                    selectedPendingUserId={draggingPendingUserId ?? selectedPlacementUserId}
-                    selectedParentId={selectedSlot?.parentId}
-                    selectedPlacementKey={selectedSlotKey}
-                    onSelectOpenSlot={handleTreeSlotSelect}
-                    onDropPendingOnSlot={handleDropPendingOnSlot}
-                  />
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-3">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-white/55">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-aura-primary/20 bg-aura-primary/10 px-3 py-1.5 text-aura-primary">
+                          <Crosshair className="h-3.5 w-3.5" />
+                          {focusTrail.length > 0 ? "Focused subtree" : "Inviter root"}
+                        </span>
+                        {focusTrail.length > 0 ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={handleResetTreeFocus}
+                              className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-white/70 transition hover:bg-white/[0.08]"
+                            >
+                              <ArrowLeft className="h-3.5 w-3.5" />
+                              Back to root
+                            </button>
+                            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                              {focusTrail.map((node, index) => (
+                                <button
+                                  key={node.userId}
+                                  type="button"
+                                  onClick={() => handleFocusTrailSelect(node.userId)}
+                                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] text-white/70 transition hover:bg-white/[0.08]"
+                                >
+                                  {index > 0 ? <span className="text-white/35">/</span> : null}
+                                  <span className="max-w-[9rem] truncate">{getTreeNodeLabel(node)}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <span className="text-white/45">
+                            Viewing your current subtree root. Open a node card and focus it to continue deeper.
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <TeamTreeView
+                      snapshot={treeSnapshot!}
+                      anchorUserId={user?.id}
+                      maxDepth={treeDepth}
+                      focusedUserId={selectedPlacementUserId ?? undefined}
+                      selectedPendingUserId={draggingPendingUserId ?? selectedPlacementUserId}
+                      selectedParentId={selectedSlot?.parentId}
+                      selectedPlacementKey={selectedSlotKey}
+                      onFocusNode={handleFocusNode}
+                      onSelectOpenSlot={handleTreeSlotSelect}
+                      onDropPendingOnSlot={handleDropPendingOnSlot}
+                    />
+                  </div>
                 )}
               </div>
               </GlassCard>

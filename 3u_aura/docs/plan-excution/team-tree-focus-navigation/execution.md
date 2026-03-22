@@ -2,8 +2,8 @@
 
 ## Status
 
-- Planning created
-- Awaiting user approval before implementation
+- Implemented
+- Verified with server + dapp checks
 
 ## Plan Reference
 
@@ -74,21 +74,95 @@ This is expected to touch both server and DApp layers because the current subtre
 
 ## Approval Gate
 
-No implementation has started yet.
-
-Waiting for approval on:
-
-1. optional server-side `focusUserId` subtree re-rooting
-2. DApp breadcrumb / return-to-root interaction
-3. tree layout hardening via content-width rendering and horizontal overflow
+- Approved by user
+- Implementation completed after plan approval
 
 ## Notes For Execution
 
 - Preserve legacy subtree behavior when `focusUserId` is absent
 - Treat focus changes as navigation, not topology mutation
 - Keep placement semantics tied to actual parent/side values, not breadcrumb position
-- Record all real verification commands and outcomes below once implementation begins
+- Real verification commands and outcomes recorded below
+
+## Implemented Files
+
+- `packages/common/src/validators/promotion.ts`
+- `apps/server/src/modules/tree/services/tree-topology.service.ts`
+- `apps/server/src/modules/tree/services/tree-topology.service.spec.ts`
+- `apps/dapp/src/queries/promotion.query.ts`
+- `apps/dapp/src/components/team/team-tree-utils.ts`
+- `apps/dapp/src/components/team/team-tree-node-card.tsx`
+- `apps/dapp/src/components/team/team-tree-view.tsx`
+- `apps/dapp/src/components/pages/team-page.tsx`
+
+## Implementation Summary
+
+- Added optional `focusUserId` to the shared subtree snapshot query contract
+- Extended server subtree snapshot logic to:
+  - preserve legacy inviter-root behavior by default
+  - validate focused nodes remain inside the inviter subtree
+  - re-root returned subtree snapshots on a valid focused descendant
+- Added focused server tests for:
+  - valid descendant focus
+  - rejected out-of-subtree focus
+- Updated DApp subtree query keys and API usage so focused subtree requests cache separately
+- Added DApp focus navigation:
+  - focus current visible subtree from a node card
+  - breadcrumb-like focus trail
+  - return-to-root action
+  - safe slot reset when the focused subtree changes
+- Hardened deep-tree layout by:
+  - making branch width content-driven
+  - allowing horizontal overflow instead of recursive width collapse
+  - setting minimum widths for child columns and expanded cards
+  - reducing expanded metric cards from 4 columns to 2 columns for better readability
+
+## Commands Run During Implementation
+
+- `pnpm --dir packages/common build`
+- `pnpm --dir apps/server test -- tree-topology.service.spec.ts`
+- `pnpm --dir apps/dapp typecheck`
+- `pnpm --dir apps/server build`
+- `pnpm --dir apps/dapp lint`
+- `pnpm --dir apps/dapp build`
+- `rm -rf apps/server/dist`
+- `pnpm --dir apps/server build`
+
+## Verification Results
+
+- `pnpm --dir packages/common build`
+  - passed
+- `pnpm --dir apps/server test -- tree-topology.service.spec.ts`
+  - passed
+  - 10 / 10 tests passed
+  - Jest still reported an existing open-handle notice after completion
+- `pnpm --dir apps/dapp typecheck`
+  - passed
+- `pnpm --dir apps/dapp lint`
+  - passed with existing warnings only
+  - existing `<img>` warnings remained in:
+    - `apps/dapp/src/components/pages/team-page.tsx`
+    - `apps/dapp/src/components/wallet-button.tsx`
+- `pnpm --dir apps/dapp build`
+  - passed
+  - existing optional wallet connector module warnings remained during build
+- `pnpm --dir apps/server build`
+  - initial run failed because `apps/server/dist` could not be removed (`ENOTEMPTY`)
+  - after `rm -rf apps/server/dist`, rerun passed
+- Manual fork-anvil browser verification
+  - not run in this implementation pass
+  - compile/build/test coverage is recorded above, but interactive UI behavior in browser still needs a live smoke check if we want full runtime confirmation
+
+## Deviations From Plan
+
+- No new server response metadata was added beyond `focusUserId`; breadcrumb history is maintained on the DApp side using the currently visible snapshot path
+- The focus action is exposed from the expanded node card rather than from the collapsed icon node in this first implementation to avoid overloading dense node chrome
+- Server build required a manual cleanup of `apps/server/dist` because of an existing local filesystem residue, not because of the feature changes themselves
 
 ## Execution Updates
 
-- Pending approval
+- Planning artifacts created and approved
+- Shared query contract updated and common package rebuilt
+- Server subtree focus support implemented and covered by tests
+- DApp focus navigation and deep-tree layout hardening implemented
+- Verification completed and recorded above

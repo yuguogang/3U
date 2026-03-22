@@ -5,6 +5,7 @@ import {
   ArrowDownLeft,
   ArrowDownRight,
   ChevronDown,
+  Crosshair,
   Crown,
   GripVertical,
   Link2,
@@ -38,8 +39,10 @@ export interface TeamTreeNodeCardProps {
   selectedPendingUserId?: string | null;
   hasChildren?: boolean;
   relationTone?: NodeRelationTone;
+  canFocus?: boolean;
   onToggleDetails?: () => void;
   onToggleBranch?: () => void;
+  onFocusNode?: (node: TeamTreeNodeLike) => void;
   onSelectOpenSlot?: (node: TeamTreeNodeLike, position: TeamPosition) => void;
   onDropPendingOnSlot?: (
     node: TeamTreeNodeLike,
@@ -229,7 +232,7 @@ function CollapsedNode({
   const tone = getNodeVisualTone({ relationTone: relationTone ?? "descendant", isRoot: node.isRoot });
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex w-[10rem] flex-col items-center gap-2 px-2">
       <div className="relative">
         <button
           type="button"
@@ -269,7 +272,7 @@ function CollapsedNode({
         ) : null}
       </div>
 
-      <div className="max-w-[88px] text-center">
+      <div className="max-w-[9rem] text-center">
         <p className="truncate text-xs font-semibold text-white">{getTreeNodeLabel(node)}</p>
         <p className="mt-0.5 truncate text-[10px] text-white/45">{formatCompactWallet(node.walletAddress)}</p>
       </div>
@@ -308,8 +311,10 @@ function ExpandedNode({
   selectedPendingUserId,
   hasChildren,
   relationTone,
+  canFocus,
   onToggleDetails,
   onToggleBranch,
+  onFocusNode,
   onSelectOpenSlot,
   onDropPendingOnSlot,
 }: TeamTreeNodeCardProps) {
@@ -325,7 +330,7 @@ function ExpandedNode({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[26px] border bg-[linear-gradient(180deg,rgba(38,18,18,0.92),rgba(20,10,10,0.92))] p-3.5 shadow-[0_22px_60px_rgba(0,0,0,0.28)]",
+        "relative w-[18rem] min-w-[18rem] overflow-hidden rounded-[26px] border bg-[linear-gradient(180deg,rgba(38,18,18,0.92),rgba(20,10,10,0.92))] p-3.5 shadow-[0_22px_60px_rgba(0,0,0,0.28)]",
         selected ? "border-aura-primary/35 ring-1 ring-inset ring-aura-primary/30" : "border-white/10",
         active && "shadow-[0_0_0_1px_rgba(255,86,54,0.18),0_18px_50px_rgba(255,86,54,0.12)]",
         compact && "p-3",
@@ -389,11 +394,21 @@ function ExpandedNode({
                 <TreeChip>{node.teamPosition === TeamPosition.LEFT ? "Left" : "Right"}</TreeChip>
               ) : null}
               {node.inviteCode ? <TreeChip tone="accent">Invite {node.inviteCode}</TreeChip> : null}
+              {canFocus ? (
+                <button
+                  type="button"
+                  onClick={() => onFocusNode?.(node)}
+                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-2 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-white/70 transition hover:bg-white/[0.08]"
+                >
+                  <Crosshair className="h-3 w-3" />
+                  Focus
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
             <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Aura</p>
             <p className="mt-1 text-sm font-semibold text-white">{auraLabel}</p>
@@ -412,7 +427,7 @@ function ExpandedNode({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
           <div className="inline-flex items-center gap-2 text-xs text-white/55">
             <Sparkles className="h-3.5 w-3.5 text-aura-primary" />
             <span>Small leg {smallLeg}</span>
@@ -445,7 +460,7 @@ function ExpandedNode({
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-[11px] text-white/40">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-white/40">
           <span>{node.parentId ? `Parent ${formatCompactId(node.parentId)}` : "No parent"}</span>
           <span>{node.rewardLabel?.trim() || `NFT ${node.nftTierLabel ?? "unknown"}`}</span>
         </div>
@@ -466,8 +481,10 @@ export function TeamTreeNodeCard({
   selectedPendingUserId,
   hasChildren = false,
   relationTone = "descendant",
+  canFocus = false,
   onToggleDetails,
   onToggleBranch,
+  onFocusNode,
   onSelectOpenSlot,
   onDropPendingOnSlot,
 }: TeamTreeNodeCardProps) {
@@ -485,8 +502,10 @@ export function TeamTreeNodeCard({
         selectedPendingUserId={selectedPendingUserId}
         hasChildren={hasChildren}
         relationTone={relationTone}
+        canFocus={canFocus}
         onToggleDetails={onToggleDetails}
         onToggleBranch={onToggleBranch}
+        onFocusNode={onFocusNode}
         onSelectOpenSlot={onSelectOpenSlot}
         onDropPendingOnSlot={onDropPendingOnSlot}
       />
@@ -504,8 +523,10 @@ export function TeamTreeNodeCard({
         selectedPendingUserId={selectedPendingUserId}
         hasChildren={hasChildren}
         relationTone={relationTone}
+        canFocus={canFocus}
         onToggleDetails={onToggleDetails}
         onToggleBranch={onToggleBranch}
+        onFocusNode={onFocusNode}
         onSelectOpenSlot={onSelectOpenSlot}
         onDropPendingOnSlot={onDropPendingOnSlot}
       />

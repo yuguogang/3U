@@ -196,9 +196,21 @@ export class TreeTopologyService {
       );
     }
 
+    const focusRootId = query.focusUserId ?? inviter.id;
+    if (
+      query.focusUserId &&
+      query.focusUserId !== inviter.id &&
+      !(await this.teamClosureRepository.hasAncestorLink(
+        inviter.id,
+        query.focusUserId,
+      ))
+    ) {
+      throw new ConflictException('Focus node is outside the inviter subtree');
+    }
+
     const subtreeNodes = await this.teamClosureRepository.listSubtreeNodes(
-      inviter.id,
-      query,
+      focusRootId,
+      { depth: query.depth },
     );
     const occupiedPositions =
       await this.teamClosureRepository.listOccupiedChildPositions(
@@ -208,12 +220,12 @@ export class TreeTopologyService {
 
     for (const row of occupiedPositions) {
       const parentSet = occupiedByParent.get(row.parentId) ?? new Set<TeamPosition>();
-      parentSet.add(row.teamPosition);
+      parentSet.add(row.teamPosition as TeamPosition);
       occupiedByParent.set(row.parentId, parentSet);
     }
 
     return {
-      rootUserId: inviter.id,
+      rootUserId: focusRootId,
       requestedDepth: query.depth,
       nodes: subtreeNodes.map((node) => {
         const occupied = occupiedByParent.get(node.id) ?? new Set<TeamPosition>();
@@ -230,9 +242,9 @@ export class TreeTopologyService {
           inviterId: node.inviterId ?? undefined,
           parentId: node.parentId ?? undefined,
           placementKey: node.placementKey ?? undefined,
-          teamPosition: node.teamPosition ?? undefined,
+          teamPosition: (node.teamPosition as TeamPosition | undefined) ?? undefined,
           depth: node.depth,
-          isRoot: node.id === inviter.id,
+          isRoot: node.id === focusRootId,
           hasPurchasedNft: node.profile?.hasPurchasedNft ?? false,
           hasReferralNft: node.profile?.hasReferralNft ?? false,
           totalAuraAtomic: totalAuraAtomic.toString(),

@@ -447,4 +447,101 @@ describe('TreeTopologyService', () => {
       ],
     });
   });
+
+  it('returns a focused descendant subtree when focusUserId is valid', async () => {
+    const { service, teamClosureRepository } = createService();
+    teamClosureRepository.findParentForPlacement.mockResolvedValue({
+      id: actor.id,
+      inviterId: null,
+      parentId: null,
+      status: UserStatus.ACTIVE,
+      walletAddress: '0x1111111111111111111111111111111111111111',
+    });
+    teamClosureRepository.hasSelfClosure.mockResolvedValue(true);
+    teamClosureRepository.hasAncestorLink.mockResolvedValue(true);
+    teamClosureRepository.listSubtreeNodes.mockResolvedValue([
+      {
+        id: 'node_focus',
+        walletAddress: '0x2222222222222222222222222222222222222222',
+        inviteCode: 'FOCUS01',
+        inviterId: actor.id,
+        parentId: actor.id,
+        placementKey: `${actor.id}:LEFT`,
+        status: UserStatus.ACTIVE,
+        teamPosition: TeamPosition.LEFT,
+        depth: 0,
+        profile: null,
+      },
+      {
+        id: 'node_leaf',
+        walletAddress: '0x3333333333333333333333333333333333333333',
+        inviteCode: null,
+        inviterId: 'node_focus',
+        parentId: 'node_focus',
+        placementKey: 'node_focus:RIGHT',
+        status: UserStatus.ACTIVE,
+        teamPosition: TeamPosition.RIGHT,
+        depth: 1,
+        profile: null,
+      },
+    ]);
+    teamClosureRepository.listOccupiedChildPositions.mockResolvedValue([
+      { parentId: 'node_focus', teamPosition: TeamPosition.RIGHT },
+    ]);
+
+    const result = await service.getTreeSnapshotForInviter(actor, {
+      depth: 4,
+      focusUserId: 'node_focus',
+    });
+
+    expect(teamClosureRepository.hasAncestorLink).toHaveBeenCalledWith(
+      actor.id,
+      'node_focus',
+    );
+    expect(teamClosureRepository.listSubtreeNodes).toHaveBeenCalledWith(
+      'node_focus',
+      { depth: 4 },
+    );
+    expect(result.rootUserId).toBe('node_focus');
+    expect(result.nodes[0]).toEqual({
+      userId: 'node_focus',
+      walletAddress: '0x2222222222222222222222222222222222222222',
+      inviteCode: 'FOCUS01',
+      inviterId: actor.id,
+      parentId: actor.id,
+      placementKey: `${actor.id}:LEFT`,
+      teamPosition: TeamPosition.LEFT,
+      depth: 0,
+      isRoot: true,
+      hasPurchasedNft: false,
+      hasReferralNft: false,
+      totalAuraAtomic: '0',
+      leftTeamVolume: '0',
+      rightTeamVolume: '0',
+      smallLegVolume: '0',
+      openChildPositions: [TeamPosition.LEFT],
+    });
+  });
+
+  it('rejects focusUserId outside the inviter subtree', async () => {
+    const { service, teamClosureRepository } = createService();
+    teamClosureRepository.findParentForPlacement.mockResolvedValue({
+      id: actor.id,
+      inviterId: null,
+      parentId: null,
+      status: UserStatus.ACTIVE,
+      walletAddress: '0x1111111111111111111111111111111111111111',
+    });
+    teamClosureRepository.hasSelfClosure.mockResolvedValue(true);
+    teamClosureRepository.hasAncestorLink.mockResolvedValue(false);
+
+    await expect(
+      service.getTreeSnapshotForInviter(actor, {
+        depth: 4,
+        focusUserId: 'node_outside',
+      }),
+    ).rejects.toThrow('Focus node is outside the inviter subtree');
+
+    expect(teamClosureRepository.listSubtreeNodes).not.toHaveBeenCalled();
+  });
 });

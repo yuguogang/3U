@@ -20,6 +20,7 @@ export interface TeamTreeViewProps extends HTMLAttributes<HTMLDivElement> {
   selectedPlacementKey?: string | null;
   selectedPendingUserId?: string | null;
   compact?: boolean;
+  onFocusNode?: (node: TeamTreeNodeLike) => void;
   onSelectOpenSlot?: (node: TeamTreeNodeLike, position: TeamPosition) => void;
   onDropPendingOnSlot?: (
     node: TeamTreeNodeLike,
@@ -40,6 +41,7 @@ function TreeBranch({
   expandedNodeIds,
   expandedDetailNodeId,
   compact,
+  onFocusNode,
   onToggleDetails,
   onToggleExpand,
   onSelectOpenSlot,
@@ -54,6 +56,7 @@ function TreeBranch({
   expandedNodeIds: ExpandedTreeState;
   expandedDetailNodeId?: string | null;
   compact?: boolean;
+  onFocusNode?: (node: TeamTreeNodeLike) => void;
   onToggleDetails: (node: TeamTreeNodeLike) => void;
   onToggleExpand: (userId: string) => void;
   onSelectOpenSlot?: (node: TeamTreeNodeLike, position: TeamPosition) => void;
@@ -82,7 +85,7 @@ function TreeBranch({
         : "descendant";
 
   return (
-    <div className="relative">
+    <div className="relative flex w-fit flex-col items-center">
       <TeamTreeNodeCard
         node={node}
         active={isFocused}
@@ -92,17 +95,19 @@ function TreeBranch({
         branchExpanded={isExpanded}
         detailsExpanded={detailsExpanded}
         relationTone={relationTone}
+        canFocus={!node.isRoot}
         selectedPlacementKey={selectedPlacementKey}
         selectedPendingUserId={selectedPendingUserId}
         onToggleDetails={() => onToggleDetails(node)}
         onToggleBranch={() => onToggleExpand(node.userId)}
+        onFocusNode={onFocusNode}
         onSelectOpenSlot={onSelectOpenSlot}
         onDropPendingOnSlot={onDropPendingOnSlot}
       />
 
       {hasChildren ? (
         isExpanded ? (
-          <div className="relative mt-4 pt-8">
+          <div className="relative mt-4 flex w-fit flex-col items-center pt-8">
             <svg
               aria-hidden="true"
               className="pointer-events-none absolute inset-x-0 top-0 h-12 w-full overflow-visible text-white/12"
@@ -115,8 +120,8 @@ function TreeBranch({
               <line x1="80" y1="14" x2="80" y2="48" stroke="currentColor" strokeWidth="1.5" />
             </svg>
 
-            <div className="grid grid-cols-2 gap-4 pt-2">
-              <div className="min-w-0">
+            <div className="inline-grid grid-cols-[minmax(11rem,auto)_minmax(11rem,auto)] items-start gap-x-6 gap-y-4 pt-2">
+              <div className="min-w-[11rem]">
                 <div className="mb-2 flex items-center justify-center">
                   <span className="rounded-full border border-emerald-400/15 bg-emerald-400/8 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-300/85">
                     Left
@@ -133,19 +138,20 @@ function TreeBranch({
                     expandedNodeIds={expandedNodeIds}
                     expandedDetailNodeId={expandedDetailNodeId}
                     compact={compact}
+                    onFocusNode={onFocusNode}
                     onToggleDetails={onToggleDetails}
                     onToggleExpand={onToggleExpand}
                     onSelectOpenSlot={onSelectOpenSlot}
                     onDropPendingOnSlot={onDropPendingOnSlot}
                   />
                 ) : (
-                  <div className="flex min-h-[72px] items-center justify-center rounded-2xl border border-dashed border-white/8 bg-white/[0.015] text-[11px] text-white/28">
+                  <div className="flex min-h-[72px] min-w-[11rem] items-center justify-center rounded-2xl border border-dashed border-white/8 bg-white/[0.015] text-[11px] text-white/28">
                     Empty
                   </div>
                 )}
               </div>
 
-              <div className="min-w-0">
+              <div className="min-w-[11rem]">
                 <div className="mb-2 flex items-center justify-center">
                   <span className="rounded-full border border-sky-400/15 bg-sky-400/8 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-sky-200/85">
                     Right
@@ -162,13 +168,14 @@ function TreeBranch({
                     expandedNodeIds={expandedNodeIds}
                     expandedDetailNodeId={expandedDetailNodeId}
                     compact={compact}
+                    onFocusNode={onFocusNode}
                     onToggleDetails={onToggleDetails}
                     onToggleExpand={onToggleExpand}
                     onSelectOpenSlot={onSelectOpenSlot}
                     onDropPendingOnSlot={onDropPendingOnSlot}
                   />
                 ) : (
-                  <div className="flex min-h-[72px] items-center justify-center rounded-2xl border border-dashed border-white/8 bg-white/[0.015] text-[11px] text-white/28">
+                  <div className="flex min-h-[72px] min-w-[11rem] items-center justify-center rounded-2xl border border-dashed border-white/8 bg-white/[0.015] text-[11px] text-white/28">
                     Empty
                   </div>
                 )}
@@ -189,6 +196,7 @@ function TreeBranch({
                     expandedNodeIds={expandedNodeIds}
                     expandedDetailNodeId={expandedDetailNodeId}
                     compact={compact}
+                    onFocusNode={onFocusNode}
                     onToggleDetails={onToggleDetails}
                     onToggleExpand={onToggleExpand}
                     onSelectOpenSlot={onSelectOpenSlot}
@@ -229,6 +237,7 @@ export function TeamTreeView({
   selectedPendingUserId,
   compact = false,
   className,
+  onFocusNode,
   onSelectOpenSlot,
   onDropPendingOnSlot,
   ...props
@@ -268,6 +277,9 @@ export function TeamTreeView({
             Tap a node to inspect details
           </span>
           <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
+            Open a node, then focus its subtree to go deeper
+          </span>
+          <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
             Expand only the branches you need
           </span>
           <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
@@ -275,7 +287,7 @@ export function TeamTreeView({
           </span>
         </div>
 
-        <div className="min-w-[320px] space-y-4">
+        <div className="flex min-w-max flex-col gap-4">
           {roots.length > 0 ? (
             roots.map((node) => (
               <div key={node.userId} className="rounded-[28px] border border-white/8 bg-white/[0.015] p-3 sm:p-4">
@@ -289,6 +301,7 @@ export function TeamTreeView({
                   expandedNodeIds={expandedNodeIds}
                   expandedDetailNodeId={expandedDetailNodeId}
                   compact={compact}
+                  onFocusNode={onFocusNode}
                   onToggleDetails={(selectedNode) =>
                     setExpandedDetailNodeId((current) =>
                       current === selectedNode.userId ? null : selectedNode.userId,
@@ -306,7 +319,7 @@ export function TeamTreeView({
               </div>
             ))
           ) : (
-            <div className="rounded-[28px] border border-white/8 bg-white/[0.015] p-5">
+            <div className="min-w-[320px] rounded-[28px] border border-white/8 bg-white/[0.015] p-5">
               <p className="text-sm font-medium text-white">Tree snapshot is empty</p>
               <p className="mt-2 text-xs text-white/45">
                 No nodes were returned for this subtree yet.

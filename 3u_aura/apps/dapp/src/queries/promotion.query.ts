@@ -28,8 +28,14 @@ export const promotionQueryKeys = {
   pendingPlacements: ["promotion", "team", "pending-placements"] as const,
   selectableSlots: ["promotion", "team", "selectable-slots"] as const,
   treeSnapshotRoot: ["promotion", "team", "tree-snapshot"] as const,
-  treeSnapshot: (depth?: number) =>
-    ["promotion", "team", "tree-snapshot", depth ?? "all"] as const,
+  treeSnapshot: (depth?: number, focusUserId?: string) =>
+    [
+      "promotion",
+      "team",
+      "tree-snapshot",
+      depth ?? "all",
+      focusUserId ?? "root",
+    ] as const,
 };
 
 export function useCurrentEpochQuery() {
@@ -73,7 +79,7 @@ export function useTeamTreeSnapshotQuery(
   return useQuery({
     enabled,
     queryFn: () => apiGetTeamTreeSnapshot(query),
-    queryKey: promotionQueryKeys.treeSnapshot(query?.depth),
+    queryKey: promotionQueryKeys.treeSnapshot(query?.depth, query?.focusUserId),
   });
 }
 

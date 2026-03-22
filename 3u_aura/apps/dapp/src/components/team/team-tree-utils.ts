@@ -1,4 +1,4 @@
-import { TeamPosition } from "3u-aura-common";
+import { TeamPosition, type TeamTreeNodeView } from "3u-aura-common";
 
 export type TeamTreeNodeLike = {
   userId: string;
@@ -126,4 +126,43 @@ export function buildTreeBranches(nodes: TeamTreeNodeLike[], rootUserId?: string
     root.childCount = root.children.length;
   });
   return roots;
+}
+
+export function buildTreeNodePath<T extends Pick<TeamTreeNodeView, "userId" | "parentId">>(
+  nodes: T[] | null | undefined,
+  rootUserId?: string | null,
+  targetUserId?: string | null,
+) {
+  if (!nodes?.length || !rootUserId || !targetUserId) {
+    return null;
+  }
+
+  const nodeMap = new Map(nodes.map((node) => [node.userId, node]));
+  const targetNode = nodeMap.get(targetUserId);
+  const rootNode = nodeMap.get(rootUserId);
+
+  if (!targetNode || !rootNode) {
+    return null;
+  }
+
+  const path: T[] = [];
+  const visited = new Set<string>();
+  let current: T | undefined = targetNode;
+
+  while (current) {
+    if (visited.has(current.userId)) {
+      return null;
+    }
+
+    visited.add(current.userId);
+    path.push(current);
+
+    if (current.userId === rootUserId) {
+      return path.reverse();
+    }
+
+    current = current.parentId ? nodeMap.get(current.parentId) : undefined;
+  }
+
+  return null;
 }

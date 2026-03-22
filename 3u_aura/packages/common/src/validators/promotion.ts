@@ -61,6 +61,7 @@ export const TeamTreeSnapshotQuerySchema = z.object({
       z.number().int().min(0).max(12),
     )
     .optional(),
+  focusUserId: z.string().trim().min(1).optional(),
 });
 
 export type TeamTreeSnapshotQuery = z.infer<
