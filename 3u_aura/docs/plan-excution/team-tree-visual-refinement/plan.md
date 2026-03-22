@@ -13,15 +13,21 @@ This task builds on the completed visual tree placement foundation and focuses o
 
 The refined target experience should support:
 
-1. icon-first tree display, with detailed node information shown on tap/click (and hover on desktop where available)
+1. icon-first tree display as the **default** state, with the same node able to expand into a detail card on tap/click
 2. expand / collapse behavior so subtree navigation stays compact
 3. different visual treatment for direct-referral relationship vs merely being inside the operator subtree
 4. drag-like placement for **pending** members only, with explicit confirmation before mutation
 5. a tighter, more elegant structure than the current always-open card stack
+6. a single-tree interaction where:
+   - node default = icon
+   - node expanded = card
+   - expanded card can collapse back to icon in place
 
 ## 2. Scope
 
 - Refine `apps/dapp` `/team` tree presentation and placement interaction
+- Replace the current “card is the node” default with “icon is the node” default
+- Add in-place node expansion/collapse so the same tree can morph between compact graph browsing and rich node inspection
 - Improve visual differentiation between:
   - root node
   - direct-referral node
@@ -74,9 +80,10 @@ The refined target experience should support:
 - `apps/dapp/src/components/pages/team-page.tsx`
   - currently carries too much placement-mode orchestration and should be clarified, but can remain the coordinator for this task
 - `apps/dapp/src/components/team/team-tree-view.tsx`
-  - should better communicate subtree shape, expand/collapse state, and selected placement target
+  - should support icon-state and expanded-card-state within the same tree
 - `apps/dapp/src/components/team/team-tree-node-card.tsx`
-  - should distinguish node role/status more clearly and support compact detail-reveal behavior
+  - should no longer be the default always-visible node shape
+  - should be repurposed into the expanded state of a node, not a separate alternate tree mode
 - `apps/dapp/src/components/team/team-tree-pending-summary.tsx`
   - should remain high-level summary only, not absorb pending member card UX
 - New small DApp-only refinements may be added under `apps/dapp/src/components/team/*` if needed for:
@@ -84,7 +91,8 @@ The refined target experience should support:
   - selection status row
   - placement mode hint block
   - expand/collapse control
-  - node detail popover/sheet
+  - icon node primitive
+  - in-place expanded node card
 
 ### Shared / Server
 
@@ -98,7 +106,7 @@ The refined target experience should support:
 
 Current tree rendering proves the backend supports subtree placement, but it still feels developer-facing:
 
-- node cards are information-dense without clear hierarchy cues
+- node cards are still acting like the primary tree shape, which makes the tree feel heavy
 - open slots read as technical state more than user action targets
 - internal-node vs leaf-node distinction is too subtle
 - direct-referral vs deeper-subtree descendants are not visually separated enough
@@ -139,11 +147,72 @@ The `/team` page now has better state logic, but visual explanation is still not
 
 ### 6.5 Node Detail Interaction Gap
 
-Users should not need every node card fully expanded all the time. The refined tree should make the compact state beautiful and scannable, and reveal rich node information only when requested.
+Users should not need every node card fully expanded all the time. The refined tree should make the compact icon state beautiful and scannable, and reveal rich node information only when requested.
+
+### 6.6 View Preference Gap
+
+The intended interaction is not “switch the whole tree into another mode.” It is:
+
+- compact icon tree for normal browsing
+- tap/click a specific node to expand that node into a richer card
+- tap/click again or collapse to return that same node to icon form
+
+So the refinement must preserve a single coherent tree, not render two separate tree modes.
 
 ## 7. Milestones
 
-### Milestone 1: Refine Node Visual Semantics
+### Milestone 1: Default Icon Tree Mode
+
+- Goal:
+  - make the default tree presentation icon-first instead of card-first
+- Affected files/modules:
+  - `apps/dapp/src/components/team/team-tree-view.tsx`
+  - new/refined `apps/dapp/src/components/team/*`
+- Implementation notes:
+  - each node should default to a compact icon/tree badge form
+  - icon should visually encode:
+    - root
+    - direct referral
+    - internal node
+    - leaf node
+  - connectors and spacing should prioritize compactness and readability
+  - info card should appear only when a node is tapped/clicked
+- Risks:
+  - making the icon-only state too abstract
+  - losing tap accuracy on mobile if icons become too small
+- Verification commands:
+  - `pnpm --dir apps/dapp lint`
+  - `pnpm --dir apps/dapp typecheck`
+- Expected outputs:
+  - tree is readable as a graph before any detail card is opened
+
+### Milestone 1.5: In-Place Node Expansion Behavior
+
+- Goal:
+  - let users expand a node from icon form into card form and collapse it back in place
+- Affected files/modules:
+  - `apps/dapp/src/components/pages/team-page.tsx`
+  - `apps/dapp/src/components/team/team-tree-view.tsx`
+  - `apps/dapp/src/components/team/team-tree-node-card.tsx`
+  - optional new icon-node helper under `apps/dapp/src/components/team/*`
+- Implementation notes:
+  - icon node remains the default
+  - expanded card replaces that node in place inside the same tree
+  - collapse returns the same node to icon form without rebuilding the whole tree
+  - expanded/collapsed state should preserve:
+    - selected pending member
+    - selected slot
+    - drag/tap placement semantics
+- Risks:
+  - node expansion making layout jump too aggressively
+  - too many expanded cards at once harming compactness
+- Verification commands:
+  - `pnpm --dir apps/dapp lint`
+  - `pnpm --dir apps/dapp typecheck`
+- Expected outputs:
+  - user can inspect node details without leaving the same tree
+
+### Milestone 2: Refine Node Visual Semantics
 
 - Goal:
   - make node role/status readable at a glance
@@ -168,7 +237,7 @@ Users should not need every node card fully expanded all the time. The refined t
 - Expected outputs:
   - node state and slot state are easier to scan without reading every label
 
-### Milestone 2: Pending Placement Card Refinement
+### Milestone 3: Pending Placement Card Refinement
 
 - Goal:
   - turn pending member selection into a compact, touch-friendly, low-ambiguity interaction
@@ -193,7 +262,7 @@ Users should not need every node card fully expanded all the time. The refined t
 - Expected outputs:
   - pending user selection becomes quick and obvious on mobile
 
-### Milestone 3: Placement Mode & Slot Highlight Refinement
+### Milestone 4: Placement Mode & Slot Highlight Refinement
 
 - Goal:
   - make the relationship between selected pending member and valid open slots visually continuous
@@ -221,7 +290,7 @@ Users should not need every node card fully expanded all the time. The refined t
 - Expected outputs:
   - users can tell exactly where placement is possible before they confirm
 
-### Milestone 4: Placement Confirmation Context Upgrade
+### Milestone 5: Placement Confirmation Context Upgrade
 
 - Goal:
   - make final confirmation read like a precise action summary instead of a generic form footer
@@ -244,7 +313,7 @@ Users should not need every node card fully expanded all the time. The refined t
 - Expected outputs:
   - placement confirmation is understandable without re-reading the full tree
 
-### Milestone 5: Tree State Messaging Refinement
+### Milestone 6: Tree State Messaging Refinement
 
 - Goal:
   - improve top-level explanation of tree state and growth readiness
@@ -268,7 +337,7 @@ Users should not need every node card fully expanded all the time. The refined t
 - Expected outputs:
   - fewer ambiguous states on `/team`
 
-### Milestone 6: Manual Mobile Walkthrough Validation
+### Milestone 7: Manual Mobile Walkthrough Validation
 
 - Goal:
   - validate the refined flow in the live `fork-anvil` environment
@@ -276,6 +345,7 @@ Users should not need every node card fully expanded all the time. The refined t
   - `docs/plan-excution/team-tree-visual-refinement/execution.md`
 - Implementation notes:
   - verify:
+    - compact icon nodes can expand into cards and collapse back in place
     - root sees visually clear subtree
     - pending member selection is obvious
     - open slot highlighting is understandable
@@ -312,11 +382,14 @@ Do not implement until approved. This is a Major DApp refinement task because it
 ## 10. Final Verification Checklist
 
 - Tree node role/state is visually clearer than the current baseline
+- Default tree presentation is icon-first, not card-first
+- Node can expand from icon to card and collapse back without leaving the same tree
 - Direct-referral vs deeper-subtree nodes are visually distinguishable without confusing inviter vs parent semantics
 - Pending placement cards are mobile-friendly and clearly selectable
 - Selecting a pending member highlights valid subtree placement targets
 - Tree supports compact browsing through expand/collapse behavior
 - Node detail can be revealed on demand via tap/click, with hover optional on desktop
+- Information cards appear as a secondary reveal surface, not as the default node shape
 - Open slots are understandable without reading technical labels
 - If drag-style placement is introduced, it remains restricted to pending members and still requires explicit confirmation
 - Placement confirmation clearly summarizes member + parent + side

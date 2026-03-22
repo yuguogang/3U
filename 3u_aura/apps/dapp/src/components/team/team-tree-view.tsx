@@ -2,11 +2,9 @@
 
 import { type HTMLAttributes, useMemo, useState } from "react";
 import { ChevronDown, Workflow } from "lucide-react";
-import { GlassCard } from "@/components/ui-custom/glass-card";
 import { cn } from "@/lib/utils";
 import { TeamPosition, type TeamTreeSnapshotView } from "3u-aura-common";
 import { TeamTreeNodeCard } from "./team-tree-node-card";
-import { TeamTreeNodeDetailsSheet } from "./team-tree-node-details-sheet";
 import {
   buildTreeBranches,
   type TeamTreeNodeBranch,
@@ -40,8 +38,9 @@ function TreeBranch({
   selectedPlacementKey,
   selectedPendingUserId,
   expandedNodeIds,
+  expandedDetailNodeId,
   compact,
-  onOpenDetails,
+  onToggleDetails,
   onToggleExpand,
   onSelectOpenSlot,
   onDropPendingOnSlot,
@@ -53,8 +52,9 @@ function TreeBranch({
   selectedPlacementKey?: string | null;
   selectedPendingUserId?: string | null;
   expandedNodeIds: ExpandedTreeState;
+  expandedDetailNodeId?: string | null;
   compact?: boolean;
-  onOpenDetails: (node: TeamTreeNodeLike) => void;
+  onToggleDetails: (node: TeamTreeNodeLike) => void;
   onToggleExpand: (userId: string) => void;
   onSelectOpenSlot?: (node: TeamTreeNodeLike, position: TeamPosition) => void;
   onDropPendingOnSlot?: (
@@ -67,6 +67,13 @@ function TreeBranch({
   const isExpanded = expandedNodeIds[node.userId] ?? false;
   const isFocused = focusedUserId === node.userId;
   const isSelected = selectedParentId === node.userId;
+  const detailsExpanded = expandedDetailNodeId === node.userId;
+  const leftChild = node.children.find((child) => child.teamPosition === TeamPosition.LEFT);
+  const rightChild = node.children.find((child) => child.teamPosition === TeamPosition.RIGHT);
+  const extraChildren = node.children.filter(
+    (child) =>
+      child.teamPosition !== TeamPosition.LEFT && child.teamPosition !== TeamPosition.RIGHT,
+  );
   const relationTone =
     node.userId === anchorUserId
       ? "self"
@@ -82,41 +89,97 @@ function TreeBranch({
         selected={isSelected}
         compact={compact}
         hasChildren={hasChildren}
-        expanded={isExpanded}
+        branchExpanded={isExpanded}
+        detailsExpanded={detailsExpanded}
         relationTone={relationTone}
         selectedPlacementKey={selectedPlacementKey}
         selectedPendingUserId={selectedPendingUserId}
-        onOpenDetails={onOpenDetails}
-        onToggleExpand={() => onToggleExpand(node.userId)}
+        onToggleDetails={() => onToggleDetails(node)}
+        onToggleBranch={() => onToggleExpand(node.userId)}
         onSelectOpenSlot={onSelectOpenSlot}
         onDropPendingOnSlot={onDropPendingOnSlot}
       />
 
       {hasChildren ? (
         isExpanded ? (
-          <div className="relative ml-6 border-l border-white/10 pl-6 pt-4">
+          <div className="relative mt-4 pt-8">
             <svg
               aria-hidden="true"
-              className="pointer-events-none absolute left-0 top-0 h-full w-6 overflow-visible text-white/10"
-              viewBox="0 0 24 100"
+              className="pointer-events-none absolute inset-x-0 top-0 h-12 w-full overflow-visible text-white/12"
+              viewBox="0 0 100 48"
               preserveAspectRatio="none"
             >
-              <line x1="12" y1="0" x2="12" y2="100" stroke="currentColor" strokeWidth="1.5" />
-              <line x1="12" y1="20" x2="24" y2="20" stroke="currentColor" strokeWidth="1.5" />
+              <line x1="50" y1="0" x2="50" y2="14" stroke="currentColor" strokeWidth="1.5" />
+              <line x1="20" y1="14" x2="80" y2="14" stroke="currentColor" strokeWidth="1.5" />
+              <line x1="20" y1="14" x2="20" y2="48" stroke="currentColor" strokeWidth="1.5" />
+              <line x1="80" y1="14" x2="80" y2="48" stroke="currentColor" strokeWidth="1.5" />
             </svg>
-            <div className="space-y-4">
-              {node.children.map((child) => (
-                <div key={child.userId} className="relative">
-                  <svg
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-[-24px] top-0 h-full w-6 overflow-visible text-white/10"
-                    viewBox="0 0 24 100"
-                    preserveAspectRatio="none"
-                  >
-                    <line x1="12" y1="0" x2="12" y2="100" stroke="currentColor" strokeWidth="1.5" />
-                    <line x1="12" y1="20" x2="24" y2="20" stroke="currentColor" strokeWidth="1.5" />
-                  </svg>
+
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="min-w-0">
+                <div className="mb-2 flex items-center justify-center">
+                  <span className="rounded-full border border-emerald-400/15 bg-emerald-400/8 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-300/85">
+                    Left
+                  </span>
+                </div>
+                {leftChild ? (
                   <TreeBranch
+                    node={leftChild}
+                    anchorUserId={anchorUserId}
+                    focusedUserId={focusedUserId}
+                    selectedParentId={selectedParentId}
+                    selectedPlacementKey={selectedPlacementKey}
+                    selectedPendingUserId={selectedPendingUserId}
+                    expandedNodeIds={expandedNodeIds}
+                    expandedDetailNodeId={expandedDetailNodeId}
+                    compact={compact}
+                    onToggleDetails={onToggleDetails}
+                    onToggleExpand={onToggleExpand}
+                    onSelectOpenSlot={onSelectOpenSlot}
+                    onDropPendingOnSlot={onDropPendingOnSlot}
+                  />
+                ) : (
+                  <div className="flex min-h-[72px] items-center justify-center rounded-2xl border border-dashed border-white/8 bg-white/[0.015] text-[11px] text-white/28">
+                    Empty
+                  </div>
+                )}
+              </div>
+
+              <div className="min-w-0">
+                <div className="mb-2 flex items-center justify-center">
+                  <span className="rounded-full border border-sky-400/15 bg-sky-400/8 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-sky-200/85">
+                    Right
+                  </span>
+                </div>
+                {rightChild ? (
+                  <TreeBranch
+                    node={rightChild}
+                    anchorUserId={anchorUserId}
+                    focusedUserId={focusedUserId}
+                    selectedParentId={selectedParentId}
+                    selectedPlacementKey={selectedPlacementKey}
+                    selectedPendingUserId={selectedPendingUserId}
+                    expandedNodeIds={expandedNodeIds}
+                    expandedDetailNodeId={expandedDetailNodeId}
+                    compact={compact}
+                    onToggleDetails={onToggleDetails}
+                    onToggleExpand={onToggleExpand}
+                    onSelectOpenSlot={onSelectOpenSlot}
+                    onDropPendingOnSlot={onDropPendingOnSlot}
+                  />
+                ) : (
+                  <div className="flex min-h-[72px] items-center justify-center rounded-2xl border border-dashed border-white/8 bg-white/[0.015] text-[11px] text-white/28">
+                    Empty
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {extraChildren.length > 0 ? (
+              <div className="mt-4 space-y-3">
+                {extraChildren.map((child) => (
+                  <TreeBranch
+                    key={child.userId}
                     node={child}
                     anchorUserId={anchorUserId}
                     focusedUserId={focusedUserId}
@@ -124,21 +187,22 @@ function TreeBranch({
                     selectedPlacementKey={selectedPlacementKey}
                     selectedPendingUserId={selectedPendingUserId}
                     expandedNodeIds={expandedNodeIds}
+                    expandedDetailNodeId={expandedDetailNodeId}
                     compact={compact}
-                    onOpenDetails={onOpenDetails}
+                    onToggleDetails={onToggleDetails}
                     onToggleExpand={onToggleExpand}
                     onSelectOpenSlot={onSelectOpenSlot}
                     onDropPendingOnSlot={onDropPendingOnSlot}
                   />
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         ) : (
           <button
             type="button"
             onClick={() => onToggleExpand(node.userId)}
-            className="ml-6 mt-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/45 transition hover:bg-white/[0.06]"
+            className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/45 transition hover:bg-white/[0.06]"
           >
             <ChevronDown className="-rotate-90 h-3.5 w-3.5" />
             Expand {node.children.length} child
@@ -146,7 +210,7 @@ function TreeBranch({
           </button>
         )
       ) : (
-        <div className="ml-6 flex items-center gap-2 py-3 text-xs text-white/30">
+        <div className="flex items-center justify-center gap-2 py-3 text-xs text-white/30">
           <Workflow className="h-3.5 w-3.5" />
           Leaf node
         </div>
@@ -170,7 +234,7 @@ export function TeamTreeView({
   ...props
 }: TeamTreeViewProps) {
   const [expansionOverrides, setExpansionOverrides] = useState<ExpandedTreeState>({});
-  const [detailNode, setDetailNode] = useState<TeamTreeNodeLike | null>(null);
+  const [expandedDetailNodeId, setExpandedDetailNodeId] = useState<string | null>(null);
 
   const filteredNodes =
     typeof maxDepth === "number"
@@ -214,7 +278,7 @@ export function TeamTreeView({
         <div className="min-w-[320px] space-y-4">
           {roots.length > 0 ? (
             roots.map((node) => (
-              <GlassCard key={node.userId} className="p-4" variant={node.isRoot ? "highlight" : "default"}>
+              <div key={node.userId} className="rounded-[28px] border border-white/8 bg-white/[0.015] p-3 sm:p-4">
                 <TreeBranch
                   node={node}
                   anchorUserId={anchorUserId}
@@ -223,8 +287,13 @@ export function TeamTreeView({
                   selectedPlacementKey={selectedPlacementKey}
                   selectedPendingUserId={selectedPendingUserId}
                   expandedNodeIds={expandedNodeIds}
+                  expandedDetailNodeId={expandedDetailNodeId}
                   compact={compact}
-                  onOpenDetails={setDetailNode}
+                  onToggleDetails={(selectedNode) =>
+                    setExpandedDetailNodeId((current) =>
+                      current === selectedNode.userId ? null : selectedNode.userId,
+                    )
+                  }
                   onToggleExpand={(userId) =>
                     setExpansionOverrides((current) => ({
                       ...current,
@@ -234,35 +303,18 @@ export function TeamTreeView({
                   onSelectOpenSlot={onSelectOpenSlot}
                   onDropPendingOnSlot={onDropPendingOnSlot}
                 />
-              </GlassCard>
+              </div>
             ))
           ) : (
-            <GlassCard className="p-5">
+            <div className="rounded-[28px] border border-white/8 bg-white/[0.015] p-5">
               <p className="text-sm font-medium text-white">Tree snapshot is empty</p>
               <p className="mt-2 text-xs text-white/45">
                 No nodes were returned for this subtree yet.
               </p>
-            </GlassCard>
+            </div>
           )}
         </div>
       </div>
-
-      <TeamTreeNodeDetailsSheet
-        node={detailNode}
-        relationTone={
-          detailNode?.userId === anchorUserId
-            ? "self"
-            : detailNode?.inviterId === anchorUserId
-              ? "direct"
-              : "descendant"
-        }
-        open={Boolean(detailNode)}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDetailNode(null);
-          }
-        }}
-      />
     </>
   );
 }

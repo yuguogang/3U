@@ -7,11 +7,10 @@ import {
   ChevronDown,
   Crown,
   GripVertical,
-  Info,
   Link2,
   LockKeyhole,
+  Minimize2,
   Sparkles,
-  Trees,
   UserRound,
   Users,
 } from "lucide-react";
@@ -19,8 +18,8 @@ import { cn } from "@/lib/utils";
 import { formatAuraAtomic, formatUsdtAtomic } from "@/lib/promotion-format";
 import { TeamPosition } from "3u-aura-common";
 import {
+  formatCompactId,
   formatCompactWallet,
-  getAvatarPalette,
   getTreeNodeLabel,
   type TeamTreeNodeLike,
 } from "./team-tree-utils";
@@ -33,89 +32,20 @@ export interface TeamTreeNodeCardProps {
   active?: boolean;
   selected?: boolean;
   compact?: boolean;
+  branchExpanded?: boolean;
+  detailsExpanded?: boolean;
   selectedPlacementKey?: string | null;
   selectedPendingUserId?: string | null;
   hasChildren?: boolean;
-  expanded?: boolean;
   relationTone?: NodeRelationTone;
-  onOpenDetails?: (node: TeamTreeNodeLike) => void;
-  onToggleExpand?: () => void;
+  onToggleDetails?: () => void;
+  onToggleBranch?: () => void;
   onSelectOpenSlot?: (node: TeamTreeNodeLike, position: TeamPosition) => void;
   onDropPendingOnSlot?: (
     node: TeamTreeNodeLike,
     position: TeamPosition,
     pendingUserId: string,
   ) => void;
-}
-
-function createIdenticonCells(seed: string) {
-  const hash = seed.split("").reduce((acc, char) => {
-    const next = acc * 31 + char.charCodeAt(0);
-    return next & 0x7fffffff;
-  }, 7);
-
-  const cells: Array<{ x: number; y: number }> = [];
-  for (let row = 0; row < 5; row += 1) {
-    for (let col = 0; col < 3; col += 1) {
-      const bitIndex = row * 3 + col;
-      const filled = ((hash >> bitIndex) & 1) === 1;
-      if (filled) {
-        cells.push({ x: col, y: row });
-        if (col !== 2) {
-          cells.push({ x: 4 - col, y: row });
-        }
-      }
-    }
-  }
-
-  return cells;
-}
-
-function NodeAvatar({
-  seed,
-  relationTone,
-  isRoot,
-}: {
-  seed: string;
-  relationTone: NodeRelationTone;
-  isRoot: boolean;
-}) {
-  const palette = getAvatarPalette(seed);
-  const cells = createIdenticonCells(seed);
-  const ringClass = isRoot
-    ? "ring-aura-primary/40"
-    : relationTone === "direct"
-      ? "ring-emerald-400/35"
-      : relationTone === "self"
-        ? "ring-sky-400/35"
-        : "ring-white/15";
-
-  return (
-    <div
-      className={cn(
-        "relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 ring-1 ring-inset",
-        ringClass,
-      )}
-      style={{
-        background: `radial-gradient(circle at 30% 30%, ${palette.glow}, transparent 60%), linear-gradient(135deg, ${palette.light}, ${palette.dark})`,
-      }}
-      aria-hidden="true"
-    >
-      <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full opacity-90">
-        {cells.map((cell, index) => (
-          <rect
-            key={`${cell.x}-${cell.y}-${index}`}
-            x={18 + cell.x * 14}
-            y={14 + cell.y * 14}
-            width="12"
-            height="12"
-            rx="3"
-            fill="rgba(255,255,255,0.96)"
-          />
-        ))}
-      </svg>
-    </div>
-  );
 }
 
 function TreeChip({
@@ -157,11 +87,72 @@ function getRelationToneLabel(relationTone: NodeRelationTone) {
   return "Subtree";
 }
 
+function getNodeVisualTone({
+  relationTone,
+  isRoot,
+}: {
+  relationTone: NodeRelationTone;
+  isRoot: boolean;
+}) {
+  if (isRoot) {
+    return {
+      bg: "from-aura-primary/30 via-[#4b1918] to-[#1c0c0d]",
+      border: "border-aura-primary/30",
+      ring: "ring-aura-primary/35",
+      text: "text-aura-primary",
+    };
+  }
+
+  if (relationTone === "direct") {
+    return {
+      bg: "from-emerald-500/18 via-[#24321f] to-[#11130f]",
+      border: "border-emerald-400/25",
+      ring: "ring-emerald-400/30",
+      text: "text-emerald-300",
+    };
+  }
+
+  if (relationTone === "self") {
+    return {
+      bg: "from-sky-500/18 via-[#1d2934] to-[#111317]",
+      border: "border-sky-400/25",
+      ring: "ring-sky-400/30",
+      text: "text-sky-200",
+    };
+  }
+
+  return {
+    bg: "from-white/10 via-[#242021] to-[#121012]",
+    border: "border-white/10",
+    ring: "ring-white/15",
+    text: "text-white/80",
+  };
+}
+
+function NodeGlyph({
+  hasChildren,
+  isRoot,
+}: {
+  hasChildren: boolean;
+  isRoot: boolean;
+}) {
+  if (isRoot) {
+    return <Crown className="h-5 w-5" />;
+  }
+
+  if (hasChildren) {
+    return <Users className="h-5 w-5" />;
+  }
+
+  return <UserRound className="h-5 w-5" />;
+}
+
 function SlotButton({
   node,
   position,
   selectedPlacementKey,
   selectedPendingUserId,
+  compact = false,
   onSelectOpenSlot,
   onDropPendingOnSlot,
 }: {
@@ -169,6 +160,7 @@ function SlotButton({
   position: TeamPosition;
   selectedPlacementKey?: string | null;
   selectedPendingUserId?: string | null;
+  compact?: boolean;
   onSelectOpenSlot?: (node: TeamTreeNodeLike, position: TeamPosition) => void;
   onDropPendingOnSlot?: (
     node: TeamTreeNodeLike,
@@ -178,24 +170,19 @@ function SlotButton({
 }) {
   const isSelected = selectedPlacementKey === `${node.userId}:${position}`;
   const isPlacementActive = Boolean(selectedPendingUserId);
-  const label = position === TeamPosition.LEFT ? "Place left" : "Place right";
+  const sizeClass = compact ? "h-8 w-8" : "h-9 w-9";
 
   return (
     <button
       type="button"
-      aria-label={label}
+      aria-label={position === TeamPosition.LEFT ? "Place left" : "Place right"}
       onClick={() => onSelectOpenSlot?.(node, position)}
       onDragOver={(event) => {
-        if (!onDropPendingOnSlot) {
-          return;
-        }
+        if (!onDropPendingOnSlot) return;
         event.preventDefault();
       }}
       onDrop={(event) => {
-        if (!onDropPendingOnSlot) {
-          return;
-        }
-
+        if (!onDropPendingOnSlot) return;
         event.preventDefault();
         const pendingUserId = event.dataTransfer.getData("text/pending-user-id");
         if (pendingUserId) {
@@ -203,9 +190,10 @@ function SlotButton({
         }
       }}
       className={cn(
-        "inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-200 active:scale-[0.97]",
+        "inline-flex items-center justify-center rounded-full border transition-all duration-200 active:scale-[0.97]",
+        sizeClass,
         isSelected
-          ? "border-amber-300/50 bg-amber-400/15 text-amber-200 shadow-[0_0_0_1px_rgba(251,191,36,0.18),0_0_18px_rgba(251,191,36,0.22)]"
+          ? "border-amber-300/55 bg-amber-400/15 text-amber-200 shadow-[0_0_0_1px_rgba(251,191,36,0.18),0_0_18px_rgba(251,191,36,0.22)]"
           : position === TeamPosition.LEFT
             ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300"
             : "border-sky-400/25 bg-sky-400/10 text-sky-200",
@@ -213,27 +201,115 @@ function SlotButton({
       )}
     >
       {position === TeamPosition.LEFT ? (
-        <ArrowDownLeft className="h-4.5 w-4.5" />
+        <ArrowDownLeft className={cn(compact ? "h-4 w-4" : "h-4.5 w-4.5")} />
       ) : (
-        <ArrowDownRight className="h-4.5 w-4.5" />
+        <ArrowDownRight className={cn(compact ? "h-4 w-4" : "h-4.5 w-4.5")} />
       )}
     </button>
   );
 }
 
-export function TeamTreeNodeCard({
+function CollapsedNode({
   node,
-  className,
-  active = false,
-  selected = false,
-  compact = false,
+  active,
+  selected,
+  branchExpanded,
   selectedPlacementKey,
   selectedPendingUserId,
-  hasChildren = false,
-  expanded = false,
-  relationTone = "descendant",
-  onOpenDetails,
-  onToggleExpand,
+  hasChildren,
+  relationTone,
+  onToggleDetails,
+  onToggleBranch,
+  onSelectOpenSlot,
+  onDropPendingOnSlot,
+}: Omit<
+  TeamTreeNodeCardProps,
+  "className" | "compact" | "detailsExpanded"
+>) {
+  const tone = getNodeVisualTone({ relationTone: relationTone ?? "descendant", isRoot: node.isRoot });
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative">
+        <button
+          type="button"
+          onClick={onToggleDetails}
+          className={cn(
+            "relative flex h-14 w-14 items-center justify-center rounded-full border bg-gradient-to-br shadow-[0_16px_34px_rgba(0,0,0,0.28)] ring-1 ring-inset transition-all duration-200 active:scale-[0.97]",
+            tone.bg,
+            tone.border,
+            tone.ring,
+            active && "shadow-[0_0_0_1px_rgba(255,86,54,0.18),0_0_18px_rgba(255,86,54,0.22)]",
+            selected && "ring-2 ring-aura-primary/45",
+          )}
+          aria-label={`Open details for ${getTreeNodeLabel(node)}`}
+        >
+          <div className={cn("relative z-10", tone.text)}>
+            <NodeGlyph
+              hasChildren={hasChildren ?? false}
+              isRoot={node.isRoot}
+            />
+          </div>
+          {node.inviterId && relationTone === "direct" ? (
+            <span className="absolute -right-1 -top-1 inline-flex h-5 w-5 items-center justify-center rounded-full border border-emerald-300/30 bg-emerald-400/15 text-emerald-200">
+              <Link2 className="h-3 w-3" />
+            </span>
+          ) : null}
+        </button>
+
+        {hasChildren ? (
+          <button
+            type="button"
+            onClick={onToggleBranch}
+            className="absolute -bottom-1 -right-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#171214] text-white/65 transition hover:bg-white/[0.08]"
+            aria-label={branchExpanded ? "Collapse subtree" : "Expand subtree"}
+          >
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", branchExpanded ? "rotate-0" : "-rotate-90")} />
+          </button>
+        ) : null}
+      </div>
+
+      <div className="max-w-[88px] text-center">
+        <p className="truncate text-xs font-semibold text-white">{getTreeNodeLabel(node)}</p>
+        <p className="mt-0.5 truncate text-[10px] text-white/45">{formatCompactWallet(node.walletAddress)}</p>
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        {node.openChildPositions.length > 0 ? (
+          node.openChildPositions.map((position) => (
+            <SlotButton
+              key={position}
+              node={node}
+              position={position}
+              compact
+              selectedPlacementKey={selectedPlacementKey}
+              selectedPendingUserId={selectedPendingUserId}
+              onSelectOpenSlot={onSelectOpenSlot}
+              onDropPendingOnSlot={onDropPendingOnSlot}
+            />
+          ))
+        ) : (
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/35">
+            <LockKeyhole className="h-3.5 w-3.5" />
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ExpandedNode({
+  node,
+  active,
+  selected,
+  compact,
+  branchExpanded,
+  selectedPlacementKey,
+  selectedPendingUserId,
+  hasChildren,
+  relationTone,
+  onToggleDetails,
+  onToggleBranch,
   onSelectOpenSlot,
   onDropPendingOnSlot,
 }: TeamTreeNodeCardProps) {
@@ -253,13 +329,25 @@ export function TeamTreeNodeCard({
         selected ? "border-aura-primary/35 ring-1 ring-inset ring-aura-primary/30" : "border-white/10",
         active && "shadow-[0_0_0_1px_rgba(255,86,54,0.18),0_18px_50px_rgba(255,86,54,0.12)]",
         compact && "p-3",
-        className,
       )}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,86,54,0.08),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(65,132,255,0.08),transparent_34%)]" />
       <div className="relative space-y-3">
         <div className="flex items-start gap-3">
-          <NodeAvatar seed={node.walletAddress} relationTone={relationTone} isRoot={node.isRoot} />
+          <CollapsedNode
+            node={node}
+            active={active}
+            selected={selected}
+            branchExpanded={branchExpanded}
+            selectedPlacementKey={selectedPlacementKey}
+            selectedPendingUserId={selectedPendingUserId}
+            hasChildren={hasChildren}
+            relationTone={relationTone}
+            onToggleDetails={onToggleDetails}
+            onToggleBranch={onToggleBranch}
+            onSelectOpenSlot={onSelectOpenSlot}
+            onDropPendingOnSlot={onDropPendingOnSlot}
+          />
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -274,41 +362,25 @@ export function TeamTreeNodeCard({
                   <TreeChip tone={relationToneChip}>
                     {relationTone === "direct" ? (
                       <Link2 className="h-3 w-3" />
-                    ) : relationTone === "self" ? (
-                      <Trees className="h-3 w-3" />
                     ) : hasChildren ? (
                       <Users className="h-3 w-3" />
                     ) : (
                       <UserRound className="h-3 w-3" />
                     )}
-                    {getRelationToneLabel(relationTone)}
+                    {getRelationToneLabel(relationTone ?? "descendant")}
                   </TreeChip>
                 </div>
                 <p className="mt-1 text-xs text-white/45">{walletLabel}</p>
               </div>
 
-              <div className="flex items-center gap-1">
-                {hasChildren ? (
-                  <button
-                    type="button"
-                    onClick={onToggleExpand}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/60 transition hover:bg-white/[0.08]"
-                    aria-label={expanded ? "Collapse subtree" : "Expand subtree"}
-                  >
-                    <ChevronDown
-                      className={cn("h-4 w-4 transition-transform", expanded ? "rotate-0" : "-rotate-90")}
-                    />
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => onOpenDetails?.(node)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/60 transition hover:bg-white/[0.08]"
-                  aria-label="Open node details"
-                >
-                  <Info className="h-4 w-4" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={onToggleDetails}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/60 transition hover:bg-white/[0.08]"
+                aria-label="Collapse node details"
+              >
+                <Minimize2 className="h-4 w-4" />
+              </button>
             </div>
 
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -372,7 +444,71 @@ export function TeamTreeNodeCard({
             )}
           </div>
         </div>
+
+        <div className="flex items-center justify-between text-[11px] text-white/40">
+          <span>{node.parentId ? `Parent ${formatCompactId(node.parentId)}` : "No parent"}</span>
+          <span>{node.rewardLabel?.trim() || `NFT ${node.nftTierLabel ?? "unknown"}`}</span>
+        </div>
       </div>
+    </div>
+  );
+}
+
+export function TeamTreeNodeCard({
+  node,
+  className,
+  active = false,
+  selected = false,
+  compact = false,
+  branchExpanded = false,
+  detailsExpanded = false,
+  selectedPlacementKey,
+  selectedPendingUserId,
+  hasChildren = false,
+  relationTone = "descendant",
+  onToggleDetails,
+  onToggleBranch,
+  onSelectOpenSlot,
+  onDropPendingOnSlot,
+}: TeamTreeNodeCardProps) {
+  if (detailsExpanded) {
+    return (
+      <ExpandedNode
+        node={node}
+        className={className}
+        active={active}
+        selected={selected}
+        compact={compact}
+        branchExpanded={branchExpanded}
+        detailsExpanded={detailsExpanded}
+        selectedPlacementKey={selectedPlacementKey}
+        selectedPendingUserId={selectedPendingUserId}
+        hasChildren={hasChildren}
+        relationTone={relationTone}
+        onToggleDetails={onToggleDetails}
+        onToggleBranch={onToggleBranch}
+        onSelectOpenSlot={onSelectOpenSlot}
+        onDropPendingOnSlot={onDropPendingOnSlot}
+      />
+    );
+  }
+
+  return (
+    <div className={className}>
+      <CollapsedNode
+        node={node}
+        active={active}
+        selected={selected}
+        branchExpanded={branchExpanded}
+        selectedPlacementKey={selectedPlacementKey}
+        selectedPendingUserId={selectedPendingUserId}
+        hasChildren={hasChildren}
+        relationTone={relationTone}
+        onToggleDetails={onToggleDetails}
+        onToggleBranch={onToggleBranch}
+        onSelectOpenSlot={onSelectOpenSlot}
+        onDropPendingOnSlot={onDropPendingOnSlot}
+      />
     </div>
   );
 }
