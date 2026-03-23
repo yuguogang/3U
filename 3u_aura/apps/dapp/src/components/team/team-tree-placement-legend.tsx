@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowDownLeft, ArrowDownRight, Crown, GitBranch, GripVertical, Link2, LockKeyhole, Sparkles, Trees, UserRound, Users } from "lucide-react";
+import { Crown, GitBranch, GripVertical, Link2, Sparkles, Trees, UserRound, Users } from "lucide-react";
 import { GlassCard } from "@/components/ui-custom/glass-card";
 import { cn } from "@/lib/utils";
 
@@ -51,10 +51,7 @@ export function TeamTreePlacementLegend({
             <LegendPill icon={<Users className="h-3.5 w-3.5" />} label={t("team.legend.hasTeam")} />
             <LegendPill icon={<Trees className="h-3.5 w-3.5" />} label={t("team.legend.subtree")} />
             <LegendPill icon={<UserRound className="h-3.5 w-3.5" />} label={t("team.legend.leaf")} />
-            <LegendPill icon={<ArrowDownLeft className="h-3.5 w-3.5" />} label={t("team.legend.placeLeft")} />
-            <LegendPill icon={<ArrowDownRight className="h-3.5 w-3.5" />} label={t("team.legend.placeRight")} />
             <LegendPill icon={<GripVertical className="h-3.5 w-3.5" />} label={t("team.legend.dragPending")} />
-            <LegendPill icon={<LockKeyhole className="h-3.5 w-3.5" />} label={t("team.legend.occupied")} />
             <LegendPill icon={<Sparkles className="h-3.5 w-3.5" />} label={t("team.legend.selected")} />
           </div>
         </div>

@@ -3,14 +3,10 @@
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import {
-  ArrowDownLeft,
-  ArrowDownRight,
   ChevronDown,
   Crosshair,
   Crown,
-  GripVertical,
   Link2,
-  LockKeyhole,
   Minimize2,
   Sparkles,
   UserRound,
@@ -39,6 +35,7 @@ export interface TeamTreeNodeCardProps {
   selectedPlacementKey?: string | null;
   selectedPendingUserId?: string | null;
   hasChildren?: boolean;
+  canExpandBranch?: boolean;
   relationTone?: NodeRelationTone;
   canFocus?: boolean;
   onToggleDetails?: () => void;
@@ -154,86 +151,16 @@ function NodeGlyph({
   return <UserRound className="h-5 w-5" />;
 }
 
-function SlotButton({
-  node,
-  position,
-  selectedPlacementKey,
-  selectedPendingUserId,
-  compact = false,
-  onSelectOpenSlot,
-  onDropPendingOnSlot,
-}: {
-  node: TeamTreeNodeLike;
-  position: TeamPosition;
-  selectedPlacementKey?: string | null;
-  selectedPendingUserId?: string | null;
-  compact?: boolean;
-  onSelectOpenSlot?: (node: TeamTreeNodeLike, position: TeamPosition) => void;
-  onDropPendingOnSlot?: (
-    node: TeamTreeNodeLike,
-    position: TeamPosition,
-    pendingUserId: string,
-  ) => void;
-}) {
-  const t = useTranslations("Common");
-  const isSelected = selectedPlacementKey === `${node.userId}:${position}`;
-  const isPlacementActive = Boolean(selectedPendingUserId);
-  const sizeClass = compact ? "h-8 w-8" : "h-9 w-9";
-
-  return (
-    <button
-      type="button"
-      aria-label={
-        position === TeamPosition.LEFT
-          ? t("shared.promotion.tree.placeLeft")
-          : t("shared.promotion.tree.placeRight")
-      }
-      onClick={() => onSelectOpenSlot?.(node, position)}
-      onDragOver={(event) => {
-        if (!onDropPendingOnSlot) return;
-        event.preventDefault();
-      }}
-      onDrop={(event) => {
-        if (!onDropPendingOnSlot) return;
-        event.preventDefault();
-        const pendingUserId = event.dataTransfer.getData("text/pending-user-id");
-        if (pendingUserId) {
-          onDropPendingOnSlot(node, position, pendingUserId);
-        }
-      }}
-      className={cn(
-        "inline-flex items-center justify-center rounded-full border transition-all duration-200 active:scale-[0.97]",
-        sizeClass,
-        isSelected
-          ? "border-amber-300/55 bg-amber-400/15 text-amber-200 shadow-[0_0_0_1px_rgba(251,191,36,0.18),0_0_18px_rgba(251,191,36,0.22)]"
-          : position === TeamPosition.LEFT
-            ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300"
-            : "border-sky-400/25 bg-sky-400/10 text-sky-200",
-        isPlacementActive && !isSelected && "animate-pulse shadow-[0_0_18px_rgba(255,86,54,0.18)]",
-      )}
-    >
-      {position === TeamPosition.LEFT ? (
-        <ArrowDownLeft className={cn(compact ? "h-4 w-4" : "h-4.5 w-4.5")} />
-      ) : (
-        <ArrowDownRight className={cn(compact ? "h-4 w-4" : "h-4.5 w-4.5")} />
-      )}
-    </button>
-  );
-}
-
 function CollapsedNode({
   node,
   active,
   selected,
   branchExpanded,
-  selectedPlacementKey,
-  selectedPendingUserId,
   hasChildren,
+  canExpandBranch,
   relationTone,
   onToggleDetails,
   onToggleBranch,
-  onSelectOpenSlot,
-  onDropPendingOnSlot,
 }: Omit<
   TeamTreeNodeCardProps,
   "className" | "compact" | "detailsExpanded"
@@ -270,7 +197,7 @@ function CollapsedNode({
           ) : null}
         </button>
 
-        {hasChildren ? (
+        {canExpandBranch ? (
           <button
             type="button"
             onClick={onToggleBranch}
@@ -290,27 +217,6 @@ function CollapsedNode({
         <p className="truncate text-xs font-semibold text-white">{getTreeNodeLabel(node)}</p>
         <p className="mt-0.5 truncate text-[10px] text-white/45">{formatCompactWallet(node.walletAddress)}</p>
       </div>
-
-      <div className="flex items-center gap-1.5">
-        {node.openChildPositions.length > 0 ? (
-          node.openChildPositions.map((position) => (
-            <SlotButton
-              key={position}
-              node={node}
-              position={position}
-              compact
-              selectedPlacementKey={selectedPlacementKey}
-              selectedPendingUserId={selectedPendingUserId}
-              onSelectOpenSlot={onSelectOpenSlot}
-              onDropPendingOnSlot={onDropPendingOnSlot}
-            />
-          ))
-        ) : (
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/35">
-            <LockKeyhole className="h-3.5 w-3.5" />
-          </span>
-        )}
-      </div>
     </div>
   );
 }
@@ -321,16 +227,13 @@ function ExpandedNode({
   selected,
   compact,
   branchExpanded,
-  selectedPlacementKey,
-  selectedPendingUserId,
   hasChildren,
+  canExpandBranch,
   relationTone,
   canFocus,
   onToggleDetails,
   onToggleBranch,
   onFocusNode,
-  onSelectOpenSlot,
-  onDropPendingOnSlot,
 }: TeamTreeNodeCardProps) {
   const t = useTranslations("Common");
   const nodeLabel = getTreeNodeLabel(node);
@@ -359,14 +262,11 @@ function ExpandedNode({
             active={active}
             selected={selected}
             branchExpanded={branchExpanded}
-            selectedPlacementKey={selectedPlacementKey}
-            selectedPendingUserId={selectedPendingUserId}
             hasChildren={hasChildren}
+            canExpandBranch={canExpandBranch}
             relationTone={relationTone}
             onToggleDetails={onToggleDetails}
             onToggleBranch={onToggleBranch}
-            onSelectOpenSlot={onSelectOpenSlot}
-            onDropPendingOnSlot={onDropPendingOnSlot}
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
@@ -446,36 +346,10 @@ function ExpandedNode({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
+        <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
           <div className="inline-flex items-center gap-2 text-xs text-white/55">
             <Sparkles className="h-3.5 w-3.5 text-aura-primary" />
             <span>{t("shared.promotion.tree.smallLeg", { amount: smallLeg })}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {selectedPendingUserId ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-aura-primary/20 bg-aura-primary/10 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-aura-primary">
-                <GripVertical className="h-3 w-3" />
-                {t("shared.promotion.tree.dropTarget")}
-              </span>
-            ) : null}
-            {node.openChildPositions.length > 0 ? (
-              node.openChildPositions.map((position) => (
-                <SlotButton
-                  key={position}
-                  node={node}
-                  position={position}
-                  selectedPlacementKey={selectedPlacementKey}
-                  selectedPendingUserId={selectedPendingUserId}
-                  onSelectOpenSlot={onSelectOpenSlot}
-                  onDropPendingOnSlot={onDropPendingOnSlot}
-                />
-              ))
-            ) : (
-              <TreeChip tone="warning">
-                <LockKeyhole className="h-3 w-3" />
-                {t("shared.promotion.tree.occupied")}
-              </TreeChip>
-            )}
           </div>
         </div>
 
@@ -507,6 +381,7 @@ export function TeamTreeNodeCard({
   selectedPlacementKey,
   selectedPendingUserId,
   hasChildren = false,
+  canExpandBranch = false,
   relationTone = "descendant",
   canFocus = false,
   onToggleDetails,
@@ -528,6 +403,7 @@ export function TeamTreeNodeCard({
         selectedPlacementKey={selectedPlacementKey}
         selectedPendingUserId={selectedPendingUserId}
         hasChildren={hasChildren}
+        canExpandBranch={canExpandBranch}
         relationTone={relationTone}
         canFocus={canFocus}
         onToggleDetails={onToggleDetails}
@@ -549,6 +425,7 @@ export function TeamTreeNodeCard({
         selectedPlacementKey={selectedPlacementKey}
         selectedPendingUserId={selectedPendingUserId}
         hasChildren={hasChildren}
+        canExpandBranch={canExpandBranch}
         relationTone={relationTone}
         canFocus={canFocus}
         onToggleDetails={onToggleDetails}

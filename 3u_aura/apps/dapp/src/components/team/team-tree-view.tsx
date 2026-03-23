@@ -2,7 +2,7 @@
 
 import { type HTMLAttributes, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ChevronDown, Workflow } from "lucide-react";
+import { Sparkles, Workflow } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TeamPosition, type TeamTreeSnapshotView } from "3u-aura-common";
 import { TeamTreeNodeCard } from "./team-tree-node-card";
@@ -31,6 +31,71 @@ export interface TeamTreeViewProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 type ExpandedTreeState = Record<string, boolean>;
+
+function SlotPlaceholder({
+  node,
+  position,
+  selectedPlacementKey,
+  selectedPendingUserId,
+  onSelectOpenSlot,
+  onDropPendingOnSlot,
+}: {
+  node: TeamTreeNodeLike;
+  position: TeamPosition;
+  selectedPlacementKey?: string | null;
+  selectedPendingUserId?: string | null;
+  onSelectOpenSlot?: (node: TeamTreeNodeLike, position: TeamPosition) => void;
+  onDropPendingOnSlot?: (
+    node: TeamTreeNodeLike,
+    position: TeamPosition,
+    pendingUserId: string,
+  ) => void;
+}) {
+  const t = useTranslations("Common");
+  const isSelected = selectedPlacementKey === `${node.userId}:${position}`;
+  const isPlacementActive = Boolean(selectedPendingUserId);
+
+  return (
+    <button
+      type="button"
+      aria-label={
+        position === TeamPosition.LEFT
+          ? t("shared.promotion.tree.placeLeft")
+          : t("shared.promotion.tree.placeRight")
+      }
+      onClick={() => onSelectOpenSlot?.(node, position)}
+      onDragOver={(event) => {
+        if (!onDropPendingOnSlot) return;
+        event.preventDefault();
+      }}
+      onDrop={(event) => {
+        if (!onDropPendingOnSlot) return;
+        event.preventDefault();
+        const pendingUserId = event.dataTransfer.getData("text/pending-user-id");
+        if (pendingUserId) {
+          onDropPendingOnSlot(node, position, pendingUserId);
+        }
+      }}
+      className={cn(
+        "group flex min-h-[88px] min-w-[11rem] cursor-pointer flex-col items-center justify-center rounded-[24px] border border-dashed bg-white/[0.015] px-4 text-center transition-all duration-200",
+        isSelected
+          ? "border-amber-300/55 bg-amber-400/10 text-amber-200 shadow-[0_0_0_1px_rgba(251,191,36,0.18),0_0_18px_rgba(251,191,36,0.16)]"
+          : position === TeamPosition.LEFT
+            ? "border-emerald-400/18 text-white/34 hover:border-emerald-300/28 hover:bg-emerald-400/[0.05]"
+            : "border-sky-400/18 text-white/34 hover:border-sky-300/28 hover:bg-sky-400/[0.05]",
+        isPlacementActive && !isSelected && "animate-pulse shadow-[0_0_18px_rgba(255,86,54,0.12)]",
+      )}
+    >
+      <span className="text-sm font-medium tracking-wide">{t("shared.promotion.tree.empty")}</span>
+      {isSelected ? (
+        <span className="mt-2 inline-flex items-center gap-1 rounded-full border border-amber-300/25 bg-amber-400/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-amber-100">
+          <Sparkles className="h-3 w-3" />
+          {t("team.legend.selected")}
+        </span>
+      ) : null}
+    </button>
+  );
+}
 
 function TreeBranch({
   node,
@@ -69,6 +134,9 @@ function TreeBranch({
 }) {
   const t = useTranslations("Common");
   const hasChildren = node.children.length > 0;
+  const openLeft = node.openChildPositions.includes(TeamPosition.LEFT);
+  const openRight = node.openChildPositions.includes(TeamPosition.RIGHT);
+  const canExpandBranch = hasChildren || openLeft || openRight;
   const isExpanded = expandedNodeIds[node.userId] ?? false;
   const isFocused = focusedUserId === node.userId;
   const isSelected = selectedParentId === node.userId;
@@ -94,6 +162,7 @@ function TreeBranch({
         selected={isSelected}
         compact={compact}
         hasChildren={hasChildren}
+        canExpandBranch={canExpandBranch}
         branchExpanded={isExpanded}
         detailsExpanded={detailsExpanded}
         relationTone={relationTone}
@@ -107,7 +176,7 @@ function TreeBranch({
         onDropPendingOnSlot={onDropPendingOnSlot}
       />
 
-      {hasChildren ? (
+      {canExpandBranch ? (
         isExpanded ? (
           <div className="relative mt-4 flex w-fit flex-col items-center pt-8">
             <svg
@@ -124,11 +193,6 @@ function TreeBranch({
 
             <div className="inline-grid grid-cols-[minmax(11rem,auto)_minmax(11rem,auto)] items-start gap-x-6 gap-y-4 pt-2">
               <div className="min-w-[11rem]">
-                <div className="mb-2 flex items-center justify-center">
-                  <span className="rounded-full border border-emerald-400/15 bg-emerald-400/8 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-300/85">
-                    {t("shared.promotion.position.LEFT")}
-                  </span>
-                </div>
                 {leftChild ? (
                   <TreeBranch
                     node={leftChild}
@@ -146,6 +210,15 @@ function TreeBranch({
                     onSelectOpenSlot={onSelectOpenSlot}
                     onDropPendingOnSlot={onDropPendingOnSlot}
                   />
+                ) : openLeft ? (
+                  <SlotPlaceholder
+                    node={node}
+                    position={TeamPosition.LEFT}
+                    selectedPlacementKey={selectedPlacementKey}
+                    selectedPendingUserId={selectedPendingUserId}
+                    onSelectOpenSlot={onSelectOpenSlot}
+                    onDropPendingOnSlot={onDropPendingOnSlot}
+                  />
                 ) : (
                   <div className="flex min-h-[72px] min-w-[11rem] items-center justify-center rounded-2xl border border-dashed border-white/8 bg-white/[0.015] text-[11px] text-white/28">
                     {t("shared.promotion.tree.empty")}
@@ -154,11 +227,6 @@ function TreeBranch({
               </div>
 
               <div className="min-w-[11rem]">
-                <div className="mb-2 flex items-center justify-center">
-                  <span className="rounded-full border border-sky-400/15 bg-sky-400/8 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-sky-200/85">
-                    {t("shared.promotion.position.RIGHT")}
-                  </span>
-                </div>
                 {rightChild ? (
                   <TreeBranch
                     node={rightChild}
@@ -173,6 +241,15 @@ function TreeBranch({
                     onFocusNode={onFocusNode}
                     onToggleDetails={onToggleDetails}
                     onToggleExpand={onToggleExpand}
+                    onSelectOpenSlot={onSelectOpenSlot}
+                    onDropPendingOnSlot={onDropPendingOnSlot}
+                  />
+                ) : openRight ? (
+                  <SlotPlaceholder
+                    node={node}
+                    position={TeamPosition.RIGHT}
+                    selectedPlacementKey={selectedPlacementKey}
+                    selectedPendingUserId={selectedPendingUserId}
                     onSelectOpenSlot={onSelectOpenSlot}
                     onDropPendingOnSlot={onDropPendingOnSlot}
                   />
@@ -208,16 +285,7 @@ function TreeBranch({
               </div>
             ) : null}
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => onToggleExpand(node.userId)}
-            className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/45 transition hover:bg-white/[0.06]"
-          >
-            <ChevronDown className="-rotate-90 h-3.5 w-3.5" />
-            {t("shared.promotion.tree.expandChildren", { count: node.children.length })}
-          </button>
-        )
+        ) : null
       ) : (
         <div className="flex items-center justify-center gap-2 py-3 text-xs text-white/30">
           <Workflow className="h-3.5 w-3.5" />

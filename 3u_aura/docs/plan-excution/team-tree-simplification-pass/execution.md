@@ -3,7 +3,9 @@
 ## Status
 
 - Planning created
-- Awaiting approval
+- User approved implementation
+- Implementation completed
+- Verification completed
 
 ## Plan Reference
 
@@ -68,3 +70,49 @@ This task proposes a DApp-only cleanup pass for the `/team` tree to reduce redun
 - Preserve the existing placement confirmation flow even if visible slot affordances change
 - Prefer structural cues over repeated text labels
 - Keep accessibility labels explicit on any remaining interactive placeholders
+
+## Execution Updates
+
+- User approved the simplification pass in chat before implementation began.
+- Simplified collapsed and expanded node chrome in:
+  - `apps/dapp/src/components/team/team-tree-node-card.tsx`
+  - removed detached left/right arrow slot buttons
+  - removed the dedicated occupied lock badge
+  - kept the node chevron as the single branch expand affordance
+- Reworked branch rendering in:
+  - `apps/dapp/src/components/team/team-tree-view.tsx`
+  - removed repeated per-branch `LEFT` / `RIGHT` pills
+  - removed the separate collapsed `expand N children` button
+  - added inline empty-slot placeholders that sit directly in the tree structure
+  - made nodes with open child positions expandable even when they currently have no placed children
+- Simplified the legend in:
+  - `apps/dapp/src/components/team/team-tree-placement-legend.tsx`
+  - removed legend pills for left/right arrow buttons and occupied lock state, matching the new tree UI
+
+## Files Changed
+
+- `apps/dapp/src/components/team/team-tree-node-card.tsx`
+- `apps/dapp/src/components/team/team-tree-view.tsx`
+- `apps/dapp/src/components/team/team-tree-placement-legend.tsx`
+
+## Verification
+
+### Commands Run
+
+- `pnpm --dir apps/dapp typecheck`
+- `pnpm --dir apps/dapp lint`
+- `pnpm --dir apps/dapp build`
+
+### Results
+
+- `pnpm --dir apps/dapp typecheck`
+  - passed
+- `pnpm --dir apps/dapp lint`
+  - passed with only the existing `<img>` warnings in:
+    - `apps/dapp/src/components/pages/team-page.tsx`
+    - `apps/dapp/src/components/wallet-button.tsx`
+- `pnpm --dir apps/dapp build`
+  - passed
+  - existing wallet connector dependency warnings from Next / wagmi / rainbowkit remained unchanged
+- Manual browser smoke
+  - not run in this execution log
