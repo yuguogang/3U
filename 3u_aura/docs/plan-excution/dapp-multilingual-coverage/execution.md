@@ -108,6 +108,10 @@ This task will expand the existing DApp `next-intl` coverage so the main end-use
   - `apps/dapp/src/components/layout/mobile-layout.tsx`
 - Expanded `apps/dapp/messages/*/language.json` so the new switcher has translated menu copy and accessibility labels.
 - Tightened the mobile header layout with truncation and narrower spacing so the new control fits without pushing existing controls into awkward wrapping.
+- Follow-up header density hotfix after user review:
+  - the first compact locale button still consumed too much horizontal space on very narrow mobile widths
+  - `apps/dapp/src/components/i18n/locale-switcher.tsx` was reduced to an icon-only trigger while preserving the dropdown menu and accessibility label
+  - `apps/dapp/src/components/layout/mobile-layout.tsx` spacing was tightened slightly again so the title block keeps more usable width
 
 ## Prior Increment Record
 
@@ -169,6 +173,7 @@ This task will expand the existing DApp `next-intl` coverage so the main end-use
 - `apps/dapp/src/components/i18n/locale-switcher.tsx`
 - `apps/dapp/src/components/layout/mobile-layout.tsx`
 - `apps/dapp/src/lib/promotion-format.ts`
+- `apps/dapp/src/components/i18n/locale-switcher.tsx`
 
 ## Verification
 
@@ -203,6 +208,11 @@ This task will expand the existing DApp `next-intl` coverage so the main end-use
   - final rerun of `pnpm --dir apps/dapp build`
     - Passed
     - same existing wallet connector dependency warnings remained unchanged
+- Header density hotfix verification:
+  - `pnpm --dir apps/dapp typecheck`
+    - Passed
+  - `pnpm --dir apps/dapp lint`
+    - Passed with the same existing `<img>` warnings only
 - Manual browser smoke across locale switches
   - Not run in this execution log
 

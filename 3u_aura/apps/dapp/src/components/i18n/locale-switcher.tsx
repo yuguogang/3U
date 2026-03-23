@@ -56,13 +56,14 @@ export function LocaleSwitcher({ className }: { className?: string }) {
         <button
           type="button"
           className={cn(
-            "inline-flex h-9 items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/5 px-2.5 text-xs font-medium text-white/80 transition-all hover:bg-white/10",
+            "inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/5 text-xs font-medium text-white/80 transition-all hover:bg-white/10",
             className,
           )}
           aria-label={t("switcherAria")}
+          title={LOCALE_META[activeLocale].nativeLabel}
         >
           <Languages className="h-4 w-4 shrink-0 text-white/70" />
-          <span className="font-medium">{LOCALE_META[activeLocale].shortLabel}</span>
+          <span className="sr-only">{LOCALE_META[activeLocale].nativeLabel}</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

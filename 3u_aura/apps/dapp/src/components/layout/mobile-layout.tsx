@@ -32,7 +32,7 @@ export function MobileLayout({
         {/* Header */}
         <header className="sticky top-0 z-30 bg-[#050505]/80 backdrop-blur-xl border-b border-white/[0.06]">
           <div className="px-4 pt-3 pb-3 flex items-center justify-between">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-aura-primary to-aura-primary-dark flex items-center justify-center shadow-glow-sm flex-shrink-0">
                 <span className="text-white font-bold text-sm">3U</span>
               </div>
@@ -45,7 +45,7 @@ export function MobileLayout({
                 </p>
               </div>
             </div>
-            <div className="ml-3 flex shrink-0 items-center gap-1.5">
+            <div className="ml-2 flex shrink-0 items-center gap-1">
               <LocaleSwitcher />
               <NotificationInboxEntry />
               <WalletButton />
