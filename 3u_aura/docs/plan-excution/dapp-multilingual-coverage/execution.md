@@ -3,9 +3,10 @@
 ## Status
 
 - Planning created
-- User approved implementation
-- Implementation completed
-- Verification completed
+- Plan iterated after new feedback
+- User approved the next implementation increment
+- Increment implementation completed
+- Increment verification completed
 
 ## Plan Reference
 
@@ -84,6 +85,32 @@ This task will expand the existing DApp `next-intl` coverage so the main end-use
 
 ## Execution Updates
 
+- New user feedback after the first localization pass:
+  - some date/time surfaces still render in English
+  - there is still no in-app language switch button
+  - the mobile header may need a dropdown-style menu to avoid overcrowding
+- Re-researched the affected implementation areas:
+  - `apps/dapp/src/lib/promotion-format.ts`
+  - `apps/dapp/src/components/layout/mobile-layout.tsx`
+  - `apps/dapp/src/i18n/locale-actions.ts`
+  - `apps/dapp/src/components/wallet-button.tsx`
+  - existing dropdown primitives under `apps/dapp/src/components/ui/dropdown-menu.tsx`
+- Updated `plan.md` to include:
+  - locale-aware formatting
+  - header language switch UI
+  - compact dropdown treatment for mobile header density
+- User approved the increment in chat.
+- Implemented locale-aware date formatting by updating:
+  - `apps/dapp/src/lib/promotion-format.ts`
+  - `apps/dapp/src/components/pages/rewards-page.tsx`
+- Added a compact header locale switch dropdown in:
+  - `apps/dapp/src/components/i18n/locale-switcher.tsx`
+  - `apps/dapp/src/components/layout/mobile-layout.tsx`
+- Expanded `apps/dapp/messages/*/language.json` so the new switcher has translated menu copy and accessibility labels.
+- Tightened the mobile header layout with truncation and narrower spacing so the new control fits without pushing existing controls into awkward wrapping.
+
+## Prior Increment Record
+
 - User approval received in chat before implementation started.
 - Audited the remaining hard-coded copy across:
   - `apps/dapp/src/components/pages/dashboard-page.tsx`
@@ -133,6 +160,15 @@ This task will expand the existing DApp `next-intl` coverage so the main end-use
 - `apps/dapp/src/components/team/team-tree-pending-summary.tsx`
 - `apps/dapp/src/components/team/team-tree-placement-legend.tsx`
 - `apps/dapp/src/components/team/team-tree-view.tsx`
+- `apps/dapp/messages/en/language.json`
+- `apps/dapp/messages/zh/language.json`
+- `apps/dapp/messages/zh-Hant/language.json`
+- `apps/dapp/messages/vi/language.json`
+- `apps/dapp/messages/ko/language.json`
+- `apps/dapp/messages/ja/language.json`
+- `apps/dapp/src/components/i18n/locale-switcher.tsx`
+- `apps/dapp/src/components/layout/mobile-layout.tsx`
+- `apps/dapp/src/lib/promotion-format.ts`
 
 ## Verification
 
@@ -140,6 +176,8 @@ This task will expand the existing DApp `next-intl` coverage so the main end-use
 
 - `pnpm --dir apps/dapp typecheck`
 - `pnpm --dir apps/dapp lint`
+- `pnpm --dir apps/dapp build`
+- `pnpm --dir apps/dapp typecheck`
 - `pnpm --dir apps/dapp build`
 
 ### Results
@@ -154,6 +192,17 @@ This task will expand the existing DApp `next-intl` coverage so the main end-use
 - `pnpm --dir apps/dapp build`
   - Passed
   - Existing wallet connector dependency warnings from Next / wagmi / rainbowkit remained unchanged
+- Incremental verification after the follow-up feedback:
+  - `pnpm --dir apps/dapp lint`
+    - Passed with the same existing `<img>` warnings only
+  - first rerun of `pnpm --dir apps/dapp typecheck`
+    - failed because `.next/types` files were being regenerated concurrently by a running build
+    - no code-level TypeScript error was reported
+  - second rerun of `pnpm --dir apps/dapp typecheck`
+    - Passed when run sequentially after build output stabilized
+  - final rerun of `pnpm --dir apps/dapp build`
+    - Passed
+    - same existing wallet connector dependency warnings remained unchanged
 - Manual browser smoke across locale switches
   - Not run in this execution log
 

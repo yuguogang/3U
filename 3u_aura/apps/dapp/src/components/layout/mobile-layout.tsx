@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import { LocaleSwitcher } from "@/components/i18n/locale-switcher";
 import { NotificationInboxEntry } from "@/components/notifications/notification-inbox-entry";
 import { WalletButton } from "@/components/wallet-button";
 import { BottomNav } from "@/components/ui-custom/bottom-nav";
@@ -31,20 +32,21 @@ export function MobileLayout({
         {/* Header */}
         <header className="sticky top-0 z-30 bg-[#050505]/80 backdrop-blur-xl border-b border-white/[0.06]">
           <div className="px-4 pt-3 pb-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-aura-primary to-aura-primary-dark flex items-center justify-center shadow-glow-sm flex-shrink-0">
                 <span className="text-white font-bold text-sm">3U</span>
               </div>
-              <div className="flex flex-col gap-0.5">
-                <h1 className="text-base font-semibold tracking-tight text-white leading-none">
+              <div className="min-w-0 flex flex-col gap-0.5">
+                <h1 className="truncate text-base font-semibold tracking-tight text-white leading-none">
                   {title || "AURA"}
                 </h1>
-                <p className="text-[10px] uppercase tracking-widest text-white/40 leading-none">
+                <p className="truncate text-[10px] uppercase tracking-widest text-white/40 leading-none">
                   {eyebrow}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="ml-3 flex shrink-0 items-center gap-1.5">
+              <LocaleSwitcher />
               <NotificationInboxEntry />
               <WalletButton />
             </div>

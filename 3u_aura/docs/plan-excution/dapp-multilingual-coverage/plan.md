@@ -4,6 +4,8 @@
 
 Expand the existing DApp internationalization layer so the main product surfaces stop mixing Chinese and English, and instead render consistently from the current locale across all supported DApp languages.
 
+The task now also includes locale-aware formatting and a user-facing language switch entry in the mobile header, because message translation alone is not sufficient if dates still render in English or the user cannot change locale in-app.
+
 This task is not about introducing i18n from scratch. The repository already has:
 
 - `next-intl` wired into the DApp shell
@@ -22,6 +24,9 @@ The goal is to close the current coverage gap so high-traffic DApp pages such as
 ## 2. Scope
 
 - Audit and replace hard-coded page/UI copy in the DApp with locale-backed messages
+- Make high-visibility date/time formatting locale-aware for the currently selected DApp locale
+- Add an in-app locale switch control to the DApp header
+- Adjust header interaction density so language switching does not crowd the notification / chain / wallet controls
 - Extend the current DApp message-loading strategy beyond the current `Common` and `Language` namespaces
 - Standardize translation key organization for page-level copy, section copy, status copy, and reusable CTA text
 - Localize the main end-user DApp pages:
@@ -44,7 +49,7 @@ The goal is to close the current coverage gap so high-traffic DApp pages such as
 - Admin app localization
 - Server API localization
 - Notification content localization changes beyond keeping current behavior intact
-- Date/number/currency formatting redesign beyond what is already in place
+- Broad visual redesign of the header beyond what is needed to make locale switching fit cleanly
 - URL-based locale routing changes
 - New locale additions beyond the six already configured
 - Machine translation quality review with native-language copy editing beyond a practical first-pass product translation
@@ -57,6 +62,7 @@ The goal is to close the current coverage gap so high-traffic DApp pages such as
 - The current mixed-language problem is primarily caused by hard-coded client-page strings, not missing locale detection
 - It is acceptable to restructure message files if that reduces long-term translation sprawl
 - Existing translation coverage in notifications and bottom navigation should be preserved and used as the reference pattern
+- A compact dropdown-style language selector is preferable to adding another always-expanded header button on narrow mobile widths
 
 ## 5. Architecture Impact
 
@@ -68,7 +74,25 @@ The goal is to close the current coverage gap so high-traffic DApp pages such as
 - `apps/dapp/src/i18n/constants.ts`
   - locale list and default locale remain the canonical configuration
 - `apps/dapp/src/i18n/locale-actions.ts`
-  - expected to remain unchanged unless implementation reveals a refresh edge case
+  - already supports cookie updates
+  - expected to be reused by the new language switch UI
+
+### Locale-Aware Formatting
+
+- `apps/dapp/src/lib/promotion-format.ts`
+  - currently hard-codes `en-US` for date formatting
+  - must be updated so formatting can follow the selected app locale
+- any page currently using `formatDateTime(...)`
+  - needs a locale-aware call path rather than server-default English formatting
+
+### Header Interaction Density
+
+- `apps/dapp/src/components/layout/mobile-layout.tsx`
+  - current header only exposes notifications + wallet controls
+  - needs a language switch entry without breaking the existing compact mobile layout
+- likely supporting UI:
+  - a new locale switcher component under `apps/dapp/src/components/**`
+  - reuse of existing dropdown primitives under `apps/dapp/src/components/ui/dropdown-menu.tsx`
 
 ### Message Assets
 
@@ -135,6 +159,18 @@ Notifications already demonstrate the expected usage pattern:
 
 This should be extended rather than replaced.
 
+### 6.5 Locale Formatting Is Still Partially Hard-Coded
+
+- `apps/dapp/src/lib/promotion-format.ts` formats date/time with `en-US`
+- this causes screens such as rewards schedule cards to keep English month/day formatting even when copy is translated
+- this is now an explicit part of the scope gap
+
+### 6.6 Locale Switching Is Implemented In State, But Not In UI
+
+- locale persistence already exists through `NEXT_LOCALE`
+- there is no user-visible language switch control in the DApp header
+- the new UI should prioritize compactness on mobile and may need a dropdown / overflow treatment rather than another always-visible full-width button
+
 ## 7. Milestones
 
 ### Milestone 1: i18n Contract and Message Organization
@@ -167,7 +203,35 @@ This should be extended rather than replaced.
 - Expected outputs:
   - a clear, minimal namespace/file strategy for the DApp
 
-### Milestone 2: Dashboard + Shared Shell Coverage
+### Milestone 2: Locale-Aware Formatting + Header Locale Switch
+
+- Goal:
+  - ensure translated pages also format dates/times in the active locale and provide a practical in-app language switch entry
+- Affected files/modules:
+  - `apps/dapp/src/lib/promotion-format.ts`
+  - `apps/dapp/src/components/layout/mobile-layout.tsx`
+  - `apps/dapp/src/i18n/locale-actions.ts`
+  - likely a new header locale switcher component
+  - any page currently displaying formatted schedule dates
+- Implementation notes:
+  - remove the hard-coded `en-US` formatting path for end-user date/time surfaces
+  - prefer passing the active locale explicitly from client pages/components
+  - add a compact locale switch control in the header
+  - recommended direction:
+    - use a dropdown-style menu rather than a permanently expanded extra button
+    - keep notification + chain/account controls readable on narrow widths
+- Risks:
+  - hydration mismatches if locale formatting is changed inconsistently between server and client
+  - making the header overly dense or causing chain/account controls to wrap awkwardly
+- Verification commands:
+  - `pnpm --dir apps/dapp typecheck`
+  - `pnpm --dir apps/dapp lint`
+  - manual smoke of locale switching on a narrow mobile viewport
+- Expected outputs:
+  - visible language switch entry in the header
+  - date/time formatting that follows the selected locale
+
+### Milestone 3: Dashboard + Shared Shell Coverage
 
 - Goal:
   - localize the most visible landing surface and any shared shell copy it depends on
@@ -193,7 +257,7 @@ This should be extended rather than replaced.
 - Expected outputs:
   - dashboard and shared shell render consistently in the selected locale
 
-### Milestone 3: Team / Check-In / Rewards / Claims / NFT Page Coverage
+### Milestone 4: Team / Check-In / Rewards / Claims / NFT Page Coverage
 
 - Goal:
   - localize the remaining core product pages that still contain hard-coded copy
@@ -224,7 +288,7 @@ This should be extended rather than replaced.
 - Expected outputs:
   - the main product journey is locale-backed rather than hard-coded
 
-### Milestone 4: Coverage Audit and Locale Completeness
+### Milestone 5: Coverage Audit and Locale Completeness
 
 - Goal:
   - confirm there are no major untranslated user-facing gaps in the main DApp path
@@ -258,8 +322,10 @@ Approval for this task means agreement on:
 
 1. treating this as a DApp-only localization coverage task
 2. extending the current `next-intl` message loading strategy rather than replacing it
-3. allowing message-file restructuring if needed for maintainability
-4. prioritizing the main product pages first, not every edge surface in one pass
+3. adding locale-aware formatting for user-visible dates/times
+4. adding a compact header locale switch entry, with dropdown-style interaction if space is tight
+5. allowing message-file restructuring if needed for maintainability
+6. prioritizing the main product pages first, not every edge surface in one pass
 
 ## 9. Rollback / Recovery Notes
 
@@ -271,6 +337,8 @@ Approval for this task means agreement on:
 ## 10. Final Verification Checklist
 
 - [ ] The DApp i18n runtime loads all namespaces required by the updated pages
+- [ ] User-visible schedule/date formatting follows the selected locale instead of forcing `en-US`
+- [ ] The mobile header exposes a working locale switch entry without overcrowding wallet / chain / notifications
 - [ ] `dashboard-page.tsx` no longer relies on hard-coded user-facing English copy
 - [ ] `team-page.tsx` no longer relies on hard-coded user-facing English copy
 - [ ] `checkin-page.tsx` no longer relies on hard-coded user-facing English copy

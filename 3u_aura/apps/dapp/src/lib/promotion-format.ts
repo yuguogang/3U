@@ -121,7 +121,10 @@ export function formatWalletAddress(address?: string | null) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-export function formatDateTime(value?: Date | string | null) {
+export function formatDateTime(
+  value?: Date | string | null,
+  locale: string = "en-US",
+) {
   if (!value) {
     return "-";
   }
@@ -131,7 +134,7 @@ export function formatDateTime(value?: Date | string | null) {
     return "-";
   }
 
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);

@@ -136,11 +136,11 @@ export function RewardsPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-white/50">{t("rewards.schedule.startTime")}</span>
-                <span className="text-white font-mono">{formatDateTime(epochQuery.data?.startAt)}</span>
+                <span className="text-white font-mono">{formatDateTime(epochQuery.data?.startAt, locale)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-white/50">{t("rewards.schedule.endTime")}</span>
-                <span className="text-white font-mono">{formatDateTime(epochQuery.data?.endAt)}</span>
+                <span className="text-white font-mono">{formatDateTime(epochQuery.data?.endAt, locale)}</span>
               </div>
               <div className="pt-4 border-t border-white/[0.08]">
                 <div className="flex items-center gap-2 text-xs text-aura-primary">
