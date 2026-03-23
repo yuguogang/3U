@@ -11,6 +11,11 @@ import { Web3Provider } from "@/components/providers/web3-provider";
 export const metadata: Metadata = {
   title: "3U AURA Promotion DApp",
   description: "Promotion-phase dashboard and operations shell for 3U AURA.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default async function RootLayout({
