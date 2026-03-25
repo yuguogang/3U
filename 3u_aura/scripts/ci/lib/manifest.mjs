@@ -10,15 +10,71 @@ function readJsonFile(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 }
 
+function normalizeAddress(value) {
+  return typeof value === 'string' ? value.toLowerCase() : value;
+}
+
+function assertManifestConsistency(envName, ciManifest, configManifest) {
+  const mismatches = [];
+  const fields = [
+    ['chain.id', ciManifest.chain?.id, configManifest.chain?.id],
+    ['chain.rpcUrl', ciManifest.chain?.rpcUrl, configManifest.chain?.rpcUrl],
+    [
+      'contracts.paymentTokenAddress',
+      normalizeAddress(ciManifest.contracts?.paymentTokenAddress),
+      normalizeAddress(configManifest.contracts?.paymentTokenAddress),
+    ],
+    [
+      'contracts.founderNftAddress',
+      normalizeAddress(ciManifest.contracts?.founderNftAddress),
+      normalizeAddress(configManifest.contracts?.founderNftAddress),
+    ],
+    [
+      'contracts.nftSaleAddress',
+      normalizeAddress(ciManifest.contracts?.nftSaleAddress),
+      normalizeAddress(configManifest.contracts?.nftSaleAddress),
+    ],
+    [
+      'contracts.settlementAddress',
+      normalizeAddress(ciManifest.contracts?.settlementAddress),
+      normalizeAddress(configManifest.contracts?.settlementAddress),
+    ],
+    [
+      'contracts.merkleDistributorAddress',
+      normalizeAddress(ciManifest.contracts?.merkleDistributorAddress),
+      normalizeAddress(configManifest.contracts?.merkleDistributorAddress),
+    ],
+  ];
+
+  for (const [label, left, right] of fields) {
+    if (left !== right) {
+      mismatches.push(`${label}: ci=${left} config=${right}`);
+    }
+  }
+
+  if (mismatches.length) {
+    throw new Error(
+      `Manifest mismatch detected for ${envName}. Sync config/promotion-envs and scripts/ci/.runtime before continuing.\n${mismatches.join('\n')}`,
+    );
+  }
+}
+
 export function loadManifest(envName = 'fork-anvil') {
   const ciManifest = loadCiManifest(envName);
+  const configManifestPath = path.join(
+    REPO_ROOT,
+    'config',
+    'promotion-envs',
+    envName,
+    'manifest.json',
+  );
+  const configManifest = readJsonFile(configManifestPath);
   if (ciManifest) {
+    assertManifestConsistency(envName, ciManifest, configManifest);
     return ciManifest;
   }
 
-  return readJsonFile(
-    path.join(REPO_ROOT, 'config', 'promotion-envs', envName, 'manifest.json'),
-  );
+  return configManifest;
 }
 
 export function loadWalletFixture(name, envName = 'fork-anvil') {

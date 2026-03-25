@@ -20,7 +20,7 @@ async function main() {
       'Usage: pnpm tsx scripts/settle-weekly-epoch-rewards.ts --epoch-id <id> [--mode <draft|publish>] [--reward-json-uri <uri>]',
     );
   }
-  if (!['draft', 'publish'].includes(mode)) {
+  if (!['draft', 'publish', 'activate'].includes(mode)) {
     throw new Error(`Unsupported mode: ${mode}`);
   }
 
@@ -31,9 +31,11 @@ async function main() {
   try {
     const rewardsService = app.get(RewardsService);
     const result =
-      mode === 'publish'
-        ? await rewardsService.publishEpochRewards(epochId, rewardJsonUri)
-        : await rewardsService.materializeEpochRewards(epochId);
+      mode === 'activate'
+        ? await rewardsService.activateEpochRewards(epochId, rewardJsonUri)
+        : mode === 'publish'
+          ? await rewardsService.publishEpochRewards(epochId)
+          : await rewardsService.materializeEpochRewards(epochId);
 
     console.log(JSON.stringify(result, null, 2));
   } finally {

@@ -642,6 +642,15 @@ async function settlePhase({
       envName,
     );
   }
+  const activated = spawnJsonScript([
+    path.join(REPO_ROOT, 'scripts', 'uat', 'activate-weekly-fork-claims.mjs'),
+    '--env',
+    envName,
+    '--epoch-id',
+    epochRecord.id,
+    '--merkle-root',
+    published.merkleRoot,
+  ]);
 
   let subsidy = {
     published: false,
@@ -673,7 +682,10 @@ async function settlePhase({
         const subsidyPublishHash = await publishSubsidyEpoch(
           adminWallet,
           {
-            claimDeadline: BigInt(targetTimestamp + SUBSIDY_CLAIM_WINDOW_SECONDS),
+            claimDeadline: BigInt(
+              (await readLatestBlockTimestampSeconds(envName)) +
+                SUBSIDY_CLAIM_WINDOW_SECONDS
+            ),
             epochId: subsidyEpochId,
             subsidyAmount: parseUnits(SUBSIDY_AMOUNT_USDT, 6),
           },
@@ -704,6 +716,7 @@ async function settlePhase({
       draft,
       epochRecord,
       epochSync,
+      activated,
       published,
       referenceAt,
       subsidy,

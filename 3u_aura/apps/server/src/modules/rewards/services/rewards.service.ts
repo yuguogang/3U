@@ -138,14 +138,11 @@ export class RewardsService {
     });
   }
 
-  async publishEpochRewards(
-    epochId: string,
-    rewardJsonUri?: string,
-  ): Promise<{
+  async publishEpochRewards(epochId: string): Promise<{
     consolationCount: number;
     epochId: string;
     lotteryRolloverUsdt: string;
-    merkle: Awaited<ReturnType<MerkleDraftService['publishDraftForEpoch']>>;
+    merkle: Awaited<ReturnType<MerkleDraftService['inspectDraftForEpoch']>>;
     mode: 'publish';
     nextEpochId?: string;
     rankingRolloverUsdt: string;
@@ -255,9 +252,8 @@ export class RewardsService {
         );
       }
 
-      const merkle = await this.merkleDraftService.publishDraftForEpoch(
+      const merkle = await this.merkleDraftService.inspectDraftForEpoch(
         epoch.id,
-        rewardJsonUri,
         tx,
       );
 
@@ -269,6 +265,30 @@ export class RewardsService {
         mode: 'publish' as const,
         nextEpochId: nextEpoch?.id,
         rankingRolloverUsdt,
+      };
+    });
+  }
+
+  async activateEpochRewards(
+    epochId: string,
+    rewardJsonUri?: string,
+  ): Promise<{
+    epochId: string;
+    merkle: Awaited<ReturnType<MerkleDraftService['publishDraftForEpoch']>>;
+    mode: 'activate';
+  }> {
+    return this.transactionOrchestrator.run(async (tx) => {
+      const epoch = await this.getEpochReadyForActivationOrThrow(epochId, tx);
+      const merkle = await this.merkleDraftService.publishDraftForEpoch(
+        epoch.id,
+        rewardJsonUri,
+        tx,
+      );
+
+      return {
+        epochId: epoch.id,
+        merkle,
+        mode: 'activate' as const,
       };
     });
   }
@@ -291,7 +311,7 @@ export class RewardsService {
         );
       const wallets = new Set<string>();
       let processedRewards = 0;
-      let skippedRewardsWithoutLedger = 0;
+      const skippedRewardsWithoutLedger = 0;
 
       for (const reward of rewards) {
         wallets.add(reward.user.walletAddress);
@@ -436,7 +456,10 @@ export class RewardsService {
         },
         tx,
       ),
-      this.ledgerRepository.sumConfirmedConsolationAmountByUser(data.userId, tx),
+      this.ledgerRepository.sumConfirmedConsolationAmountByUser(
+        data.userId,
+        tx,
+      ),
     ]);
 
     await this.statsRepository.setDailyConsolationProjection(
@@ -499,6 +522,26 @@ export class RewardsService {
     if (epoch.status !== EpochStatus.CALCULATING) {
       throw new Error(
         `Weekly epoch ${epochId} must be CALCULATING before settlement, got ${epoch.status}`,
+      );
+    }
+
+    return epoch;
+  }
+
+  private async getEpochReadyForActivationOrThrow(
+    epochId: string,
+    tx: Prisma.TransactionClient,
+  ): Promise<WeeklyEpoch> {
+    const epoch = await this.weeklyEpochRepository.findById(epochId, tx);
+    if (!epoch) {
+      throw new Error(`Weekly epoch not found: ${epochId}`);
+    }
+    if (
+      epoch.status !== EpochStatus.CALCULATING &&
+      epoch.status !== EpochStatus.ROOT_POSTED
+    ) {
+      throw new Error(
+        `Weekly epoch ${epochId} must be CALCULATING or ROOT_POSTED before activation`,
       );
     }
 

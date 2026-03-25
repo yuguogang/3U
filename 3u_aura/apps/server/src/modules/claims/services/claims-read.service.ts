@@ -1,10 +1,11 @@
-import { type User } from '@/db';
-import { Injectable } from '@nestjs/common';
 import {
-  ClaimStatus,
-  ClaimType,
-  PromotionClaimsView,
-} from '3u-aura-common';
+  ClaimStatus as DbClaimStatus,
+  ClaimType as DbClaimType,
+  EpochStatus as DbEpochStatus,
+  type User,
+} from '@/db';
+import { Injectable } from '@nestjs/common';
+import { ClaimStatus, ClaimType, PromotionClaimsView } from '3u-aura-common';
 import { LotteryTicketRepository } from '../../lottery';
 import { ClaimRecordRepository } from '../repositories/claim-record.repository';
 import { NftSubsidyClaimRepository } from '../repositories/nft-subsidy-claim.repository';
@@ -34,8 +35,12 @@ export class ClaimsReadService {
         .filter(
           (claim) =>
             !(
-              claim.claimType === ClaimType.MERKLE_LOTTERY &&
+              claim.claimType === DbClaimType.MERKLE_LOTTERY &&
               hiddenEpochIdSet.has(claim.epochId ?? '')
+            ) &&
+            !(
+              claim.status === DbClaimStatus.CLAIMABLE &&
+              claim.epoch?.status !== DbEpochStatus.ROOT_POSTED
             ),
         )
         .map((claim) => ({

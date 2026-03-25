@@ -198,6 +198,20 @@ export async function runWeeklyMerkleClaimFlow({
   const rootTx = await publishMerkleRoot(admin, TARGET_EPOCH_NO, published.merkleRoot, ENV);
   console.log(`   Deposit tx: ${depositTx}`);
   console.log(`   Root publish tx: ${rootTx}`);
+  const activated = JSON.parse(
+    await runNodeScript([
+      'scripts/uat/activate-weekly-fork-claims.mjs',
+      '--env',
+      ENV,
+      '--epoch-id',
+      epoch.id,
+      '--merkle-root',
+      published.merkleRoot,
+      '--reward-json-uri',
+      rewardJsonUri,
+    ]),
+  );
+  console.log(`   Activated claims: ${JSON.stringify(activated)}`);
 
   console.log('11. Resolving claimant with target merkle claim from server...');
   const claimantResolution = await resolveClaimantForType(

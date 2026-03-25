@@ -61,6 +61,11 @@ describe('RewardsService', () => {
       }),
     };
     const merkleDraftService = {
+      inspectDraftForEpoch: jest.fn().mockResolvedValue({
+        claimCount: 4,
+        merkleRoot:
+          '0x1111111111111111111111111111111111111111111111111111111111111111',
+      }),
       materializeForEpoch: jest.fn().mockResolvedValue({
         claimCount: 4,
         leafCount: 4,
@@ -326,10 +331,7 @@ describe('RewardsService', () => {
     weeklyEpochPolicyEngine.toDateKey.mockReset();
     weeklyEpochPolicyEngine.toDateKey.mockReturnValue('2026-03-15');
 
-    const result = await service.publishEpochRewards(
-      'epoch_1',
-      'ipfs://phase6-root.json',
-    );
+    const result = await service.publishEpochRewards('epoch_1');
 
     expect(weeklyEpochRepository.incrementPreparedPools).toHaveBeenCalledWith(
       {
@@ -348,20 +350,18 @@ describe('RewardsService', () => {
       }),
       expect.any(Object),
     );
-    expect(
-      statsRepository.setDailyConsolationProjection,
-    ).toHaveBeenCalledWith(
+    expect(statsRepository.setDailyConsolationProjection).toHaveBeenCalledWith(
       expect.objectContaining({
         dateKey: '2026-03-15',
         userId: 'user_3',
       }),
       expect.any(Object),
     );
-    expect(merkleDraftService.publishDraftForEpoch).toHaveBeenCalledWith(
+    expect(merkleDraftService.inspectDraftForEpoch).toHaveBeenCalledWith(
       'epoch_1',
-      'ipfs://phase6-root.json',
       expect.any(Object),
     );
+    expect(merkleDraftService.publishDraftForEpoch).not.toHaveBeenCalled();
     expect(result).toEqual(
       expect.objectContaining({
         consolationCount: 1,
@@ -375,6 +375,7 @@ describe('RewardsService', () => {
   it('self-heals consolation projections when ledger already exists', async () => {
     const {
       ledgerRepository,
+      merkleDraftService,
       service,
       statsRepository,
       weeklyEpochPolicyEngine,
@@ -425,7 +426,9 @@ describe('RewardsService', () => {
       }),
       expect.any(Object),
     );
-    expect(statsRepository.setProfileConsolationProjection).toHaveBeenCalledWith(
+    expect(
+      statsRepository.setProfileConsolationProjection,
+    ).toHaveBeenCalledWith(
       expect.objectContaining({
         totalAura: new Prisma.Decimal((100n * 10n ** 18n).toString()),
         userId: 'user_3',
@@ -433,6 +436,43 @@ describe('RewardsService', () => {
       expect.any(Object),
     );
     expect(result.consolationCount).toBe(0);
+    expect(merkleDraftService.publishDraftForEpoch).not.toHaveBeenCalled();
+  });
+
+  it('activates merkle rewards only after explicit activation', async () => {
+    const { merkleDraftService, service, weeklyEpochRepository } =
+      createService();
+
+    weeklyEpochRepository.findById.mockResolvedValue({
+      endAt: new Date('2026-03-15T16:00:00.000Z'),
+      epochNo: 1,
+      epochType: EpochType.WEEKLY_PROMOTION,
+      id: 'epoch_1',
+      lotteryPoolUsdt: new Prisma.Decimal(1000),
+      rankingPoolUsdt: new Prisma.Decimal(1000),
+      startAt: new Date('2026-03-08T16:00:00.000Z'),
+      status: EpochStatus.CALCULATING,
+    });
+
+    const result = await service.activateEpochRewards(
+      'epoch_1',
+      'ipfs://phase6-root.json',
+    );
+
+    expect(merkleDraftService.publishDraftForEpoch).toHaveBeenCalledWith(
+      'epoch_1',
+      'ipfs://phase6-root.json',
+      expect.any(Object),
+    );
+    expect(result).toEqual({
+      epochId: 'epoch_1',
+      merkle: {
+        claimCount: 4,
+        merkleRoot:
+          '0x1111111111111111111111111111111111111111111111111111111111111111',
+      },
+      mode: 'activate',
+    });
   });
 
   it('reconciles consolation projections for a wallet-scoped backfill run', async () => {
@@ -444,7 +484,8 @@ describe('RewardsService', () => {
       weeklyRewardRepository,
     } = createService();
 
-    weeklyRewardRepository.listConsolationRewardsForProjection.mockResolvedValue([
+    weeklyRewardRepository.listConsolationRewardsForProjection.mockResolvedValue(
+      [
         {
           amountAura: new Prisma.Decimal((100n * 10n ** 18n).toString()),
           epoch: {
@@ -457,7 +498,8 @@ describe('RewardsService', () => {
           },
           userId: 'user_3',
         },
-      ]);
+      ],
+    );
     weeklyEpochPolicyEngine.toDateKey.mockReset();
     weeklyEpochPolicyEngine.toDateKey.mockReturnValue('2026-03-15');
 
@@ -500,24 +542,28 @@ describe('RewardsService', () => {
       weeklyRewardRepository,
     } = createService();
 
-    weeklyRewardRepository.listConsolationRewardsForProjection.mockResolvedValue([
-      {
-        amountAura: new Prisma.Decimal((100n * 10n ** 18n).toString()),
-        epoch: {
-          endAt: new Date('2026-03-15T16:00:00.000Z'),
+    weeklyRewardRepository.listConsolationRewardsForProjection.mockResolvedValue(
+      [
+        {
+          amountAura: new Prisma.Decimal((100n * 10n ** 18n).toString()),
+          epoch: {
+            endAt: new Date('2026-03-15T16:00:00.000Z'),
+          },
+          epochId: 'epoch_1',
+          id: 'reward_consolation',
+          user: {
+            walletAddress: '0x0000000000000000000000000000000000000003',
+          },
+          userId: 'user_3',
         },
-        epochId: 'epoch_1',
-        id: 'reward_consolation',
-        user: {
-          walletAddress: '0x0000000000000000000000000000000000000003',
-        },
-        userId: 'user_3',
-      },
-    ]);
+      ],
+    );
     ledgerRepository.findConfirmedBySource.mockResolvedValue(null);
     ledgerRepository.sumConfirmedConsolationAmountByUserAndEpoch
       .mockResolvedValueOnce(new Prisma.Decimal(0))
-      .mockResolvedValueOnce(new Prisma.Decimal((100n * 10n ** 18n).toString()));
+      .mockResolvedValueOnce(
+        new Prisma.Decimal((100n * 10n ** 18n).toString()),
+      );
     ledgerRepository.sumConfirmedConsolationAmountByUser.mockResolvedValue(
       new Prisma.Decimal((100n * 10n ** 18n).toString()),
     );

@@ -130,11 +130,7 @@ export class MerkleDraftService {
     claimCount: number;
     merkleRoot: string;
   }> {
-    const draft = await this.claimPublicationService.resolveMerkleDraftRoot(
-      epochId,
-      [...MERKLE_CLAIM_TYPES],
-      tx,
-    );
+    const draft = await this.inspectDraftForEpoch(epochId, tx);
 
     await this.claimPublicationService.markMerkleClaimsClaimable(
       epochId,
@@ -158,5 +154,19 @@ export class MerkleDraftService {
     );
 
     return draft;
+  }
+
+  async inspectDraftForEpoch(
+    epochId: string,
+    tx: Prisma.TransactionClient,
+  ): Promise<{
+    claimCount: number;
+    merkleRoot: string;
+  }> {
+    return this.claimPublicationService.resolveMerkleDraftRoot(
+      epochId,
+      [...MERKLE_CLAIM_TYPES],
+      tx,
+    );
   }
 }

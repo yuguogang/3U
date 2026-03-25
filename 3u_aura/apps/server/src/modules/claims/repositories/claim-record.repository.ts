@@ -1,4 +1,11 @@
-import { ClaimRecord, ClaimStatus, ClaimType, DbService, Prisma } from '@/db';
+import {
+  ClaimRecord,
+  ClaimStatus,
+  ClaimType,
+  DbService,
+  EpochStatus,
+  Prisma,
+} from '@/db';
 import { Injectable } from '@nestjs/common';
 
 type DbExecutor = DbService | Prisma.TransactionClient;
@@ -135,6 +142,7 @@ export class ClaimRecordRepository {
       > & {
         epoch: {
           epochNo: number;
+          status: EpochStatus;
         } | null;
       }
     >
@@ -164,6 +172,7 @@ export class ClaimRecordRepository {
         epoch: {
           select: {
             epochNo: true,
+            status: true,
           },
         },
       },
