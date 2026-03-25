@@ -8,3 +8,4 @@ export * from './admin-epoch-sync-request.dto';
 export * from './admin-nft-eligibility-list-query.dto';
 export * from './admin-pending-placement-list-query.dto';
 export * from './admin-reject-referral-nft-request.dto';
+export * from './admin-reward-publication-request.dto';

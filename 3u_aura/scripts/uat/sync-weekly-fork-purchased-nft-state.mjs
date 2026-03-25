@@ -3,7 +3,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
-import { loadManifest, loadWalletFixture, REPO_ROOT } from '../promotion-env/lib.mjs';
+import { REPO_ROOT } from '../promotion-env/lib.mjs';
+import { loadManifest } from '../ci/lib/manifest.mjs';
 import { getAccessToken, syncPurchasedNft } from '../ci/lib/server.mjs';
 
 const requireFromServer = createRequire(

@@ -165,6 +165,36 @@ export interface AdminEpochSyncPreviewView {
   referenceAt: string;
 }
 
+export interface AdminRewardPublicationPreviewView {
+  allowanceSatisfied: boolean;
+  balanceSatisfied: boolean;
+  blockers: string[];
+  canActivate: boolean;
+  claimCount: number;
+  dbActivated: boolean;
+  distributorBalanceAtomic: string;
+  draftMerkleRoot: string;
+  epochId: string;
+  epochNo: number;
+  epochStatus: EpochStatus;
+  expectedRewardFunderAddress?: string;
+  fundingSatisfied: boolean;
+  fundingSourceKind: 'CHECKIN_RECEIVER';
+  onChainMerkleRoot?: string;
+  rewardFunderAddress?: string;
+  rewardFunderAllowanceAtomic: string;
+  rewardFunderBalanceAtomic: string;
+  rootPublished: boolean;
+  totalRewardAmountAtomic: string;
+  totalRewardAmountUsdt: string;
+}
+
+export interface AdminRewardPublicationExecuteView
+  extends AdminRewardPublicationPreviewView {
+  activated: boolean;
+  rewardJsonUri?: string;
+}
+
 export interface AdminOperationResultEnvelope<TResult> {
   action: string;
   dryRun: boolean;

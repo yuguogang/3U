@@ -45,6 +45,7 @@ export type ConfigOptions = {
     claimChainId: number;
     startAt: string;
     checkinReceiverAddress?: string;
+    rewardFunderAddress?: string;
     merkleDistributorAddress?: string;
     nftSaleAddress?: string;
     paymentTokenAddress?: string;

@@ -38,5 +38,21 @@
     "initialBnbMin": "0.1",
     "initialUsdtMin": "1000",
     "role": "userC"
+  },
+  {
+    "name": "checkinFunder",
+    "address": "0xCheckinRewardFunderWallet",
+    "privateKeyEnv": "PROMOTION_CHECKIN_FUNDER_PRIVATE_KEY",
+    "initialBnbMin": "0.1",
+    "initialUsdtMin": "0",
+    "role": "checkinRewardFunder"
+  },
+  {
+    "name": "financeWallet",
+    "address": "0xFinanceWallet",
+    "privateKeyEnv": "PROMOTION_FINANCE_WALLET_PRIVATE_KEY",
+    "initialBnbMin": "0.1",
+    "initialUsdtMin": "0",
+    "role": "financeWallet"
   }
 ]

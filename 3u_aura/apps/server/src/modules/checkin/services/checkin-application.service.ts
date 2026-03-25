@@ -5,16 +5,14 @@ import type {
   PromotionCheckinRequest,
   PromotionCheckinResult,
 } from '3u-aura-common';
-import { LedgerRepository } from '../../ledger';
-import { PaymentService } from '../../payment';
-import { RewardsService } from '../../rewards';
-import {
-  AuditSeamService,
-  IdempotencySeamService,
-  TransactionOrchestratorService,
-} from '../../shared';
-import { StatsRepository } from '../../stats';
-import { VolumePropagationService } from '../../volume';
+import { LedgerRepository } from '../../ledger/repositories/ledger.repository';
+import { PaymentService } from '../../payment/services/payment.service';
+import { RewardsService } from '../../rewards/services/rewards.service';
+import { AuditSeamService } from '../../shared/services/audit-seam.service';
+import { IdempotencySeamService } from '../../shared/services/idempotency-seam.service';
+import { TransactionOrchestratorService } from '../../shared/services/transaction-orchestrator.service';
+import { StatsRepository } from '../../stats/repositories/stats.repository';
+import { VolumePropagationService } from '../../volume/services/volume-propagation.service';
 import { CheckinPolicyEngine } from '../engines/checkin-policy.engine';
 import { CheckinRepository } from '../repositories/checkin.repository';
 

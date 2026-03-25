@@ -44,6 +44,21 @@ function assertManifestConsistency(envName, ciManifest, configManifest) {
       normalizeAddress(ciManifest.contracts?.merkleDistributorAddress),
       normalizeAddress(configManifest.contracts?.merkleDistributorAddress),
     ],
+    [
+      'roles.rewardFunderAddress',
+      normalizeAddress(ciManifest.roles?.rewardFunderAddress),
+      normalizeAddress(configManifest.roles?.rewardFunderAddress),
+    ],
+    [
+      'roles.checkinReceiverAddress',
+      normalizeAddress(ciManifest.roles?.checkinReceiverAddress),
+      normalizeAddress(configManifest.roles?.checkinReceiverAddress),
+    ],
+    [
+      'roles.financeWallet',
+      normalizeAddress(ciManifest.roles?.financeWallet),
+      normalizeAddress(configManifest.roles?.financeWallet),
+    ],
   ];
 
   for (const [label, left, right] of fields) {
@@ -81,6 +96,30 @@ export function loadWalletFixture(name, envName = 'fork-anvil') {
   return readJsonFile(
     path.join(REPO_ROOT, 'config', 'promotion-envs', envName, 'wallets', `${name}.json`),
   );
+}
+
+export function loadWalletFixtureByAddress(address, envName = 'fork-anvil') {
+  const normalized = String(address).toLowerCase();
+  const walletDir = path.join(
+    REPO_ROOT,
+    'config',
+    'promotion-envs',
+    envName,
+    'wallets',
+  );
+
+  for (const walletFile of fs.readdirSync(walletDir)) {
+    if (!walletFile.endsWith('.json')) {
+      continue;
+    }
+
+    const fixture = readJsonFile(path.join(walletDir, walletFile));
+    if (String(fixture.address).toLowerCase() === normalized) {
+      return fixture;
+    }
+  }
+
+  throw new Error(`Wallet fixture not found for ${address} in ${envName}`);
 }
 
 export const FORK_ANVIL_CONFIG = {

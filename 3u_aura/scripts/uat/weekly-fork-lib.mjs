@@ -13,6 +13,7 @@ import {
   loadManifest,
   writeFileIfChanged,
 } from '../promotion-env/lib.mjs';
+import { writeCiManifest } from '../ci/lib/runtime.mjs';
 
 const DEFAULTS = {
   adminPort: 3201,
@@ -314,6 +315,15 @@ function defaultForkDatabaseSchema(envName) {
 }
 
 function cloneWalletTemplate(sourceEnvName, targetEnvName) {
+  const targetPath = path.join(
+    getWeeklyForkEnvDir(targetEnvName),
+    'wallets.example.json',
+  );
+
+  if (fs.existsSync(targetPath)) {
+    return;
+  }
+
   const sourcePath = path.join(
     REPO_ROOT,
     'config',
@@ -321,24 +331,36 @@ function cloneWalletTemplate(sourceEnvName, targetEnvName) {
     sourceEnvName,
     'wallets.example.json',
   );
-  const targetPath = path.join(
-    getWeeklyForkEnvDir(targetEnvName),
-    'wallets.example.json',
-  );
-
   writeFileIfChanged(targetPath, fs.readFileSync(sourcePath, 'utf8'));
 }
 
-function loadWalletTemplates(sourceEnvName) {
-  return readJson(
-    path.join(
-      REPO_ROOT,
-      'config',
-      'promotion-envs',
-      sourceEnvName,
-      'wallets.example.json',
-    ),
+function resolveWalletTemplatePath(sourceEnvName, targetEnvName) {
+  const targetPath = path.join(
+    REPO_ROOT,
+    'config',
+    'promotion-envs',
+    targetEnvName,
+    'wallets.example.json',
   );
+  if (fs.existsSync(targetPath)) {
+    return targetPath;
+  }
+
+  return path.join(
+    REPO_ROOT,
+    'config',
+    'promotion-envs',
+    sourceEnvName,
+    'wallets.example.json',
+  );
+}
+
+function loadWalletTemplates(sourceEnvName, targetEnvName) {
+  return readJson(resolveWalletTemplatePath(sourceEnvName, targetEnvName));
+}
+
+function deriveDeterministicPrivateKey(scope) {
+  return `0x${createHash('sha256').update(scope).digest('hex')}`;
 }
 
 function buildForkWalletFixtures({
@@ -346,16 +368,12 @@ function buildForkWalletFixtures({
   sourceEnvName,
   targetEnvName,
 }) {
-  const templates = loadWalletTemplates(sourceEnvName);
-
-  if (templates.length > ANVIL_DEFAULT_PRIVATE_KEYS.length) {
-    throw new Error(
-      `Not enough deterministic anvil wallets. templates=${templates.length} available=${ANVIL_DEFAULT_PRIVATE_KEYS.length}`,
-    );
-  }
+  const templates = loadWalletTemplates(sourceEnvName, targetEnvName);
 
   return templates.map((template, index) => {
-    const privateKey = ANVIL_DEFAULT_PRIVATE_KEYS[index];
+    const privateKey =
+      ANVIL_DEFAULT_PRIVATE_KEYS[index] ??
+      deriveDeterministicPrivateKey(`${targetEnvName}:${template.name}:${template.role}`);
     const account = privateKeyToAccount(privateKey);
 
     return {
@@ -406,6 +424,10 @@ function getLocalDeployControllerAddress(sourceManifest, forkWallets) {
   );
 }
 
+function getForkWalletByRole(forkWallets, role) {
+  return forkWallets.find((wallet) => wallet.role === role);
+}
+
 function deriveManifest(options, sourceManifest, forkWallets) {
   const existingManifest = readExistingWeeklyManifest(options.envName);
   const sourceRedis = parseRedisUrl(sourceManifest.infra.redis.cacheUrl);
@@ -415,6 +437,11 @@ function deriveManifest(options, sourceManifest, forkWallets) {
   const databaseSchema =
     options.databaseSchema ?? defaultForkDatabaseSchema(options.envName);
   const adminWallet = forkWallets.find((wallet) => wallet.role === 'admin');
+  const checkinRewardWallet = getForkWalletByRole(
+    forkWallets,
+    'checkinRewardFunder',
+  );
+  const financeWallet = getForkWalletByRole(forkWallets, 'financeWallet');
   const localDeployControllerAddress = getLocalDeployControllerAddress(
     sourceManifest,
     forkWallets,
@@ -430,16 +457,21 @@ function deriveManifest(options, sourceManifest, forkWallets) {
     useLocalDeploy && existingManifest?.fork?.deploymentMode === 'local-deploy'
       ? existingManifest.contracts
       : sourceManifest.contracts;
+  const ownerAddress = adminWallet?.address ?? localDeployControllerAddress;
+  const checkinReceiverAddress =
+    checkinRewardWallet?.address ?? ownerAddress;
+  const financeWalletAddress = financeWallet?.address ?? ownerAddress;
   const roles = useLocalDeploy
-    ? {
+      ? {
         ...sourceManifest.roles,
         adminAllowlistWallets,
-        checkinReceiverAddress: localDeployControllerAddress,
-        financeWallet: localDeployControllerAddress,
-        owner: localDeployControllerAddress,
-        referralSignerAddress: localDeployControllerAddress,
-        rootPublisher: localDeployControllerAddress,
-        settlementPublisher: localDeployControllerAddress,
+        checkinReceiverAddress,
+        financeWallet: financeWalletAddress,
+        owner: ownerAddress,
+        rewardFunderAddress: checkinReceiverAddress,
+        referralSignerAddress: ownerAddress,
+        rootPublisher: ownerAddress,
+        settlementPublisher: financeWalletAddress,
       }
     : {
         ...sourceManifest.roles,
@@ -518,6 +550,7 @@ export function createWeeklyForkEnvironment(options) {
   const manifest = deriveManifest(options, sourceManifest, forkWallets);
   const manifestPath = path.join(envDir, 'manifest.json');
   writeJson(manifestPath, manifest);
+  writeCiManifest(options.envName, manifest);
 
   cloneWalletTemplate(options.sourceEnvName, options.envName);
   writeForkWalletFixtures(forkWallets, options.envName);
@@ -1127,6 +1160,10 @@ export async function startWeeklyFork(options) {
     }
 
     syncWeeklyForkTargetEnvFiles(options.envName);
+    writeCiManifest(
+      options.envName,
+      readJson(path.join(getWeeklyForkEnvDir(options.envName), 'manifest.json')),
+    );
   }
 
   const runtime = {

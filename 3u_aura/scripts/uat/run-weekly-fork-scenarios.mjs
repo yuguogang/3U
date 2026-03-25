@@ -11,13 +11,18 @@ import {
   buyNft,
   depositMerkleRewards,
   getNftBalance,
+  getPurchasedNftCount,
   getPublishedSubsidyEpoch,
   mintUsdt,
   parseUnits,
   publishMerkleRoot,
   publishSubsidyEpoch,
 } from '../ci/lib/contracts.mjs';
-import { loadManifest, loadWalletFixture } from '../ci/lib/manifest.mjs';
+import {
+  loadManifest,
+  loadWalletFixture,
+  loadWalletFixtureByAddress,
+} from '../ci/lib/manifest.mjs';
 import { REPO_ROOT } from '../promotion-env/lib.mjs';
 import {
   parseWeeklyForkArgs,
@@ -634,6 +639,14 @@ async function settlePhase({
   ]);
 
   if (BigInt(published.totalAmount) > 0n) {
+    const manifest = loadManifest(envName);
+    const rewardFunder = loadWalletFixtureByAddress(
+      manifest.roles.rewardFunderAddress ||
+        manifest.roles.checkinReceiverAddress ||
+        manifest.roles.owner,
+      envName,
+    );
+    await mintUsdt(rewardFunder.address, BigInt(published.totalAmount), envName);
     await depositMerkleRewards(adminWallet, BigInt(published.totalAmount), envName);
     await publishMerkleRoot(
       adminWallet,
@@ -661,6 +674,11 @@ async function settlePhase({
     if (targetNftBalance > 0n) {
       let subsidyEpochId = null;
       const manifest = loadManifest(envName);
+      const financeWallet = loadWalletFixtureByAddress(
+        manifest.roles.financeWallet || manifest.roles.owner,
+        envName,
+      );
+      const purchasedSupply = await getPurchasedNftCount(envName);
       for (
         let epochId = 1;
         epochId <= Number(manifest.contracts.maxSubsidyEpochs ?? 12);
@@ -679,8 +697,21 @@ async function settlePhase({
           skippedReason: 'no unpublished subsidy epoch remains on-chain',
         };
       } else {
+        const subsidyFundingAmount =
+          parseUnits(SUBSIDY_AMOUNT_USDT, 6) * purchasedSupply;
+        await mintUsdt(
+          financeWallet.address,
+          subsidyFundingAmount,
+          envName,
+        );
+        await approveUsdt(
+          financeWallet,
+          manifest.contracts.settlementAddress,
+          subsidyFundingAmount,
+          envName,
+        );
         const subsidyPublishHash = await publishSubsidyEpoch(
-          adminWallet,
+          financeWallet,
           {
             claimDeadline: BigInt(
               (await readLatestBlockTimestampSeconds(envName)) +

@@ -18,7 +18,8 @@ contract MerkleClaim is Ownable, ReentrancyGuard {
     error UnauthorizedPublisher(address account);
     error ZeroAddress();
 
-    event RewardsDeposited(address indexed funder, uint256 amount);
+    event RewardsDeposited(address indexed caller, address indexed funder, uint256 amount);
+    event RewardFunderUpdated(address indexed rewardFunder);
     event RootPublisherUpdated(address indexed rootPublisher);
     event WeeklyRootPublished(address indexed publisher, uint256 indexed epochId, bytes32 indexed merkleRoot);
     event RewardClaimed(
@@ -34,6 +35,7 @@ contract MerkleClaim is Ownable, ReentrancyGuard {
     uint8 public constant RANKING_REWARD_CODE = 2;
 
     IERC20Minimal public immutable paymentToken;
+    address public rewardFunder;
     address public rootPublisher;
 
     mapping(uint256 => bytes32) public epochRootById;
@@ -46,12 +48,13 @@ contract MerkleClaim is Ownable, ReentrancyGuard {
         _;
     }
 
-    constructor(address initialOwner, address paymentTokenAddress) Ownable(initialOwner) {
-        if (paymentTokenAddress == address(0)) {
+    constructor(address initialOwner, address paymentTokenAddress, address initialRewardFunder) Ownable(initialOwner) {
+        if (paymentTokenAddress == address(0) || initialRewardFunder == address(0)) {
             revert ZeroAddress();
         }
 
         paymentToken = IERC20Minimal(paymentTokenAddress);
+        rewardFunder = initialRewardFunder;
     }
 
     /// @notice Updates the root publisher role.
@@ -64,14 +67,24 @@ contract MerkleClaim is Ownable, ReentrancyGuard {
         emit RootPublisherUpdated(newRootPublisher);
     }
 
-    /// @notice Deposits reward funding into the distributor.
-    function depositRewards(uint256 amount) external onlyOwner nonReentrant {
-        bool success = paymentToken.transferFrom(msg.sender, address(this), amount);
-        if (!success) {
-            revert RootTransferFailed();
+    /// @notice Updates the reward funder role.
+    function setRewardFunder(address newRewardFunder) external onlyOwner {
+        if (newRewardFunder == address(0)) {
+            revert ZeroAddress();
         }
 
-        emit RewardsDeposited(msg.sender, amount);
+        rewardFunder = newRewardFunder;
+        emit RewardFunderUpdated(newRewardFunder);
+    }
+
+    /// @notice Deposits reward funding into the distributor.
+    function depositRewards(uint256 amount) external onlyOwner nonReentrant {
+        _depositRewardsFrom(msg.sender, amount);
+    }
+
+    /// @notice Deposits reward funding from the configured reward funder.
+    function depositRewardsFromFunder(uint256 amount) external onlyRootPublisherOrOwner nonReentrant {
+        _depositRewardsFrom(rewardFunder, amount);
     }
 
     /// @notice Publishes an immutable Merkle root for a weekly epoch.
@@ -132,5 +145,14 @@ contract MerkleClaim is Ownable, ReentrancyGuard {
         uint256 wordIndex = index / 256;
         uint256 bitIndex = index % 256;
         claimedBitMapByEpoch[epochId][wordIndex] = claimedBitMapByEpoch[epochId][wordIndex] | (1 << bitIndex);
+    }
+
+    function _depositRewardsFrom(address funder, uint256 amount) internal {
+        bool success = paymentToken.transferFrom(funder, address(this), amount);
+        if (!success) {
+            revert RootTransferFailed();
+        }
+
+        emit RewardsDeposited(msg.sender, funder, amount);
     }
 }

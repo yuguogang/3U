@@ -15,6 +15,7 @@ import {
   AdminClaimSyncRequestDto,
   AdminEpochSyncRequestDto,
   AdminRejectReferralNftRequestDto,
+  AdminRewardPublicationRequestDto,
 } from './dto';
 import { AdminOpsService } from './services/admin-ops.service';
 
@@ -59,6 +60,12 @@ export class AdminOpsController {
     return this.adminOpsService.previewEpochSync(command);
   }
 
+  @Post('rewards/publish/preview')
+  @HttpCode(HttpStatus.OK)
+  previewRewardPublication(@Body() command: AdminRewardPublicationRequestDto) {
+    return this.adminOpsService.previewRewardPublication(command);
+  }
+
   @Post('epochs/sync')
   @HttpCode(HttpStatus.OK)
   executeEpochSync(
@@ -66,6 +73,15 @@ export class AdminOpsController {
     @Body() command: AdminEpochSyncRequestDto,
   ) {
     return this.adminOpsService.executeEpochSync(operator, command);
+  }
+
+  @Post('rewards/publish')
+  @HttpCode(HttpStatus.OK)
+  executeRewardPublication(
+    @CurrentUser() operator: User,
+    @Body() command: AdminRewardPublicationRequestDto,
+  ) {
+    return this.adminOpsService.executeRewardPublication(operator, command);
   }
 
   @Post('nft-eligibility/approve')

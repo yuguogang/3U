@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { formatJson } from "@/lib/admin-format";
 import {
+  useExecuteRewardPublicationMutation,
   useExecuteEpochSyncMutation,
+  usePreviewRewardPublicationMutation,
   usePreviewEpochSyncMutation,
 } from "@/queries/admin.query";
 import { useAdminSessionReady } from "@/store/auth.store";
@@ -22,9 +24,13 @@ import {
 export function OpsPage() {
   const enabled = useAdminSessionReady();
   const [referenceAt, setReferenceAt] = useState("");
+  const [rewardEpochNo, setRewardEpochNo] = useState("");
+  const [rewardJsonUri, setRewardJsonUri] = useState("");
   const [snapshot, setSnapshot] = useState<string | null>(null);
   const previewMutation = usePreviewEpochSyncMutation();
   const executeMutation = useExecuteEpochSyncMutation();
+  const previewRewardPublicationMutation = usePreviewRewardPublicationMutation();
+  const executeRewardPublicationMutation = useExecuteRewardPublicationMutation();
 
   if (!enabled) {
     return (
@@ -81,6 +87,68 @@ export function OpsPage() {
                 tone="danger"
               >
                 {executeMutation.isPending ? "Executing..." : "Execute sync"}
+              </ActionButton>
+            </div>
+          </div>
+        </Panel>
+
+        <Panel>
+          <PanelTitle
+            description="这一步只做奖励发布就绪检查和 DB activate。链上 funding / publish root 仍按当前中期方案保持手工 UAT。"
+            title="Reward Publication"
+          />
+          <div className="grid gap-4">
+            <div>
+              <FieldLabel htmlFor="reward-epoch-no">Epoch No</FieldLabel>
+              <TextInput
+                id="reward-epoch-no"
+                onChange={(event) => setRewardEpochNo(event.target.value)}
+                placeholder="3"
+                value={rewardEpochNo}
+              />
+            </div>
+            <div>
+              <FieldLabel htmlFor="reward-json-uri">Reward JSON URI</FieldLabel>
+              <TextInput
+                id="reward-json-uri"
+                onChange={(event) => setRewardJsonUri(event.target.value)}
+                placeholder="ipfs://weekly-root.json"
+                value={rewardJsonUri}
+              />
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <ActionButton
+                disabled={
+                  previewRewardPublicationMutation.isPending || !rewardEpochNo
+                }
+                onClick={async () => {
+                  const result = await previewRewardPublicationMutation.mutateAsync({
+                    epochNo: Number(rewardEpochNo),
+                    rewardJsonUri: rewardJsonUri || undefined,
+                  });
+                  setSnapshot(formatJson(result));
+                }}
+              >
+                {previewRewardPublicationMutation.isPending
+                  ? "Previewing..."
+                  : "Preview reward publish"}
+              </ActionButton>
+              <ActionButton
+                disabled={
+                  executeRewardPublicationMutation.isPending || !rewardEpochNo
+                }
+                onClick={async () => {
+                  const result = await executeRewardPublicationMutation.mutateAsync({
+                    epochNo: Number(rewardEpochNo),
+                    rewardJsonUri: rewardJsonUri || undefined,
+                  });
+                  setSnapshot(formatJson(result));
+                }}
+                tone="danger"
+              >
+                {executeRewardPublicationMutation.isPending
+                  ? "Activating..."
+                  : "Activate reward publish"}
               </ActionButton>
             </div>
           </div>

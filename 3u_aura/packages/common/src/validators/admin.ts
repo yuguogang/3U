@@ -100,6 +100,15 @@ export const AdminEpochSyncRequestSchema = z.object({
 
 export type AdminEpochSyncRequest = z.infer<typeof AdminEpochSyncRequestSchema>;
 
+export const AdminRewardPublicationRequestSchema = z.object({
+  epochNo: z.preprocess((value) => Number(value), z.number().int().positive()),
+  rewardJsonUri: z.string().trim().min(1).optional(),
+});
+
+export type AdminRewardPublicationRequest = z.infer<
+  typeof AdminRewardPublicationRequestSchema
+>;
+
 export const AdminApproveReferralNftRequestSchema = z.object({
   decisionReason: z.string().trim().max(500).optional(),
   userId: z.string().trim().min(1),

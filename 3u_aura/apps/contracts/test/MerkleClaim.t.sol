@@ -15,6 +15,7 @@ contract MerkleClaimTest is Test {
 
     address private owner = makeAddr("owner");
     address private publisher = makeAddr("publisher");
+    address private rewardFunder = makeAddr("rewardFunder");
     address private outsider = makeAddr("outsider");
 
     string private fixtureJson;
@@ -23,7 +24,7 @@ contract MerkleClaimTest is Test {
         string memory root = vm.projectRoot();
 
         usdt = new MockUSDT();
-        merkleClaim = new MerkleClaim(owner, address(usdt));
+        merkleClaim = new MerkleClaim(owner, address(usdt), rewardFunder);
 
         vm.prank(owner);
         merkleClaim.setRootPublisher(publisher);
@@ -90,6 +91,33 @@ contract MerkleClaimTest is Test {
         merkleClaim.setRootPublisher(outsider);
     }
 
+    function testOnlyOwnerCanUpdateRewardFunder() public {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, outsider));
+        vm.prank(outsider);
+        merkleClaim.setRewardFunder(outsider);
+    }
+
+    function testPublisherCanDepositFromRewardFunder() public {
+        uint256 amount = 12_500_000;
+
+        usdt.mint(rewardFunder, amount);
+        vm.startPrank(rewardFunder);
+        usdt.approve(address(merkleClaim), amount);
+        vm.stopPrank();
+
+        vm.prank(publisher);
+        merkleClaim.depositRewardsFromFunder(amount);
+
+        assertEq(usdt.balanceOf(address(merkleClaim)), amount);
+        assertEq(usdt.balanceOf(rewardFunder), 0);
+    }
+
+    function testUnauthorizedAccountCannotDepositFromRewardFunder() public {
+        vm.expectRevert(abi.encodeWithSelector(MerkleClaim.UnauthorizedPublisher.selector, outsider));
+        vm.prank(outsider);
+        merkleClaim.depositRewardsFromFunder(1);
+    }
+
     function testRootIsImmutableOncePublished() public {
         uint256 epochId = fixtureJson.readUint(".epochId");
         bytes32 merkleRoot = fixtureJson.readBytes32(".merkleRoot");
@@ -103,11 +131,13 @@ contract MerkleClaimTest is Test {
     }
 
     function _fundAndPublish(uint256 epochId, bytes32 merkleRoot, uint256 amount) private {
-        usdt.mint(owner, amount);
-        vm.startPrank(owner);
+        usdt.mint(rewardFunder, amount);
+        vm.startPrank(rewardFunder);
         usdt.approve(address(merkleClaim), amount);
-        merkleClaim.depositRewards(amount);
         vm.stopPrank();
+
+        vm.prank(owner);
+        merkleClaim.depositRewardsFromFunder(amount);
 
         vm.prank(publisher);
         merkleClaim.publishRoot(epochId, merkleRoot);

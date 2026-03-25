@@ -13,6 +13,7 @@ contract DeploySettlementClaim is Script {
         address broadcaster = vm.addr(deployerPrivateKey);
         address finalOwner = vm.envOr("OWNER", broadcaster);
         address founderNFTAddress = vm.envAddress("FOUNDER_NFT_ADDRESS");
+        address rewardFunder = vm.envOr("REWARD_FUNDER", broadcaster);
         address usdtAddress = vm.envAddress("USDT_ADDRESS");
         address settlementPublisher = vm.envOr("SETTLEMENT_PUBLISHER", broadcaster);
         address rootPublisher = vm.envOr("ROOT_PUBLISHER", broadcaster);
@@ -21,7 +22,7 @@ contract DeploySettlementClaim is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         settlement = new Settlement(broadcaster, founderNFTAddress, usdtAddress, maxSubsidyEpochs);
-        merkleClaim = new MerkleClaim(broadcaster, usdtAddress);
+        merkleClaim = new MerkleClaim(broadcaster, usdtAddress, rewardFunder);
 
         settlement.setEpochPublisher(settlementPublisher);
         merkleClaim.setRootPublisher(rootPublisher);

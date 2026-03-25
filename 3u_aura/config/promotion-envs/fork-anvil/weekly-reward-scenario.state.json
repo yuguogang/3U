@@ -1,32 +1,33 @@
 {
   "adminWalletAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
   "autoParticipantWallets": [
-    "0x0000000000000000000000000000000000000130",
-    "0x0000000000000000000000000000000000000132",
-    "0x0000000000000000000000000000000000000136",
-    "0x000000000000000000000000000000000000013c",
-    "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-    "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-    "0x0000000000000000000000000000000000000139",
-    "0x000000000000000000000000000000000000012e",
     "0x000000000000000000000000000000000000013e",
-    "0x0000000000000000000000000000000000000133",
-    "0x000000000000000000000000000000000000013a"
+    "0x0000000000000000000000000000000000000134",
+    "0x0000000000000000000000000000000000000136",
+    "0x000000000000000000000000000000000000012e",
+    "0x0000000000000000000000000000000000000137",
+    "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "0x000000000000000000000000000000000000013d",
+    "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+    "0x0000000000000000000000000000000000000138",
+    "0x000000000000000000000000000000000000013b",
+    "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
   ],
   "currentLottery": {
-    "canParticipate": true,
+    "canParticipate": false,
     "currentStreakDays": 7,
     "daysUntilTicket": 0,
     "endAt": "2026-03-31T16:00:00.000Z",
-    "epochId": "cmn5c573j0003t5bphu9tfx59",
+    "epochId": "cmn5qn8l900033ibp2ocav92l",
     "epochNo": 3,
     "epochStatus": "OPEN",
     "isCurrentlyQualified": true,
-    "isParticipating": false,
+    "isParticipating": true,
+    "participatedAt": "2026-03-25T07:45:11.481Z",
     "startAt": "2026-03-24T16:00:00.000Z"
   },
   "envName": "fork-anvil",
-  "preparedAt": "2026-03-25T00:58:53.594Z",
+  "preparedAt": "2026-03-25T07:45:14.463Z",
   "seeded": {
     "dateKeys": [
       "2026-03-25",
@@ -67,7 +68,7 @@
     ],
     "participants": [
       {
-        "userId": "cmn5c56u20000t5bpojyrp7qi",
+        "userId": "cmn5qn7pn00003ibp23bvku5r",
         "walletAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
       },
       {
@@ -169,26 +170,26 @@
       "server": {
         "logPath": "/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/fork-anvil/logs/server.log",
         "managed": true,
-        "pid": 60665,
+        "pid": 27342,
         "port": 3210,
         "readyUrl": "http://127.0.0.1:3210/api/v1/health",
         "reused": false,
-        "startedAt": "2026-03-25T00:58:51.528Z"
+        "startedAt": "2026-03-25T07:44:42.182Z"
       }
     },
-    "updatedAt": "2026-03-25T00:58:51.528Z"
+    "updatedAt": "2026-03-25T07:44:42.186Z"
   },
-  "targetUserId": "cmn5c56u20000t5bpojyrp7qi",
+  "targetUserId": "cmn5qn7pn00003ibp23bvku5r",
   "targetWalletAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
   "targetWalletName": "userA",
-  "targetWinningRank": 4,
+  "targetWinningRank": 1,
   "targetWinnerCount": 6,
-  "settledAt": "2026-03-25T01:13:44.284Z",
+  "settledAt": "2026-03-25T07:53:21.090Z",
   "settleSummary": {
     "draft": {
       "dateKeyFromInclusive": "2026-03-25",
       "dateKeyToExclusive": "2026-04-01",
-      "epochId": "cmn5c573j0003t5bphu9tfx59",
+      "epochId": "cmn5qn8l900033ibp2ocav92l",
       "lottery": {
         "consolationCount": 12,
         "draftRewardCount": 23,
@@ -197,7 +198,7 @@
       "merkle": {
         "claimCount": 21,
         "leafCount": 21,
-        "merkleRoot": "0x88c7e07e658031cfae6de1bbcae60f916eb56d998715ec5da9454c92eb20db4e"
+        "merkleRoot": "0x80f631b7b7b15e5c85f43f786614e1e221acdeb6fdffc1c87c7406b14d4619a2"
       },
       "mode": "draft",
       "ranking": {
@@ -206,7 +207,7 @@
       }
     },
     "epochRecord": {
-      "id": "cmn5c573j0003t5bphu9tfx59",
+      "id": "cmn5qn8l900033ibp2ocav92l",
       "epochNo": 3,
       "status": "CALCULATING",
       "startAt": "2026-03-24T08:00:00.000Z",
@@ -218,7 +219,7 @@
       "result": {
         "currentEpoch": {
           "endAt": "2026-04-07T16:00:00.000Z",
-          "epochId": "cmn5coahj000ht5bpqzem744q",
+          "epochId": "cmn5qy16t000e3ibp2x8pixaa",
           "epochNo": 4,
           "epochType": "WEEKLY_PROMOTION",
           "startAt": "2026-03-31T16:00:00.000Z",
@@ -226,39 +227,39 @@
         },
         "processedEpochs": [
           {
-            "epochId": "cmn5coagl000et5bpv9e329u2",
+            "epochId": "cmn5qy12v000b3ibp9x5w732k",
             "rollover": {
-              "epochId": "cmn5coagl000et5bpv9e329u2",
-              "nextEpochId": "cmn5coagq000ft5bp9wip0idl",
+              "epochId": "cmn5qy12v000b3ibp9x5w732k",
+              "nextEpochId": "cmn5qy13y000c3ibpy6e8i4lh",
               "rolledOver": true,
               "totalPromotionPoolUsdt": "0"
             },
             "ticketRefresh": {
               "eligibleUserIds": [],
-              "epochId": "cmn5coagl000et5bpv9e329u2",
+              "epochId": "cmn5qy12v000b3ibp9x5w732k",
               "participantCount": 0,
               "qualifiedTicketCount": 0
             }
           },
           {
-            "epochId": "cmn5coagq000ft5bp9wip0idl",
+            "epochId": "cmn5qy13y000c3ibpy6e8i4lh",
             "rollover": {
-              "epochId": "cmn5coagq000ft5bp9wip0idl",
-              "nextEpochId": "cmn5c573j0003t5bphu9tfx59",
+              "epochId": "cmn5qy13y000c3ibpy6e8i4lh",
+              "nextEpochId": "cmn5qn8l900033ibp2ocav92l",
               "rolledOver": true,
               "totalPromotionPoolUsdt": "0"
             },
             "ticketRefresh": {
               "eligibleUserIds": [],
-              "epochId": "cmn5coagq000ft5bp9wip0idl",
+              "epochId": "cmn5qy13y000c3ibpy6e8i4lh",
               "participantCount": 0,
               "qualifiedTicketCount": 0
             }
           },
           {
-            "epochId": "cmn5c573j0003t5bphu9tfx59",
+            "epochId": "cmn5qn8l900033ibp2ocav92l",
             "rollover": {
-              "epochId": "cmn5c573j0003t5bphu9tfx59",
+              "epochId": "cmn5qn8l900033ibp2ocav92l",
               "rolledOver": false,
               "totalPromotionPoolUsdt": "250000000"
             },
@@ -267,6 +268,7 @@
                 "wf03_epoch_3_user_14",
                 "wf03_epoch_3_user_02",
                 "wf03_epoch_3_user_23",
+                "cmn5qn7pn00003ibp23bvku5r",
                 "wf03_epoch_3_user_17",
                 "wf03_epoch_3_user_16",
                 "wf03_epoch_3_user_18",
@@ -274,7 +276,6 @@
                 "wf03_epoch_3_user_06",
                 "wf03_epoch_3_user_08",
                 "wf03_epoch_3_user_11",
-                "cmn5c56u20000t5bpojyrp7qi",
                 "wf03_epoch_3_user_13",
                 "wf03_epoch_3_user_10",
                 "wf03_epoch_3_user_03",
@@ -288,7 +289,7 @@
                 "wf03_epoch_3_user_12",
                 "wf03_epoch_3_user_05"
               ],
-              "epochId": "cmn5c573j0003t5bphu9tfx59",
+              "epochId": "cmn5qn8l900033ibp2ocav92l",
               "participantCount": 12,
               "qualifiedTicketCount": 23
             }
@@ -296,19 +297,26 @@
         ]
       }
     },
+    "activated": {
+      "epochId": "cmn5qn8l900033ibp2ocav92l",
+      "epochNo": 3,
+      "merkleRoot": "0x80f631b7b7b15e5c85f43f786614e1e221acdeb6fdffc1c87c7406b14d4619a2",
+      "mode": "activate",
+      "rewardJsonUri": "ipfs://phase94-wave4/mock.json"
+    },
     "published": {
       "claimCount": 21,
-      "epochId": "cmn5c573j0003t5bphu9tfx59",
+      "epochId": "cmn5qn8l900033ibp2ocav92l",
       "epochNo": 3,
-      "merkleRoot": "0x88c7e07e658031cfae6de1bbcae60f916eb56d998715ec5da9454c92eb20db4e",
-      "mode": "publish",
+      "merkleRoot": "0x80f631b7b7b15e5c85f43f786614e1e221acdeb6fdffc1c87c7406b14d4619a2",
+      "mode": "prepare-publish",
       "rewardJsonUri": "ipfs://phase94-wave4/mock.json",
       "totalAmount": "250000000"
     },
     "referenceAt": "2026-03-31T16:10:00.000Z",
     "subsidy": {
       "published": false,
-      "skippedReason": "nft subsidy skipped: The contract function \"balanceOf\" returned no data (\"0x\").\n\nThis could be due to any of the following:\n  - The contract does not have the function \"balanceOf\",\n  - The parameters passed to the contract function may be invalid, or\n  - The address is not a contract.\n \nContract Call:\n  address:   0x8A791620dd6260079BF849Dc5567aDC3F2FdC318\n  function:  balanceOf(address account)\n  args:               (0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC)\n\nDocs: https://viem.sh/docs/contract/readContract\nVersion: viem@2.45.1"
+      "skippedReason": "nft subsidy skipped: Command failed: /Users/ygg/vs/ai/3U/3u_aura/scripts/uat/sync-weekly-fork-purchased-nft-state.mjs --env fork-anvil --wallet 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC\nfile:///Users/ygg/vs/ai/3U/3u_aura/scripts/uat/sync-weekly-fork-purchased-nft-state.mjs:6\nimport { loadManifest, loadWalletFixture, REPO_ROOT } from '../promotion-env/lib.mjs';\n                       ^^^^^^^^^^^^^^^^^\nSyntaxError: The requested module '../promotion-env/lib.mjs' does not provide an export named 'loadWalletFixture'\n    at #asyncInstantiate (node:internal/modules/esm/module_job:302:21)\n    at async ModuleJob.run (node:internal/modules/esm/module_job:405:5)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)\n\nNode.js v24.13.0"
     }
   }
 }

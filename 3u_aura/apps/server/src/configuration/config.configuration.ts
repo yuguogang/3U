@@ -111,6 +111,8 @@ export const configuration = () => {
       startAt: process.env.PROMOTION_START_AT || '2026-03-11T00:00:00+08:00',
       checkinReceiverAddress:
         process.env.PROMOTION_CHECKIN_RECEIVER_ADDRESS || undefined,
+      rewardFunderAddress:
+        process.env.PROMOTION_REWARD_FUNDER_ADDRESS || undefined,
       merkleDistributorAddress:
         process.env.PROMOTION_MERKLE_DISTRIBUTOR_ADDRESS || undefined,
       nftSaleAddress: process.env.PROMOTION_NFT_SALE_ADDRESS || undefined,

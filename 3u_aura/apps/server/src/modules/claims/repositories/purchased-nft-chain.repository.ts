@@ -267,6 +267,12 @@ export class PurchasedNftChainRepository {
     });
   }
 
+  async getCurrentChainTimestamp(): Promise<Date> {
+    const publicClient = this.promotionChainClientService.getPublicClient();
+    const block = await publicClient.getBlock({ blockTag: 'latest' });
+    return new Date(Number(block.timestamp) * 1000);
+  }
+
   private async resolveBlockTimestamps(
     blockNumbers: bigint[],
   ): Promise<Map<bigint, Date>> {

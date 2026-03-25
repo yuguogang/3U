@@ -26,6 +26,9 @@ import type {
   AdminPendingPlacementItemView,
   AdminPendingPlacementListQuery,
   AdminRejectReferralNftRequest,
+  AdminRewardPublicationExecuteView,
+  AdminRewardPublicationPreviewView,
+  AdminRewardPublicationRequest,
   AdminUserListItemView,
   AdminUserListQuery,
   PaginateData,
@@ -216,6 +219,28 @@ export async function apiExecuteEpochSync(body: AdminEpochSyncRequest) {
       method: "POST",
     },
   );
+}
+
+export async function apiPreviewRewardPublication(
+  body: AdminRewardPublicationRequest,
+) {
+  return fetchClient<
+    AdminOperationResultEnvelope<AdminRewardPublicationPreviewView>
+  >("/api/v1/admin/ops/rewards/publish/preview", {
+    body,
+    method: "POST",
+  });
+}
+
+export async function apiExecuteRewardPublication(
+  body: AdminRewardPublicationRequest,
+) {
+  return fetchClient<
+    AdminOperationResultEnvelope<AdminRewardPublicationExecuteView>
+  >("/api/v1/admin/ops/rewards/publish", {
+    body,
+    method: "POST",
+  });
 }
 
 export async function apiApproveReferralNft(

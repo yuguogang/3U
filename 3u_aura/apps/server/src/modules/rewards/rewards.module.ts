@@ -10,6 +10,7 @@ import { StatsModule } from '../stats';
 import { RewardsController } from './controllers/rewards.controller';
 import { RewardAllocationEngine } from './engines/reward-allocation.engine';
 import { WeeklyRewardRepository } from './repositories/weekly-reward.repository';
+import { RewardPublicationService } from './services/reward-publication.service';
 import { RewardsReadService } from './services/rewards-read.service';
 import { RewardsService } from './services/rewards.service';
 
@@ -28,12 +29,14 @@ import { RewardsService } from './services/rewards.service';
   providers: [
     RewardsService,
     RewardsReadService,
+    RewardPublicationService,
     RewardAllocationEngine,
     WeeklyRewardRepository,
   ],
   exports: [
     RewardsService,
     RewardsReadService,
+    RewardPublicationService,
     RewardAllocationEngine,
     WeeklyRewardRepository,
   ],

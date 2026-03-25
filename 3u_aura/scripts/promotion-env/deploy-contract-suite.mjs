@@ -139,6 +139,10 @@ function buildCommonContractsEnv(baseEnv, manifest) {
     BSC_TESTNET_RPC_URL: manifest.chain.rpcUrl,
     OWNER: manifest.roles.owner || '',
     FINANCE_WALLET: manifest.roles.financeWallet || '',
+    REWARD_FUNDER:
+      manifest.roles.rewardFunderAddress ||
+      manifest.roles.checkinReceiverAddress ||
+      '',
     REFERRAL_SIGNER_ADDRESS: manifest.roles.referralSignerAddress || '',
     NFT_NAME: manifest.contracts.nftName || '3U AURA Founder NFT',
     NFT_SYMBOL: manifest.contracts.nftSymbol || '3UAURA',

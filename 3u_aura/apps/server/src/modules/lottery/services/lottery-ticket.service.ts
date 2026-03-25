@@ -15,12 +15,11 @@ import {
   PromotionCurrentLotteryParticipationView,
   PromotionLotteryOutcomeView,
 } from '3u-aura-common';
-import { AuditSeamService, TransactionOrchestratorService } from '../../shared';
-import { StatsRepository } from '../../stats';
-import {
-  WeeklyEpochPolicyEngine,
-  WeeklyEpochRepository,
-} from '../../epoch';
+import { AuditSeamService } from '../../shared/services/audit-seam.service';
+import { TransactionOrchestratorService } from '../../shared/services/transaction-orchestrator.service';
+import { StatsRepository } from '../../stats/repositories/stats.repository';
+import { WeeklyEpochPolicyEngine } from '../../epoch/engines/weekly-epoch-policy.engine';
+import { WeeklyEpochRepository } from '../../epoch/repositories/weekly-epoch.repository';
 import { WeeklyRewardRepository } from '../../rewards/repositories/weekly-reward.repository';
 import { LotteryQualificationEngine } from '../engines/lottery-qualification.engine';
 import { LotteryTicketRepository } from '../repositories/lottery-ticket.repository';

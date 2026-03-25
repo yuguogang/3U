@@ -3,13 +3,13 @@ import { Injectable } from '@nestjs/common';
 import { EpochType as CommonEpochType } from '3u-aura-common';
 import { WeeklyEpochPolicyEngine } from '../../epoch/engines/weekly-epoch-policy.engine';
 import { WeeklyEpochRepository } from '../../epoch/repositories/weekly-epoch.repository';
-import { LedgerRepository } from '../../ledger';
+import { LedgerRepository } from '../../ledger/repositories/ledger.repository';
 import { LotterySettlementService } from '../../lottery/services/lottery-settlement.service';
 import { MerkleDraftService } from '../../merkle/services/merkle-draft.service';
-import { ReferralRepository } from '../../referral';
+import { ReferralRepository } from '../../referral/repositories/referral.repository';
 import { RankingSettlementService } from '../../ranking/services/ranking-settlement.service';
 import { TransactionOrchestratorService } from '../../shared/services/transaction-orchestrator.service';
-import { StatsRepository } from '../../stats';
+import { StatsRepository } from '../../stats/repositories/stats.repository';
 import { RewardAllocationEngine } from '../engines/reward-allocation.engine';
 import { WeeklyRewardRepository } from '../repositories/weekly-reward.repository';
 

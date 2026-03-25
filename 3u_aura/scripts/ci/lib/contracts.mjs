@@ -9,7 +9,11 @@ import {
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { bscTestnet } from 'viem/chains';
-import { loadManifest, loadWalletFixture } from './manifest.mjs';
+import {
+  loadManifest,
+  loadWalletFixture,
+  loadWalletFixtureByAddress,
+} from './manifest.mjs';
 
 const mockUsdtMintAbi = [
   ...erc20Abi,
@@ -153,6 +157,13 @@ const merkleAbi = [
     type: 'function',
   },
   {
+    inputs: [{ name: 'amount', type: 'uint256' }],
+    name: 'depositRewardsFromFunder',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
     inputs: [
       { name: 'epochId', type: 'uint256' },
       { name: 'merkleRoot', type: 'bytes32' },
@@ -179,6 +190,20 @@ const merkleAbi = [
     inputs: [{ name: 'epochId', type: 'uint256' }, { name: 'index', type: 'uint256' }],
     name: 'isClaimed',
     outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'rewardFunder',
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'epochId', type: 'uint256' }],
+    name: 'epochRootById',
+    outputs: [{ name: '', type: 'bytes32' }],
     stateMutability: 'view',
     type: 'function',
   },
@@ -399,13 +424,25 @@ export async function getPublishedSubsidyEpoch(epochId, envName = 'fork-anvil') 
 export async function depositMerkleRewards(owner, amount, envName = 'fork-anvil') {
   const manifest = loadManifest(envName);
   const publicClient = createPublicClientForFork(envName);
+  const rewardFunderAddress =
+    manifest.roles.rewardFunderAddress ||
+    manifest.roles.checkinReceiverAddress ||
+    manifest.roles.owner;
+  const rewardFunder = loadWalletFixtureByAddress(rewardFunderAddress, envName);
   const walletClient = createWalletClientForFixture(owner, envName);
+
+  await approveUsdt(
+    rewardFunder,
+    manifest.contracts.merkleDistributorAddress,
+    BigInt(amount),
+    envName,
+  );
 
   const hash = await walletClient.writeContract({
     abi: merkleAbi,
     address: manifest.contracts.merkleDistributorAddress,
     args: [BigInt(amount)],
-    functionName: 'depositRewards',
+    functionName: 'depositRewardsFromFunder',
   });
 
   await publicClient.waitForTransactionReceipt({ hash });
@@ -469,6 +506,53 @@ export async function isMerkleClaimed(epochId, index, envName = 'fork-anvil') {
     address: manifest.contracts.merkleDistributorAddress,
     args: [BigInt(epochId), BigInt(index)],
     functionName: 'isClaimed',
+  });
+}
+
+export async function getMerkleRewardFunder(envName = 'fork-anvil') {
+  const manifest = loadManifest(envName);
+  const publicClient = createPublicClientForFork(envName);
+
+  return publicClient.readContract({
+    abi: merkleAbi,
+    address: manifest.contracts.merkleDistributorAddress,
+    functionName: 'rewardFunder',
+  });
+}
+
+export async function getMerkleEpochRoot(epochId, envName = 'fork-anvil') {
+  const manifest = loadManifest(envName);
+  const publicClient = createPublicClientForFork(envName);
+
+  return publicClient.readContract({
+    abi: merkleAbi,
+    address: manifest.contracts.merkleDistributorAddress,
+    args: [BigInt(epochId)],
+    functionName: 'epochRootById',
+  });
+}
+
+export async function getTokenAllowance(ownerAddress, spenderAddress, envName = 'fork-anvil') {
+  const manifest = loadManifest(envName);
+  const publicClient = createPublicClientForFork(envName);
+
+  return publicClient.readContract({
+    abi: erc20Abi,
+    address: manifest.contracts.paymentTokenAddress,
+    args: [ownerAddress, spenderAddress],
+    functionName: 'allowance',
+  });
+}
+
+export async function getTokenBalance(address, envName = 'fork-anvil') {
+  const manifest = loadManifest(envName);
+  const publicClient = createPublicClientForFork(envName);
+
+  return publicClient.readContract({
+    abi: erc20Abi,
+    address: manifest.contracts.paymentTokenAddress,
+    args: [address],
+    functionName: 'balanceOf',
   });
 }
 

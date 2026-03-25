@@ -33,6 +33,10 @@ describe('AdminOpsService', () => {
       approveReferralMintEligibility: jest.fn(),
       rejectReferralMintEligibility: jest.fn(),
     };
+    const rewardPublicationService = {
+      activateEpochRewardPublication: jest.fn(),
+      previewEpochRewardPublication: jest.fn(),
+    };
     const weeklyEpochApplicationService = {
       prepareRolloverForEpoch: jest.fn(),
       syncEpochLifecycle: jest.fn(),
@@ -48,6 +52,7 @@ describe('AdminOpsService', () => {
       claimSyncService as never,
       lotteryTicketService as never,
       nftEligibilityApplicationService as never,
+      rewardPublicationService as never,
       weeklyEpochApplicationService as never,
       weeklyEpochPolicyEngine as never,
     );
@@ -59,6 +64,7 @@ describe('AdminOpsService', () => {
       claimSyncService,
       lotteryTicketService,
       nftEligibilityApplicationService,
+      rewardPublicationService,
       service,
       weeklyEpochApplicationService,
       weeklyEpochPolicyEngine,
@@ -209,6 +215,89 @@ describe('AdminOpsService', () => {
           '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
       }),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('previews reward publication through the reward publication service', async () => {
+    const { rewardPublicationService, service } = createService();
+    rewardPublicationService.previewEpochRewardPublication.mockResolvedValue({
+      allowanceSatisfied: true,
+      balanceSatisfied: true,
+      blockers: [],
+      canActivate: true,
+      claimCount: 2,
+      dbActivated: false,
+      distributorBalanceAtomic: '32750000',
+      draftMerkleRoot:
+        '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      epochId: 'epoch_3',
+      epochNo: 3,
+      epochStatus: EpochStatus.CALCULATING,
+      expectedRewardFunderAddress:
+        '0x1111111111111111111111111111111111111111',
+      fundingSatisfied: true,
+      fundingSourceKind: 'CHECKIN_RECEIVER',
+      onChainMerkleRoot:
+        '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      rewardFunderAddress: '0x1111111111111111111111111111111111111111',
+      rewardFunderAllowanceAtomic: '32750000',
+      rewardFunderBalanceAtomic: '50000000',
+      rootPublished: true,
+      totalRewardAmountAtomic: '32750000',
+      totalRewardAmountUsdt: '32.75',
+    });
+
+    const result = await service.previewRewardPublication({ epochNo: 3 });
+
+    expect(result.action).toBe('admin.ops.rewards.publish.preview');
+    expect(result.dryRun).toBe(true);
+    expect(result.result.epochNo).toBe(3);
+  });
+
+  it('records audit when activating reward publication', async () => {
+    const { auditTrailService, rewardPublicationService, service } =
+      createService();
+    rewardPublicationService.activateEpochRewardPublication.mockResolvedValue({
+      activated: true,
+      allowanceSatisfied: true,
+      balanceSatisfied: true,
+      blockers: [],
+      canActivate: true,
+      claimCount: 2,
+      dbActivated: false,
+      distributorBalanceAtomic: '32750000',
+      draftMerkleRoot:
+        '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      epochId: 'epoch_3',
+      epochNo: 3,
+      epochStatus: EpochStatus.CALCULATING,
+      expectedRewardFunderAddress:
+        '0x1111111111111111111111111111111111111111',
+      fundingSatisfied: true,
+      fundingSourceKind: 'CHECKIN_RECEIVER',
+      onChainMerkleRoot:
+        '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      rewardFunderAddress: '0x1111111111111111111111111111111111111111',
+      rewardFunderAllowanceAtomic: '32750000',
+      rewardFunderBalanceAtomic: '50000000',
+      rewardJsonUri: 'ipfs://weekly-root.json',
+      rootPublished: true,
+      totalRewardAmountAtomic: '32750000',
+      totalRewardAmountUsdt: '32.75',
+    });
+
+    const result = await service.executeRewardPublication(operator, {
+      epochNo: 3,
+      rewardJsonUri: 'ipfs://weekly-root.json',
+    });
+
+    expect(result.action).toBe('admin.ops.rewards.publish.execute');
+    expect(auditTrailService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'admin.ops.rewards.publish.execute',
+        operatorWallet: operator.walletAddress,
+        targetId: 'epoch_3',
+      }),
+    );
   });
 
   it('throws not found for previewCheckinRepair when the target user does not exist', async () => {

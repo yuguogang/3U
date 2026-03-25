@@ -4,7 +4,7 @@ import { ClaimStatus, ClaimType, EpochStatus } from '3u-aura-common';
 describe('ClaimsReadService', () => {
   const createService = () => {
     const claimRecordRepository = {
-      listMerkleClaimsForUser: jest.fn(),
+      listMerkleClaimsForUser: jest.fn().mockResolvedValue([]),
     };
     const lotteryTicketRepository = {
       listUnrevealedParticipatingEpochIdsForUser: jest
@@ -14,15 +14,23 @@ describe('ClaimsReadService', () => {
     const nftSubsidyClaimRepository = {
       listClaimsForUser: jest.fn().mockResolvedValue([]),
     };
+    const purchasedNftChainRepository = {
+      getCurrentChainTimestamp: jest
+        .fn()
+        .mockResolvedValue(new Date('2026-03-31T16:37:13.000Z')),
+      listPublishedSubsidyEpochs: jest.fn().mockResolvedValue([]),
+    };
 
     return {
       claimRecordRepository,
       lotteryTicketRepository,
       nftSubsidyClaimRepository,
+      purchasedNftChainRepository,
       service: new ClaimsReadService(
         claimRecordRepository as never,
         lotteryTicketRepository as never,
         nftSubsidyClaimRepository as never,
+        purchasedNftChainRepository as never,
       ),
     };
   };
@@ -96,5 +104,85 @@ describe('ClaimsReadService', () => {
         status: ClaimStatus.CLAIMED,
       }),
     ]);
+  });
+
+  it('maps expired nft subsidy claims to voided', async () => {
+    const {
+      nftSubsidyClaimRepository,
+      purchasedNftChainRepository,
+      service,
+    } = createService();
+
+    nftSubsidyClaimRepository.listClaimsForUser.mockResolvedValue([
+      {
+        amountUsdt: { toFixed: () => '30000000' },
+        chainId: 97,
+        claimedAt: null,
+        contractAddress: '0x3333333333333333333333333333333333333333',
+        epoch: {
+          epochNo: 1,
+        },
+        epochId: 'epoch_1',
+        id: 'subsidy_1',
+        nftHolding: {
+          tokenId: 2n,
+        },
+        status: ClaimStatus.PENDING,
+        txHash: null,
+      },
+      {
+        amountUsdt: { toFixed: () => '30000000' },
+        chainId: 97,
+        claimedAt: null,
+        contractAddress: '0x3333333333333333333333333333333333333333',
+        epoch: {
+          epochNo: 2,
+        },
+        epochId: 'epoch_2',
+        id: 'subsidy_2',
+        nftHolding: {
+          tokenId: 2n,
+        },
+        status: ClaimStatus.PENDING,
+        txHash: null,
+      },
+    ]);
+    purchasedNftChainRepository.listPublishedSubsidyEpochs.mockResolvedValue([
+      {
+        chainId: 97,
+        claimDeadline: new Date('2026-03-26T07:48:51.000Z'),
+        contractAddress: '0x3333333333333333333333333333333333333333',
+        epochNo: 1,
+        maxEligibleTokenId: 2n,
+        publishedAt: new Date('2026-03-19T00:00:00.000Z'),
+        subsidyAmountUsdt: '30000000',
+      },
+      {
+        chainId: 97,
+        claimDeadline: new Date('2026-04-02T07:48:51.000Z'),
+        contractAddress: '0x3333333333333333333333333333333333333333',
+        epochNo: 2,
+        maxEligibleTokenId: 2n,
+        publishedAt: new Date('2026-03-26T00:00:00.000Z'),
+        subsidyAmountUsdt: '30000000',
+      },
+    ]);
+
+    const result = await service.listClaimsForUser({
+      id: 'user_1',
+      walletAddress: '0x1111111111111111111111111111111111111111',
+    });
+
+    expect(result.nftSubsidyClaims).toEqual([
+      expect.objectContaining({
+        epochNo: 1,
+        status: ClaimStatus.VOIDED,
+      }),
+      expect.objectContaining({
+        epochNo: 2,
+        status: ClaimStatus.PENDING,
+      }),
+    ]);
+
   });
 });

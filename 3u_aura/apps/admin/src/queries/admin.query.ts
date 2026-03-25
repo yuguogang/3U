@@ -18,6 +18,7 @@ import type {
   AdminNftEligibilityListQuery,
   AdminPendingPlacementListQuery,
   AdminRejectReferralNftRequest,
+  AdminRewardPublicationRequest,
   AdminUserListQuery,
 } from "3u-aura-common";
 import {
@@ -28,6 +29,7 @@ import {
   apiExecuteCheckinRepair,
   apiExecuteClaimSync,
   apiExecuteEpochSync,
+  apiExecuteRewardPublication,
   apiGetAdminOverview,
   apiGetAdminUsers,
   apiGetAuditLogs,
@@ -39,6 +41,7 @@ import {
   apiPreviewCheckinRepair,
   apiPreviewClaimSync,
   apiPreviewEpochSync,
+  apiPreviewRewardPublication,
   apiRejectReferralNft,
   apiUnpublishAdminNotification,
   apiUpdateAdminNotification,
@@ -202,6 +205,27 @@ export function useExecuteEpochSyncMutation() {
   return useMutation({
     mutationFn: (body: AdminEpochSyncRequest) => apiExecuteEpochSync(body),
     mutationKey: ["admin", "ops", "epochs", "execute"],
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin"] });
+    },
+  });
+}
+
+export function usePreviewRewardPublicationMutation() {
+  return useMutation({
+    mutationFn: (body: AdminRewardPublicationRequest) =>
+      apiPreviewRewardPublication(body),
+    mutationKey: ["admin", "ops", "rewards", "publish", "preview"],
+  });
+}
+
+export function useExecuteRewardPublicationMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: AdminRewardPublicationRequest) =>
+      apiExecuteRewardPublication(body),
+    mutationKey: ["admin", "ops", "rewards", "publish", "execute"],
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["admin"] });
     },

@@ -15,18 +15,20 @@ import {
   type AdminEpochSyncRequest,
   type AdminOperationResultEnvelope,
   type AdminRejectReferralNftRequest,
+  type AdminRewardPublicationExecuteView,
+  type AdminRewardPublicationPreviewView,
+  type AdminRewardPublicationRequest,
   EpochStatus,
   EpochType as CommonEpochType,
 } from '3u-aura-common';
-import { CheckinApplicationService } from '../../checkin';
-import { ClaimSyncService } from '../../claims';
-import { NftEligibilityApplicationService } from '../../nft-eligibility';
-import {
-  WeeklyEpochApplicationService,
-  WeeklyEpochPolicyEngine,
-} from '../../epoch';
-import { LotteryTicketService } from '../../lottery';
-import { AuditTrailService } from '../../audit';
+import { AuditTrailService } from '../../audit/services/audit-trail.service';
+import { CheckinApplicationService } from '../../checkin/services/checkin-application.service';
+import { ClaimSyncService } from '../../claims/services/claim-sync.service';
+import { WeeklyEpochPolicyEngine } from '../../epoch/engines/weekly-epoch-policy.engine';
+import { WeeklyEpochApplicationService } from '../../epoch/services/weekly-epoch-application.service';
+import { LotteryTicketService } from '../../lottery/services/lottery-ticket.service';
+import { NftEligibilityApplicationService } from '../../nft-eligibility/services/nft-eligibility-application.service';
+import { RewardPublicationService } from '../../rewards/services/reward-publication.service';
 import { AdminConsoleRepository } from '../repositories/admin-console.repository';
 
 type AdminOperator = Pick<User, 'id' | 'walletAddress'>;
@@ -48,6 +50,7 @@ export class AdminOpsService {
     private readonly claimSyncService: ClaimSyncService,
     private readonly lotteryTicketService: LotteryTicketService,
     private readonly nftEligibilityApplicationService: NftEligibilityApplicationService,
+    private readonly rewardPublicationService: RewardPublicationService,
     private readonly weeklyEpochApplicationService: WeeklyEpochApplicationService,
     private readonly weeklyEpochPolicyEngine: WeeklyEpochPolicyEngine,
   ) {}
@@ -254,6 +257,44 @@ export class AdminOpsService {
         })),
         referenceAt: projection.referenceAt.toISOString(),
       },
+    };
+  }
+
+  async previewRewardPublication(
+    command: AdminRewardPublicationRequest,
+  ): Promise<AdminOperationResultEnvelope<AdminRewardPublicationPreviewView>> {
+    const result = await this.rewardPublicationService.previewEpochRewardPublication(
+      command.epochNo,
+    );
+
+    return {
+      action: 'admin.ops.rewards.publish.preview',
+      dryRun: true,
+      result,
+    };
+  }
+
+  async executeRewardPublication(
+    operator: AdminOperator,
+    command: AdminRewardPublicationRequest,
+  ): Promise<AdminOperationResultEnvelope<AdminRewardPublicationExecuteView>> {
+    const result = await this.rewardPublicationService.activateEpochRewardPublication(
+      command.epochNo,
+      command.rewardJsonUri,
+    );
+
+    await this.auditTrailService.record({
+      action: 'admin.ops.rewards.publish.execute',
+      operatorWallet: operator.walletAddress,
+      payload: command,
+      targetId: result.epochId,
+      targetType: 'WeeklyEpoch',
+    });
+
+    return {
+      action: 'admin.ops.rewards.publish.execute',
+      dryRun: false,
+      result,
     };
   }
 

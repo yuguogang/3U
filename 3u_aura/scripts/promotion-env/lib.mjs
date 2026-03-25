@@ -169,6 +169,11 @@ function resolvePortFromUrl(url, fallbackPort) {
 }
 
 function buildCommonPromotionEnv(manifest) {
+  const rewardFunderAddress =
+    manifest.roles.rewardFunderAddress ||
+    manifest.roles.checkinReceiverAddress ||
+    '';
+
   return {
     PROMOTION_CLAIM_CHAIN_ID: String(manifest.chain.id),
     PROMOTION_START_AT: manifest.promotion.startAt,
@@ -183,6 +188,7 @@ function buildCommonPromotionEnv(manifest) {
     PROMOTION_REFERRAL_RPC_URL:
       manifest.chain.referralRpcUrl || manifest.chain.rpcUrl,
     PROMOTION_CHECKIN_RECEIVER_ADDRESS: manifest.roles.checkinReceiverAddress || '',
+    PROMOTION_REWARD_FUNDER_ADDRESS: rewardFunderAddress,
     PROMOTION_PAYMENT_TOKEN_ADDRESS: manifest.contracts.paymentTokenAddress || '',
     PROMOTION_NFT_SALE_ADDRESS: manifest.contracts.nftSaleAddress || '',
     PROMOTION_MERKLE_DISTRIBUTOR_ADDRESS:
@@ -302,6 +308,10 @@ export function buildDerivedEnv({ manifest, target, baseEnv }) {
         OWNER: manifest.roles.owner || '',
         USDT_ADDRESS: manifest.contracts.paymentTokenAddress || '',
         FINANCE_WALLET: manifest.roles.financeWallet || '',
+        REWARD_FUNDER:
+          manifest.roles.rewardFunderAddress ||
+          manifest.roles.checkinReceiverAddress ||
+          '',
         REFERRAL_SIGNER_ADDRESS: manifest.roles.referralSignerAddress || '',
         FOUNDER_NFT_ADDRESS: manifest.contracts.founderNftAddress || '',
         SETTLEMENT_PUBLISHER: manifest.roles.settlementPublisher || '',
@@ -342,6 +352,7 @@ const REQUIRED_KEYS = {
     'OWNER',
     'USDT_ADDRESS',
     'FINANCE_WALLET',
+    'REWARD_FUNDER',
     'REFERRAL_SIGNER_ADDRESS',
   ],
   dapp: [
@@ -368,6 +379,7 @@ const REQUIRED_KEYS = {
     'PROMOTION_CLAIM_CHAIN_ID',
     'PROMOTION_RPC_URL',
     'PROMOTION_CHECKIN_RECEIVER_ADDRESS',
+    'PROMOTION_REWARD_FUNDER_ADDRESS',
     'PROMOTION_PAYMENT_TOKEN_ADDRESS',
     'PROMOTION_NFT_SALE_ADDRESS',
     'PROMOTION_MERKLE_DISTRIBUTOR_ADDRESS',

@@ -10,6 +10,7 @@ import { createPublicClient, getAddress, http, type PublicClient } from 'viem';
 export type PromotionChainRuntimeConfig = {
   chainId: number;
   checkinReceiverAddress?: string;
+  rewardFunderAddress?: string;
   merkleDistributorAddress?: string;
   nftSaleAddress?: string;
   paymentTokenAddress?: string;
@@ -58,6 +59,9 @@ export class PromotionChainClientService {
       chainId: promotion?.claimChainId ?? 97,
       checkinReceiverAddress: this.normalizeOptionalAddress(
         promotion?.checkinReceiverAddress,
+      ),
+      rewardFunderAddress: this.normalizeOptionalAddress(
+        promotion?.rewardFunderAddress || promotion?.checkinReceiverAddress,
       ),
       merkleDistributorAddress: this.normalizeOptionalAddress(
         promotion?.merkleDistributorAddress,

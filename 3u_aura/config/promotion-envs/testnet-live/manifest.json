@@ -31,6 +31,7 @@
     "owner": "0x951f5f74f8a5b480DC42aA41c04522C8eCED6d64",
     "financeWallet": "0xDB45228dA324fb9A832c2a1C8Edf08D6820Ccc9C",
     "checkinReceiverAddress": "0xDB45228dA324fb9A832c2a1C8Edf08D6820Ccc9C",
+    "rewardFunderAddress": "0xDB45228dA324fb9A832c2a1C8Edf08D6820Ccc9C",
     "referralSignerAddress": "0xF9f72F7bB3639164E163081BDbe9e4d2c5FC4a7c",
     "settlementPublisher": "0x47eec8D283F825389114C4B0d3Ec617A6D6c792b",
     "rootPublisher": "0x951f5f74f8a5b480DC42aA41c04522C8eCED6d64",
