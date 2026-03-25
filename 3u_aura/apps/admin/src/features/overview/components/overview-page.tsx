@@ -193,6 +193,96 @@ export function OverviewPage() {
           </div>
         </Panel>
       </div>
+
+      <Panel>
+        <PanelTitle
+          description="用于核对上一期已发布结果是否和 claims / 公告口径一致。"
+          title="Latest Weekly Results"
+        />
+        {overview.latestWeeklyResults ? (
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <MetricCard
+                label="Result Epoch"
+                value={`#${overview.latestWeeklyResults.epochNo}`}
+              />
+              <MetricCard
+                label="Status"
+                tone="accent"
+                value={overview.latestWeeklyResults.status}
+              />
+              <MetricCard
+                label="Participants"
+                value={formatCount(overview.latestWeeklyResults.participantCount)}
+              />
+              <MetricCard
+                label="Qualified"
+                value={formatCount(overview.latestWeeklyResults.qualifiedTicketCount)}
+              />
+              <MetricCard
+                label="Lottery Winners"
+                value={formatCount(overview.latestWeeklyResults.lotteryWinners.length)}
+              />
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-2">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-400">Merkle root</span>
+                  <span className="max-w-[240px] truncate font-mono text-xs text-slate-200">
+                    {overview.latestWeeklyResults.merkleRoot ?? "Not posted"}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-white">Lottery winners</h3>
+                  {overview.latestWeeklyResults.lotteryWinners.length ? (
+                    overview.latestWeeklyResults.lotteryWinners.map((winner) => (
+                      <div
+                        className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-200"
+                        key={`${winner.userId}:${winner.prizeLabel}`}
+                      >
+                        <div>
+                          <div className="font-medium text-white">{winner.prizeLabel}</div>
+                          <div className="font-mono text-xs text-slate-400">
+                            {winner.walletAddress}
+                          </div>
+                        </div>
+                        <div>{winner.amountUsdt}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-400">No lottery winners published for the latest result epoch.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-white">Ranking top list</h3>
+                {overview.latestWeeklyResults.rankingEntries.length ? (
+                  overview.latestWeeklyResults.rankingEntries.map((entry) => (
+                    <div
+                      className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-200"
+                      key={`${entry.userId}:${entry.rank}`}
+                    >
+                      <div>
+                        <div className="font-medium text-white">Rank #{entry.rank}</div>
+                        <div className="font-mono text-xs text-slate-400">
+                          {entry.walletAddress}
+                        </div>
+                      </div>
+                      <div>{entry.amountUsdt}</div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-400">No ranking winners published for the latest result epoch.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-400">No published weekly results yet.</p>
+        )}
+      </Panel>
     </div>
   );
 }

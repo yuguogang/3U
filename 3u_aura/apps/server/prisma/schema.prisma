@@ -515,6 +515,10 @@ model LotteryTicket {
   streakDays  Int     @default(0)
   isEligible  Boolean @default(false)
   ticketCount Int     @default(0)
+  isParticipating Boolean @default(false)
+  participatedAt   DateTime?
+  isResultRevealed Boolean @default(false)
+  revealedAt       DateTime?
 
   qualifiedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -523,6 +527,7 @@ model LotteryTicket {
   @@unique([epochId, userId])
   @@index([userId])
   @@index([isEligible])
+  @@index([epochId, isParticipating])
 }
 
 /// 周奖励明细表

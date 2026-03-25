@@ -7,6 +7,7 @@ import { ClaimsModule } from '../claims';
 import { EpochModule } from '../epoch';
 import { LotteryModule } from '../lottery';
 import { NftEligibilityModule } from '../nft-eligibility';
+import { WeeklyRewardRepository } from '../rewards';
 import { AdminConsoleController } from './admin-console.controller';
 import { AdminOpsController } from './admin-ops.controller';
 import { AdminConsoleRepository } from './repositories/admin-console.repository';
@@ -25,7 +26,12 @@ import { AdminOpsService } from './services/admin-ops.service';
     UserModule,
   ],
   controllers: [AdminConsoleController, AdminOpsController],
-  providers: [AdminConsoleRepository, AdminConsoleService, AdminOpsService],
+  providers: [
+    AdminConsoleRepository,
+    AdminConsoleService,
+    AdminOpsService,
+    WeeklyRewardRepository,
+  ],
   exports: [AdminConsoleRepository, AdminConsoleService, AdminOpsService],
 })
 export class AdminModule {}

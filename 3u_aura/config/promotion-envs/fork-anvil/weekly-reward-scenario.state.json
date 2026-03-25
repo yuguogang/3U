@@ -1,0 +1,314 @@
+{
+  "adminWalletAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "autoParticipantWallets": [
+    "0x0000000000000000000000000000000000000130",
+    "0x0000000000000000000000000000000000000132",
+    "0x0000000000000000000000000000000000000136",
+    "0x000000000000000000000000000000000000013c",
+    "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "0x0000000000000000000000000000000000000139",
+    "0x000000000000000000000000000000000000012e",
+    "0x000000000000000000000000000000000000013e",
+    "0x0000000000000000000000000000000000000133",
+    "0x000000000000000000000000000000000000013a"
+  ],
+  "currentLottery": {
+    "canParticipate": true,
+    "currentStreakDays": 7,
+    "daysUntilTicket": 0,
+    "endAt": "2026-03-31T16:00:00.000Z",
+    "epochId": "cmn5c573j0003t5bphu9tfx59",
+    "epochNo": 3,
+    "epochStatus": "OPEN",
+    "isCurrentlyQualified": true,
+    "isParticipating": false,
+    "startAt": "2026-03-24T16:00:00.000Z"
+  },
+  "envName": "fork-anvil",
+  "preparedAt": "2026-03-25T00:58:53.594Z",
+  "seeded": {
+    "dateKeys": [
+      "2026-03-25",
+      "2026-03-26",
+      "2026-03-27",
+      "2026-03-28",
+      "2026-03-29",
+      "2026-03-30",
+      "2026-03-31"
+    ],
+    "minimumParticipants": 12,
+    "observerWallet": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "participantCount": 23,
+    "participantWallets": [
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "0x000000000000000000000000000000000000012d",
+      "0x000000000000000000000000000000000000012e",
+      "0x000000000000000000000000000000000000012f",
+      "0x0000000000000000000000000000000000000130",
+      "0x0000000000000000000000000000000000000131",
+      "0x0000000000000000000000000000000000000132",
+      "0x0000000000000000000000000000000000000133",
+      "0x0000000000000000000000000000000000000134",
+      "0x0000000000000000000000000000000000000135",
+      "0x0000000000000000000000000000000000000136",
+      "0x0000000000000000000000000000000000000137",
+      "0x0000000000000000000000000000000000000138",
+      "0x0000000000000000000000000000000000000139",
+      "0x000000000000000000000000000000000000013a",
+      "0x000000000000000000000000000000000000013b",
+      "0x000000000000000000000000000000000000013c",
+      "0x000000000000000000000000000000000000013d",
+      "0x000000000000000000000000000000000000013e"
+    ],
+    "participants": [
+      {
+        "userId": "cmn5c56u20000t5bpojyrp7qi",
+        "walletAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+      },
+      {
+        "userId": "wf03_epoch_3_user_02",
+        "walletAddress": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+      },
+      {
+        "userId": "wf03_epoch_3_user_03",
+        "walletAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+      },
+      {
+        "userId": "wf03_epoch_3_user_04",
+        "walletAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+      },
+      {
+        "userId": "wf03_epoch_3_user_05",
+        "walletAddress": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+      },
+      {
+        "userId": "wf03_epoch_3_user_06",
+        "walletAddress": "0x000000000000000000000000000000000000012d"
+      },
+      {
+        "userId": "wf03_epoch_3_user_07",
+        "walletAddress": "0x000000000000000000000000000000000000012e"
+      },
+      {
+        "userId": "wf03_epoch_3_user_08",
+        "walletAddress": "0x000000000000000000000000000000000000012f"
+      },
+      {
+        "userId": "wf03_epoch_3_user_09",
+        "walletAddress": "0x0000000000000000000000000000000000000130"
+      },
+      {
+        "userId": "wf03_epoch_3_user_10",
+        "walletAddress": "0x0000000000000000000000000000000000000131"
+      },
+      {
+        "userId": "wf03_epoch_3_user_11",
+        "walletAddress": "0x0000000000000000000000000000000000000132"
+      },
+      {
+        "userId": "wf03_epoch_3_user_12",
+        "walletAddress": "0x0000000000000000000000000000000000000133"
+      },
+      {
+        "userId": "wf03_epoch_3_user_13",
+        "walletAddress": "0x0000000000000000000000000000000000000134"
+      },
+      {
+        "userId": "wf03_epoch_3_user_14",
+        "walletAddress": "0x0000000000000000000000000000000000000135"
+      },
+      {
+        "userId": "wf03_epoch_3_user_15",
+        "walletAddress": "0x0000000000000000000000000000000000000136"
+      },
+      {
+        "userId": "wf03_epoch_3_user_16",
+        "walletAddress": "0x0000000000000000000000000000000000000137"
+      },
+      {
+        "userId": "wf03_epoch_3_user_17",
+        "walletAddress": "0x0000000000000000000000000000000000000138"
+      },
+      {
+        "userId": "wf03_epoch_3_user_18",
+        "walletAddress": "0x0000000000000000000000000000000000000139"
+      },
+      {
+        "userId": "wf03_epoch_3_user_19",
+        "walletAddress": "0x000000000000000000000000000000000000013a"
+      },
+      {
+        "userId": "wf03_epoch_3_user_20",
+        "walletAddress": "0x000000000000000000000000000000000000013b"
+      },
+      {
+        "userId": "wf03_epoch_3_user_21",
+        "walletAddress": "0x000000000000000000000000000000000000013c"
+      },
+      {
+        "userId": "wf03_epoch_3_user_22",
+        "walletAddress": "0x000000000000000000000000000000000000013d"
+      },
+      {
+        "userId": "wf03_epoch_3_user_23",
+        "walletAddress": "0x000000000000000000000000000000000000013e"
+      }
+    ],
+    "poolContributionAtomic": "250000000",
+    "referenceAt": "2026-03-24T16:00:00.000Z",
+    "targetEpochNo": 3
+  },
+  "serviceRuntime": {
+    "envName": "fork-anvil",
+    "services": {
+      "server": {
+        "logPath": "/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/fork-anvil/logs/server.log",
+        "managed": true,
+        "pid": 60665,
+        "port": 3210,
+        "readyUrl": "http://127.0.0.1:3210/api/v1/health",
+        "reused": false,
+        "startedAt": "2026-03-25T00:58:51.528Z"
+      }
+    },
+    "updatedAt": "2026-03-25T00:58:51.528Z"
+  },
+  "targetUserId": "cmn5c56u20000t5bpojyrp7qi",
+  "targetWalletAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+  "targetWalletName": "userA",
+  "targetWinningRank": 4,
+  "targetWinnerCount": 6,
+  "settledAt": "2026-03-25T01:13:44.284Z",
+  "settleSummary": {
+    "draft": {
+      "dateKeyFromInclusive": "2026-03-25",
+      "dateKeyToExclusive": "2026-04-01",
+      "epochId": "cmn5c573j0003t5bphu9tfx59",
+      "lottery": {
+        "consolationCount": 12,
+        "draftRewardCount": 23,
+        "lotteryRolloverUsdt": "0"
+      },
+      "merkle": {
+        "claimCount": 21,
+        "leafCount": 21,
+        "merkleRoot": "0x88c7e07e658031cfae6de1bbcae60f916eb56d998715ec5da9454c92eb20db4e"
+      },
+      "mode": "draft",
+      "ranking": {
+        "draftRewardCount": 10,
+        "rankingRolloverUsdt": "0"
+      }
+    },
+    "epochRecord": {
+      "id": "cmn5c573j0003t5bphu9tfx59",
+      "epochNo": 3,
+      "status": "CALCULATING",
+      "startAt": "2026-03-24T08:00:00.000Z",
+      "endAt": "2026-03-31T08:00:00.000Z"
+    },
+    "epochSync": {
+      "action": "admin.ops.epoch-sync.execute",
+      "dryRun": false,
+      "result": {
+        "currentEpoch": {
+          "endAt": "2026-04-07T16:00:00.000Z",
+          "epochId": "cmn5coahj000ht5bpqzem744q",
+          "epochNo": 4,
+          "epochType": "WEEKLY_PROMOTION",
+          "startAt": "2026-03-31T16:00:00.000Z",
+          "status": "OPEN"
+        },
+        "processedEpochs": [
+          {
+            "epochId": "cmn5coagl000et5bpv9e329u2",
+            "rollover": {
+              "epochId": "cmn5coagl000et5bpv9e329u2",
+              "nextEpochId": "cmn5coagq000ft5bp9wip0idl",
+              "rolledOver": true,
+              "totalPromotionPoolUsdt": "0"
+            },
+            "ticketRefresh": {
+              "eligibleUserIds": [],
+              "epochId": "cmn5coagl000et5bpv9e329u2",
+              "participantCount": 0,
+              "qualifiedTicketCount": 0
+            }
+          },
+          {
+            "epochId": "cmn5coagq000ft5bp9wip0idl",
+            "rollover": {
+              "epochId": "cmn5coagq000ft5bp9wip0idl",
+              "nextEpochId": "cmn5c573j0003t5bphu9tfx59",
+              "rolledOver": true,
+              "totalPromotionPoolUsdt": "0"
+            },
+            "ticketRefresh": {
+              "eligibleUserIds": [],
+              "epochId": "cmn5coagq000ft5bp9wip0idl",
+              "participantCount": 0,
+              "qualifiedTicketCount": 0
+            }
+          },
+          {
+            "epochId": "cmn5c573j0003t5bphu9tfx59",
+            "rollover": {
+              "epochId": "cmn5c573j0003t5bphu9tfx59",
+              "rolledOver": false,
+              "totalPromotionPoolUsdt": "250000000"
+            },
+            "ticketRefresh": {
+              "eligibleUserIds": [
+                "wf03_epoch_3_user_14",
+                "wf03_epoch_3_user_02",
+                "wf03_epoch_3_user_23",
+                "wf03_epoch_3_user_17",
+                "wf03_epoch_3_user_16",
+                "wf03_epoch_3_user_18",
+                "wf03_epoch_3_user_07",
+                "wf03_epoch_3_user_06",
+                "wf03_epoch_3_user_08",
+                "wf03_epoch_3_user_11",
+                "cmn5c56u20000t5bpojyrp7qi",
+                "wf03_epoch_3_user_13",
+                "wf03_epoch_3_user_10",
+                "wf03_epoch_3_user_03",
+                "wf03_epoch_3_user_20",
+                "wf03_epoch_3_user_22",
+                "wf03_epoch_3_user_09",
+                "wf03_epoch_3_user_19",
+                "wf03_epoch_3_user_04",
+                "wf03_epoch_3_user_21",
+                "wf03_epoch_3_user_15",
+                "wf03_epoch_3_user_12",
+                "wf03_epoch_3_user_05"
+              ],
+              "epochId": "cmn5c573j0003t5bphu9tfx59",
+              "participantCount": 12,
+              "qualifiedTicketCount": 23
+            }
+          }
+        ]
+      }
+    },
+    "published": {
+      "claimCount": 21,
+      "epochId": "cmn5c573j0003t5bphu9tfx59",
+      "epochNo": 3,
+      "merkleRoot": "0x88c7e07e658031cfae6de1bbcae60f916eb56d998715ec5da9454c92eb20db4e",
+      "mode": "publish",
+      "rewardJsonUri": "ipfs://phase94-wave4/mock.json",
+      "totalAmount": "250000000"
+    },
+    "referenceAt": "2026-03-31T16:10:00.000Z",
+    "subsidy": {
+      "published": false,
+      "skippedReason": "nft subsidy skipped: The contract function \"balanceOf\" returned no data (\"0x\").\n\nThis could be due to any of the following:\n  - The contract does not have the function \"balanceOf\",\n  - The parameters passed to the contract function may be invalid, or\n  - The address is not a contract.\n \nContract Call:\n  address:   0x8A791620dd6260079BF849Dc5567aDC3F2FdC318\n  function:  balanceOf(address account)\n  args:               (0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC)\n\nDocs: https://viem.sh/docs/contract/readContract\nVersion: viem@2.45.1"
+    }
+  }
+}

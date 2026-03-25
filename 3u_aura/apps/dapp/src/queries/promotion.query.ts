@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   NftReferralSignatureRequest,
   PromotionCheckinRequest,
+  PromotionLotteryParticipateRequest,
+  PromotionLotteryRevealRequest,
   ReferralBindInviterInput,
   ReferralBindPlacementInput,
   TeamTreeSnapshotQuery,
@@ -13,18 +15,27 @@ import {
   apiBindPlacement,
   apiGetCurrentEligibility,
   apiGetCurrentEpoch,
+  apiGetCurrentLotteryParticipation,
   apiGetPendingPlacements,
   apiGetSelectableSlots,
   apiGetTeamTreeSnapshot,
   apiIssueReferralMintSignature,
+  apiParticipateCurrentLottery,
   apiPrepareReferralMintPreview,
+  apiRevealLotteryResult,
   apiSubmitCheckin,
 } from "@/api/promotion";
+import { claimsQueryKey } from "@/queries/claims.query";
+import {
+  latestWeeklyResultsQueryKey,
+  rewardsQueryKey,
+} from "@/queries/rewards.query";
 
 export const promotionQueryKeys = {
   currentEligibility: (walletAddress?: string) =>
     ["promotion", "eligibility", walletAddress ?? "me"] as const,
   currentEpoch: ["promotion", "epoch", "current"] as const,
+  currentLottery: ["promotion", "lottery", "current"] as const,
   pendingPlacements: ["promotion", "team", "pending-placements"] as const,
   selectableSlots: ["promotion", "team", "selectable-slots"] as const,
   treeSnapshotRoot: ["promotion", "team", "tree-snapshot"] as const,
@@ -42,6 +53,14 @@ export function useCurrentEpochQuery() {
   return useQuery({
     queryFn: apiGetCurrentEpoch,
     queryKey: promotionQueryKeys.currentEpoch,
+  });
+}
+
+export function useCurrentLotteryQuery(enabled: boolean = true) {
+  return useQuery({
+    enabled,
+    queryFn: apiGetCurrentLotteryParticipation,
+    queryKey: promotionQueryKeys.currentLottery,
   });
 }
 
@@ -94,6 +113,45 @@ export function useSubmitCheckinMutation() {
         queryClient.invalidateQueries({
           queryKey: promotionQueryKeys.currentEligibility(),
         }),
+        queryClient.invalidateQueries({
+          queryKey: promotionQueryKeys.currentLottery,
+        }),
+      ]);
+    },
+  });
+}
+
+export function useParticipateLotteryMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: PromotionLotteryParticipateRequest = {}) =>
+      apiParticipateCurrentLottery(input),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: promotionQueryKeys.currentLottery,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: latestWeeklyResultsQueryKey,
+        }),
+      ]);
+    },
+  });
+}
+
+export function useRevealLotteryMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: PromotionLotteryRevealRequest) =>
+      apiRevealLotteryResult(input),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: promotionQueryKeys.currentLottery }),
+        queryClient.invalidateQueries({ queryKey: latestWeeklyResultsQueryKey }),
+        queryClient.invalidateQueries({ queryKey: claimsQueryKey }),
+        queryClient.invalidateQueries({ queryKey: rewardsQueryKey }),
       ]);
     },
   });

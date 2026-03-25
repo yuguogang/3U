@@ -367,6 +367,40 @@ export class StatsRepository {
     }));
   }
 
+  async summarizeUserEpochCheckinDays(
+    data: {
+      dateKeyFromInclusive: string;
+      dateKeyToExclusive: string;
+      userId: string;
+    },
+    executor: DbExecutor = this.db,
+  ): Promise<{
+    countedCheckinDays: number;
+    lastQualifiedDateKey?: string;
+  }> {
+    const result = await executor.userDailyStat.aggregate({
+      where: {
+        countedCheckinDays: { gt: 0 },
+        dateKey: {
+          gte: data.dateKeyFromInclusive,
+          lt: data.dateKeyToExclusive,
+        },
+        userId: data.userId,
+      },
+      _max: {
+        dateKey: true,
+      },
+      _sum: {
+        countedCheckinDays: true,
+      },
+    });
+
+    return {
+      countedCheckinDays: result._sum.countedCheckinDays ?? 0,
+      lastQualifiedDateKey: result._max.dateKey ?? undefined,
+    };
+  }
+
   async aggregateEpochLotteryPool(
     data: {
       dateKeyFromInclusive: string;

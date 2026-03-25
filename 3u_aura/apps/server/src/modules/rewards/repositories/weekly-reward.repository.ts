@@ -323,4 +323,61 @@ export class WeeklyRewardRepository {
       },
     });
   }
+
+  async listUserRewardsByEpochAndTypes(
+    data: {
+      epochId: string;
+      rewardTypes: RewardType[];
+      userId: string;
+    },
+    executor: DbExecutor = this.db,
+  ): Promise<
+    Array<
+      Pick<
+        WeeklyReward,
+        | 'amountAura'
+        | 'amountUsdt'
+        | 'distributionKey'
+        | 'epochId'
+        | 'id'
+        | 'rank'
+        | 'rewardType'
+        | 'status'
+      > & {
+        claimRecords: Array<{
+          claimType: import('@/db').ClaimType;
+          id: string;
+          status: import('@/db').ClaimStatus;
+        }>;
+      }
+    >
+  > {
+    return executor.weeklyReward.findMany({
+      where: {
+        epochId: data.epochId,
+        rewardType: { in: data.rewardTypes },
+        userId: data.userId,
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      select: {
+        amountAura: true,
+        amountUsdt: true,
+        distributionKey: true,
+        epochId: true,
+        id: true,
+        rank: true,
+        rewardType: true,
+        status: true,
+        claimRecords: {
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          select: {
+            claimType: true,
+            id: true,
+            status: true,
+          },
+          take: 1,
+        },
+      },
+    });
+  }
 }

@@ -10,6 +10,7 @@ import {
   Check,
   Coins,
   ArrowRight,
+  Ticket,
   Wallet,
 } from "lucide-react";
 import {
@@ -28,7 +29,11 @@ import {
   promotionChainId,
   promotionContracts,
 } from "@/lib/promotion-contracts";
-import { useSubmitCheckinMutation } from "@/queries/promotion.query";
+import {
+  useCurrentLotteryQuery,
+  useParticipateLotteryMutation,
+  useSubmitCheckinMutation,
+} from "@/queries/promotion.query";
 import { useUserProfileQuery } from "@/queries/user.query";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
@@ -41,6 +46,10 @@ export function CheckinPage() {
   const { address, isConnected } = useAccount();
   const { authAddress, hasHydrated, isAuthenticated } = useAuthStore();
   const profileQuery = useUserProfileQuery(isAuthenticated && hasHydrated);
+  const currentLotteryQuery = useCurrentLotteryQuery(
+    isAuthenticated && hasHydrated,
+  );
+  const participateLotteryMutation = useParticipateLotteryMutation();
   const checkinMutation = useSubmitCheckinMutation();
   const transferWrite = useWriteContract();
   const [transferHash, setTransferHash] = useState<`0x${string}` | undefined>();
@@ -53,6 +62,11 @@ export function CheckinPage() {
   const submittedAutoCheckinHashRef = useRef<string | null>(null);
 
   const profile = profileQuery.data?.profile;
+  const currentLottery = currentLotteryQuery.data;
+  const lotteryStreakDays =
+    currentLottery?.currentStreakDays ?? (profile?.currentStreakDays || 0) % 7;
+  const lotteryProgressDays = Math.min(lotteryStreakDays, 7);
+  const remainingLotteryDays = Math.max(0, 7 - lotteryStreakDays);
   const useAutomationInjectedWallet =
     process.env.NEXT_PUBLIC_E2E_INJECTED_WALLET === "true";
   const effectiveAddress =
@@ -404,7 +418,7 @@ export function CheckinPage() {
               </div>
               <span className="text-xs text-aura-primary">
                 {t("checkin.lottery.progress", {
-                  current: (profile?.currentStreakDays || 0) % 7,
+                  current: lotteryProgressDays,
                 })}
               </span>
             </div>
@@ -412,15 +426,72 @@ export function CheckinPage() {
               <div
                 className="h-full bg-gradient-to-r from-aura-primary to-aura-primary-light rounded-full transition-all duration-500"
                 style={{
-                  width: `${(((profile?.currentStreakDays || 0) % 7) / 7) * 100}%`,
+                  width: `${(lotteryProgressDays / 7) * 100}%`,
                 }}
               />
             </div>
             <p className="text-xs text-white/40 mt-2">
               {t("checkin.lottery.remaining", {
-                count: 7 - ((profile?.currentStreakDays || 0) % 7),
+                count: remainingLotteryDays,
               })}
             </p>
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-white/8">
+                    <Ticket className="h-5 w-5 text-aura-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      {t("checkin.lottery.optInTitle")}
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-white/50">
+                      {currentLottery?.isParticipating
+                        ? currentLottery.isCurrentlyQualified
+                          ? t("checkin.lottery.joinedQualified")
+                          : t("checkin.lottery.joinedPending")
+                        : t("checkin.lottery.optInDescription")}
+                    </p>
+                  </div>
+                </div>
+                {currentLottery?.isParticipating ? (
+                  <span className="rounded-full border border-aura-primary/30 bg-aura-primary/10 px-2.5 py-1 text-[10px] font-semibold text-aura-primary">
+                    {t("checkin.lottery.joinedBadge")}
+                  </span>
+                ) : null}
+              </div>
+
+              {currentLotteryQuery.error instanceof Error ? (
+                <p className="mt-3 text-xs text-aura-error">
+                  {currentLotteryQuery.error.message}
+                </p>
+              ) : null}
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {currentLottery?.canParticipate ? (
+                  <Button
+                    type="button"
+                    className="h-10 rounded-xl bg-aura-primary text-black hover:bg-aura-primary-light"
+                    disabled={participateLotteryMutation.isPending}
+                    onClick={() => participateLotteryMutation.mutate({})}
+                  >
+                    {participateLotteryMutation.isPending
+                      ? t("checkin.lottery.joining")
+                      : t("checkin.lottery.joinButton")}
+                  </Button>
+                ) : (
+                  <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/50">
+                    {currentLottery?.isParticipating
+                      ? currentLottery.isCurrentlyQualified
+                        ? t("checkin.lottery.qualifiedBadge")
+                        : t("checkin.lottery.pendingBadge")
+                      : isAuthenticated
+                        ? t("checkin.lottery.waitingEpoch")
+                        : t("checkin.lottery.signInHint")}
+                  </div>
+                )}
+              </div>
+            </div>
           </GlassCard>
         </section>
 

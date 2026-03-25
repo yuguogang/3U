@@ -4,12 +4,12 @@
     "server": {
       "logPath": "/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/fork-anvil/logs/server.log",
       "managed": true,
-      "pid": 50218,
+      "pid": 60665,
       "port": 3210,
       "readyUrl": "http://127.0.0.1:3210/api/v1/health",
-      "reused": false,
-      "startedAt": "2026-03-21T03:23:03.561Z"
+      "reused": true,
+      "startedAt": "2026-03-25T00:58:51.528Z"
     }
   },
-  "updatedAt": "2026-03-21T03:23:03.562Z"
+  "updatedAt": "2026-03-25T01:13:43.055Z"
 }

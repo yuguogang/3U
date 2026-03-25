@@ -168,6 +168,77 @@ export interface PromotionRewardView {
   claimStatus?: ClaimStatus;
 }
 
+export interface PromotionCurrentLotteryParticipationView {
+  epochId: string;
+  epochNo: number;
+  epochStatus: EpochStatus;
+  startAt: Date;
+  endAt: Date;
+  currentStreakDays: number;
+  daysUntilTicket: number;
+  isCurrentlyQualified: boolean;
+  isParticipating: boolean;
+  participatedAt?: Date;
+  canParticipate: boolean;
+}
+
+export type PromotionLotteryResultStatus =
+  | 'PENDING'
+  | 'WON'
+  | 'LOST'
+  | 'ROLLED_OVER'
+  | 'NOT_QUALIFIED'
+  | 'NOT_PARTICIPATING';
+
+export interface PromotionLotteryOutcomeView {
+  epochId: string;
+  epochNo: number;
+  epochStatus: EpochStatus;
+  isParticipating: boolean;
+  isEligible: boolean;
+  isRevealed: boolean;
+  canReveal: boolean;
+  participatedAt?: Date;
+  revealedAt?: Date;
+  resultStatus: PromotionLotteryResultStatus;
+  prizeLabel?: 'FIRST' | 'SECOND' | 'THIRD' | 'LUCKY';
+  amountUsdt?: string;
+  amountAura?: string;
+  claimRecordId?: string;
+  claimStatus?: ClaimStatus;
+}
+
+export interface PromotionWeeklyLotteryWinnerView {
+  userId: string;
+  walletAddress: string;
+  prizeLabel: 'FIRST' | 'SECOND' | 'THIRD' | 'LUCKY';
+  amountUsdt: string;
+}
+
+export interface PromotionWeeklyRankingEntryView {
+  userId: string;
+  walletAddress: string;
+  rank: number;
+  amountUsdt: string;
+  isCurrentUser: boolean;
+  claimRecordId?: string;
+  claimStatus?: ClaimStatus;
+}
+
+export interface PromotionWeeklyResultsView {
+  epochId: string;
+  epochNo: number;
+  epochStatus: EpochStatus;
+  startAt: Date;
+  endAt: Date;
+  publishedAt?: Date;
+  participantCount: number;
+  qualifiedTicketCount: number;
+  lotteryWinners: PromotionWeeklyLotteryWinnerView[];
+  rankingEntries: PromotionWeeklyRankingEntryView[];
+  myLottery: PromotionLotteryOutcomeView;
+}
+
 export interface PromotionMerkleClaimView {
   claimRecordId: string;
   epochId: string;

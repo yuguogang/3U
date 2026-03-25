@@ -7,6 +7,7 @@ import { SharedDomainModule } from '../shared';
 import { StatsModule } from '../stats';
 import { LotteryQualificationEngine } from './engines/lottery-qualification.engine';
 import { LotteryPayoutEngine } from './engines/lottery-payout.engine';
+import { LotteryController } from './lottery.controller';
 import { LotteryTicketRepository } from './repositories/lottery-ticket.repository';
 import { LotterySettlementService } from './services/lottery-settlement.service';
 import { LotteryTicketService } from './services/lottery-ticket.service';
@@ -19,6 +20,7 @@ import { LotteryTicketService } from './services/lottery-ticket.service';
     EpochModule,
     LedgerModule,
   ],
+  controllers: [LotteryController],
   providers: [
     LotteryTicketService,
     LotterySettlementService,

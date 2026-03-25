@@ -23,11 +23,38 @@ export interface AdminOverviewLatestEpochView {
   status: EpochStatus;
 }
 
+export interface AdminWeeklyLotteryWinnerView {
+  userId: string;
+  walletAddress: string;
+  prizeLabel: 'FIRST' | 'SECOND' | 'THIRD' | 'LUCKY';
+  amountUsdt: string;
+}
+
+export interface AdminWeeklyRankingEntryView {
+  userId: string;
+  walletAddress: string;
+  rank: number;
+  amountUsdt: string;
+}
+
+export interface AdminWeeklyPromotionResultsView {
+  epochId: string;
+  epochNo: number;
+  participantCount: number;
+  qualifiedTicketCount: number;
+  status: EpochStatus;
+  publishedAt?: Date;
+  merkleRoot?: string;
+  lotteryWinners: AdminWeeklyLotteryWinnerView[];
+  rankingEntries: AdminWeeklyRankingEntryView[];
+}
+
 export interface AdminOverviewView {
   activeUsers: number;
   approvedReferralNftCount: number;
   claimableMerkleClaimCount: number;
   latestEpoch?: AdminOverviewLatestEpochView;
+  latestWeeklyResults?: AdminWeeklyPromotionResultsView;
   mintedReferralNftCount: number;
   pendingPlacementCount: number;
   pendingReferralNftApprovalCount: number;

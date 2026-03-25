@@ -343,7 +343,18 @@
     "lottery": {
       "title": "Weekly Lottery Ticket",
       "progress": "{current}/7 days",
-      "remaining": "Check in for {count} more {count, plural, one {day} other {days}} to earn a lottery ticket"
+      "remaining": "Check in for {count} more {count, plural, one {day} other {days}} to earn a lottery ticket",
+      "optInTitle": "Join This Week's Lottery",
+      "optInDescription": "Qualification is tracked automatically, but you still need to opt in manually before the weekly draw.",
+      "joinedQualified": "You already joined this week's lottery and currently meet the ticket requirement.",
+      "joinedPending": "You already joined this week's lottery. Keep checking in so you qualify by settlement time.",
+      "joinedBadge": "Joined",
+      "joinButton": "Join Weekly Lottery",
+      "joining": "Joining...",
+      "qualifiedBadge": "Joined and ready",
+      "pendingBadge": "Joined, still qualifying",
+      "waitingEpoch": "Lottery opt-in is unavailable for the current epoch",
+      "signInHint": "Connect wallet and sign in before joining"
     },
     "calendar": {
       "title": "This Month"
@@ -378,6 +389,43 @@
       "errorTitle": "Unable to load rewards",
       "emptyTitle": "No rewards yet",
       "emptyDescription": "Your check-in, referral, and epoch rewards will show up here once they are recorded."
+    },
+    "weekly": {
+      "title": "Latest Weekly Results",
+      "publishedAt": "Published {date}",
+      "errorTitle": "Unable to load weekly results",
+      "emptyTitle": "No weekly results yet",
+      "emptyDescription": "Weekly lottery and ranking results will appear here after settlement and publication.",
+      "lotteryTitle": "My Lottery Result",
+      "participants": "{participants} participants, {qualified} qualified tickets",
+      "revealButton": "Reveal Result",
+      "revealingTitle": "Revealing result...",
+      "revealingDescription": "The animation only reveals the pre-settled outcome. Please hold on for a moment.",
+      "pendingTitle": "Your result is ready to reveal",
+      "pendingDescription": "Settlement is complete. Tap below to reveal your weekly lottery result.",
+      "wonTitle": "You won",
+      "wonDescription": "You landed the {prize} and can claim {amount} USDT.",
+      "lostTitle": "No luck this week",
+      "lostDescription": "You did not win this week's lottery. Keep your streak going for the next round.",
+      "lostDescriptionConsolation": "You did not win this week, but you earned {amount} AURA as a consolation reward.",
+      "notQualifiedTitle": "Joined but not qualified",
+      "notQualifiedDescription": "You opted in, but did not meet the ticket requirement by settlement time.",
+      "rolledOverTitle": "Lottery rolled over",
+      "rolledOverDescription": "There were not enough participants this week, so the pool rolled into the next epoch.",
+      "notParticipatingTitle": "You did not join this draw",
+      "notParticipatingDescription": "Lottery entry is now manual. Join next week once you have the required ticket progress.",
+      "viewClaims": "Go to claims",
+      "winnersTitle": "Lottery Winners",
+      "winnersEmpty": "No lottery winners were published for the latest weekly result.",
+      "rankingTitle": "Ranking Rewards",
+      "rankingEmpty": "No ranking rewards were published for the latest weekly result.",
+      "you": "You",
+      "prize": {
+        "FIRST": "First Prize",
+        "SECOND": "Second Prize",
+        "THIRD": "Third Prize",
+        "LUCKY": "Lucky Prize"
+      }
     }
   },
   "claims": {

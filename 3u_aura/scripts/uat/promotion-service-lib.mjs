@@ -404,43 +404,46 @@ export async function startPromotionServices({
 export async function stopPromotionServices({
   envName,
   services = SERVICE_NAMES,
+  includeUnmanaged = false,
 }) {
   const runtime = readRuntime(envName);
-  if (!runtime) {
-    return {
-      envName,
-      services: {},
-      stopped: [],
-    };
-  }
+  const nextRuntime = runtime ?? {
+    envName,
+    services: {},
+    updatedAt: null,
+  };
 
   const stopped = [];
   for (const serviceName of services) {
-    const record = runtime.services?.[serviceName];
-    if (!record?.pid) {
-      continue;
-    }
-
+    const record = nextRuntime.services?.[serviceName];
     const spec = resolveServiceSpec(envName, loadManifest(envName), serviceName);
-    if (!resolveServiceOwnerPid(spec, record.pid)) {
+    const managedOwnerPid = record?.pid
+      ? resolveServiceOwnerPid(spec, record.pid)
+      : null;
+    const unmanagedOwnerPid =
+      includeUnmanaged && !managedOwnerPid
+        ? resolveListeningOwnerPid(spec)
+        : null;
+    const ownerPid = managedOwnerPid ?? unmanagedOwnerPid;
+    if (!ownerPid) {
       continue;
     }
 
-    const didStop = await stopProcessGroup(record.pid);
+    const didStop = await stopProcessGroup(ownerPid);
     stopped.push({
-      pid: record.pid,
+      pid: ownerPid,
       serviceName,
       stopped: didStop,
     });
-    delete runtime.services[serviceName];
+    delete nextRuntime.services[serviceName];
   }
 
-  runtime.updatedAt = new Date().toISOString();
-  writeJson(getRuntimePath(envName), runtime);
+  nextRuntime.updatedAt = new Date().toISOString();
+  writeJson(getRuntimePath(envName), nextRuntime);
 
   return {
     envName,
-    services: runtime.services,
+    services: nextRuntime.services,
     stopped,
   };
 }

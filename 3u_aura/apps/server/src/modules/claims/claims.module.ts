@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { EpochModule } from '../epoch';
+import { LotteryModule } from '../lottery';
 import { NftEligibilityModule } from '../nft-eligibility';
 import { StatsModule } from '../stats';
 import { WeeklyRewardRepository } from '../rewards/repositories/weekly-reward.repository';
@@ -18,7 +19,13 @@ import { PurchasedNftSyncService } from './services/purchased-nft-sync.service';
 import { ReferralNftSyncService } from './services/referral-nft-sync.service';
 
 @Module({
-  imports: [SharedDomainModule, StatsModule, EpochModule, NftEligibilityModule],
+  imports: [
+    SharedDomainModule,
+    StatsModule,
+    EpochModule,
+    LotteryModule,
+    NftEligibilityModule,
+  ],
   controllers: [ClaimsController],
   providers: [
     ClaimSyncChainRepository,

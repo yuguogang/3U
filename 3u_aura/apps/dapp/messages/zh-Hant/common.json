@@ -343,7 +343,18 @@
     "lottery": {
       "title": "每週抽獎券",
       "progress": "{current}/7 天",
-      "remaining": "再簽到 {count} 天即可獲得一張抽獎券"
+      "remaining": "再簽到 {count} 天即可獲得一張抽獎券",
+      "optInTitle": "參與本週抽獎",
+      "optInDescription": "拿到資格後，記得手動確認參與本週抽獎。結算完成後可以去獎勵頁揭曉結果。",
+      "joinedQualified": "你已經報名本週抽獎，而且目前已滿足門票條件。",
+      "joinedPending": "你已經報名本週抽獎。繼續完成本週簽到，結算時達標就會進入抽獎池。",
+      "joinedBadge": "已參與",
+      "joinButton": "參與本週抽獎",
+      "joining": "參與中...",
+      "qualifiedBadge": "已報名，等待開獎",
+      "pendingBadge": "已報名，等待達標",
+      "waitingEpoch": "目前週期不在參與時間內",
+      "signInHint": "先連接錢包並完成登入後再參與"
     },
     "calendar": {
       "title": "本月簽到"
@@ -378,6 +389,43 @@
       "errorTitle": "獎勵載入失敗",
       "emptyTitle": "還沒有獎勵記錄",
       "emptyDescription": "你的簽到獎勵、推薦獎勵和週期獎勵在入帳後會顯示在這裡。"
+    },
+    "weekly": {
+      "title": "上週結果",
+      "publishedAt": "發佈時間：{date}",
+      "errorTitle": "每週結果載入失敗",
+      "emptyTitle": "暫時沒有每週結果",
+      "emptyDescription": "當週結算並發佈後，抽獎與排名結果會顯示在這裡。",
+      "lotteryTitle": "我的抽獎結果",
+      "participants": "參與人數 {participants}，有效門票 {qualified}",
+      "revealButton": "揭曉結果",
+      "revealingTitle": "正在揭曉中...",
+      "revealingDescription": "本次動畫只負責展示已結算好的結果，請稍候。",
+      "pendingTitle": "可以揭曉本週結果了",
+      "pendingDescription": "本週抽獎已經結算完成。點擊下方按鈕，立即揭曉你的開獎結果。",
+      "wonTitle": "恭喜中獎",
+      "wonDescription": "你本週抽中了 {prize}，可領取 {amount} USDT。",
+      "lostTitle": "這週沒有抽中",
+      "lostDescription": "本週未中獎，繼續保持簽到，下一期再來。",
+      "lostDescriptionConsolation": "這週沒有抽中，但你獲得了 {amount} AURA 安慰獎勵。",
+      "notQualifiedTitle": "已報名，但本週未達標",
+      "notQualifiedDescription": "你已參與本週抽獎，但結算時未滿足門票條件，因此未進入抽獎池。",
+      "rolledOverTitle": "本週抽獎順延",
+      "rolledOverDescription": "本期參與人數不足，獎池已順延至下一週。",
+      "notParticipatingTitle": "你沒有參與這期抽獎",
+      "notParticipatingDescription": "抽獎改為手動參與模式。下週拿到資格後，記得先點擊參與。",
+      "viewClaims": "前往領取",
+      "winnersTitle": "抽獎得獎名單",
+      "winnersEmpty": "本期暫無已公佈的抽獎得獎名單。",
+      "rankingTitle": "排名獎勵",
+      "rankingEmpty": "本期暫無已公佈的排名獎勵。",
+      "you": "我",
+      "prize": {
+        "FIRST": "一等獎",
+        "SECOND": "二等獎",
+        "THIRD": "三等獎",
+        "LUCKY": "幸運獎"
+      }
     }
   },
   "claims": {

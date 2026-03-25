@@ -1,10 +1,21 @@
 "use client";
 
-import { useMemo } from "react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Coins, Trophy, Clock, Zap, Gift } from "lucide-react";
+import {
+  ArrowRight,
+  Clock,
+  Coins,
+  Dice5,
+  Gift,
+  Sparkles,
+  Trophy,
+  Zap,
+} from "lucide-react";
 import { RewardType } from "3u-aura-common";
 import { MobileLayout } from "@/components/layout/mobile-layout";
+import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui-custom/glass-card";
 import {
   SectionCardSkeleton,
@@ -15,11 +26,16 @@ import StatCard from "@/components/ui-custom/stat-card";
 import {
   formatAuraAtomic,
   formatDateTime,
+  formatUsdtAtomic,
+  formatWalletAddress,
   parseAtomicToBigInt,
 } from "@/lib/promotion-format";
 import { useMyClaimsQuery } from "@/queries/claims.query";
-import { useCurrentEpochQuery } from "@/queries/promotion.query";
-import { useMyRewardsQuery } from "@/queries/rewards.query";
+import { useCurrentEpochQuery, useRevealLotteryMutation } from "@/queries/promotion.query";
+import {
+  useLatestWeeklyResultsQuery,
+  useMyRewardsQuery,
+} from "@/queries/rewards.query";
 import { useUserProfileQuery } from "@/queries/user.query";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
@@ -30,9 +46,14 @@ export function RewardsPage() {
   const { hasHydrated, isAuthenticated } = useAuthStore();
   const profileQuery = useUserProfileQuery(isAuthenticated && hasHydrated);
   const rewardsQuery = useMyRewardsQuery(isAuthenticated && hasHydrated);
+  const latestWeeklyResultsQuery = useLatestWeeklyResultsQuery(
+    isAuthenticated && hasHydrated,
+  );
   const claimsQuery = useMyClaimsQuery(isAuthenticated && hasHydrated);
   const epochQuery = useCurrentEpochQuery();
+  const revealLotteryMutation = useRevealLotteryMutation();
   const profile = profileQuery.data?.profile;
+  const [revealingEpochId, setRevealingEpochId] = useState<string | null>(null);
 
   useMemo(() => {
     const rewards = rewardsQuery.data ?? [];
@@ -67,6 +88,26 @@ export function RewardsPage() {
   const epochStatusLabel = epochQuery.data?.status
     ? t(`shared.promotion.epochStatus.${epochQuery.data.status}`)
     : t("shared.status.loading");
+  const latestWeeklyResults = latestWeeklyResultsQuery.data;
+  const isRevealingCurrentEpoch =
+    latestWeeklyResults?.epochId !== undefined &&
+    revealingEpochId === latestWeeklyResults.epochId;
+
+  async function handleRevealLottery() {
+    if (!latestWeeklyResults?.myLottery.canReveal) {
+      return;
+    }
+
+    setRevealingEpochId(latestWeeklyResults.epochId);
+    try {
+      await revealLotteryMutation.mutateAsync({
+        epochId: latestWeeklyResults.epochId,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 1400));
+    } finally {
+      setRevealingEpochId(null);
+    }
+  }
 
   return (
     <MobileLayout
@@ -152,6 +193,253 @@ export function RewardsPage() {
           </GlassCard>
         </section>
 
+        <section className="animate-slide-up" style={{ animationDelay: "0.25s" }}>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-medium text-white/70">
+              {t("rewards.weekly.title")}
+            </h2>
+            {latestWeeklyResults?.publishedAt ? (
+              <span className="text-[10px] text-white/40">
+                {t("rewards.weekly.publishedAt", {
+                  date: formatDateTime(latestWeeklyResults.publishedAt, locale),
+                })}
+              </span>
+            ) : null}
+          </div>
+
+          {latestWeeklyResultsQuery.isLoading ? (
+            <SectionCardSkeleton rows={2} />
+          ) : latestWeeklyResultsQuery.error instanceof Error ? (
+            <SectionErrorState
+              title={t("rewards.weekly.errorTitle")}
+              description={latestWeeklyResultsQuery.error.message}
+            />
+          ) : !latestWeeklyResults ? (
+            <SectionEmptyState
+              title={t("rewards.weekly.emptyTitle")}
+              description={t("rewards.weekly.emptyDescription")}
+            />
+          ) : (
+            <div className="space-y-3">
+              <GlassCard className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-white/50">
+                      {t("rewards.weekly.lotteryTitle")}
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-white">
+                      #{latestWeeklyResults.epochNo}
+                    </p>
+                    <p className="mt-1 text-xs text-white/40">
+                      {t("rewards.weekly.participants", {
+                        participants: latestWeeklyResults.participantCount,
+                        qualified: latestWeeklyResults.qualifiedTicketCount,
+                      })}
+                    </p>
+                  </div>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/8">
+                    {isRevealingCurrentEpoch ? (
+                      <Dice5 className="h-5 w-5 animate-spin text-aura-primary" />
+                    ) : (
+                      <Sparkles className="h-5 w-5 text-aura-primary" />
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  {isRevealingCurrentEpoch ? (
+                    <>
+                      <p className="text-sm font-medium text-white">
+                        {t("rewards.weekly.revealingTitle")}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-white/50">
+                        {t("rewards.weekly.revealingDescription")}
+                      </p>
+                    </>
+                  ) : latestWeeklyResults.myLottery.resultStatus === "PENDING" ? (
+                    <>
+                      <p className="text-sm font-medium text-white">
+                        {t("rewards.weekly.pendingTitle")}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-white/50">
+                        {t("rewards.weekly.pendingDescription")}
+                      </p>
+                      {latestWeeklyResults.myLottery.canReveal ? (
+                        <Button
+                          type="button"
+                          className="mt-4 h-10 rounded-xl bg-aura-primary text-black hover:bg-aura-primary-light"
+                          disabled={revealLotteryMutation.isPending}
+                          onClick={handleRevealLottery}
+                        >
+                          {t("rewards.weekly.revealButton")}
+                        </Button>
+                      ) : null}
+                    </>
+                  ) : latestWeeklyResults.myLottery.resultStatus === "WON" ? (
+                    <>
+                      <p className="text-sm font-medium text-white">
+                        {t("rewards.weekly.wonTitle")}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-white/50">
+                        {t("rewards.weekly.wonDescription", {
+                          amount: formatUsdtAtomic(
+                            latestWeeklyResults.myLottery.amountUsdt ?? "0",
+                          ),
+                          prize:
+                            latestWeeklyResults.myLottery.prizeLabel
+                              ? t(
+                                  `rewards.weekly.prize.${latestWeeklyResults.myLottery.prizeLabel}`,
+                                )
+                              : "-",
+                        })}
+                      </p>
+                      {latestWeeklyResults.myLottery.claimStatus === "CLAIMABLE" ? (
+                        <Button
+                          asChild
+                          className="mt-4 h-10 rounded-xl bg-white text-black hover:bg-white/90"
+                        >
+                          <Link href="/claims">
+                            {t("rewards.weekly.viewClaims")}
+                            <ArrowRight className="ml-1 h-4 w-4" />
+                          </Link>
+                        </Button>
+                      ) : null}
+                    </>
+                  ) : latestWeeklyResults.myLottery.resultStatus === "LOST" ? (
+                    <>
+                      <p className="text-sm font-medium text-white">
+                        {t("rewards.weekly.lostTitle")}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-white/50">
+                        {latestWeeklyResults.myLottery.amountAura
+                          ? t("rewards.weekly.lostDescriptionConsolation", {
+                              amount: formatAuraAtomic(
+                                latestWeeklyResults.myLottery.amountAura,
+                              ),
+                            })
+                          : t("rewards.weekly.lostDescription")}
+                      </p>
+                    </>
+                  ) : latestWeeklyResults.myLottery.resultStatus ===
+                    "NOT_QUALIFIED" ? (
+                    <>
+                      <p className="text-sm font-medium text-white">
+                        {t("rewards.weekly.notQualifiedTitle")}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-white/50">
+                        {t("rewards.weekly.notQualifiedDescription")}
+                      </p>
+                    </>
+                  ) : latestWeeklyResults.myLottery.resultStatus ===
+                    "ROLLED_OVER" ? (
+                    <>
+                      <p className="text-sm font-medium text-white">
+                        {t("rewards.weekly.rolledOverTitle")}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-white/50">
+                        {t("rewards.weekly.rolledOverDescription")}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium text-white">
+                        {t("rewards.weekly.notParticipatingTitle")}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-white/50">
+                        {t("rewards.weekly.notParticipatingDescription")}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </GlassCard>
+
+              <div className="grid gap-3 xl:grid-cols-2">
+                <GlassCard className="p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-aura-primary" />
+                    <h3 className="text-sm font-medium text-white">
+                      {t("rewards.weekly.winnersTitle")}
+                    </h3>
+                  </div>
+                  <div className="space-y-2">
+                    {latestWeeklyResults.lotteryWinners.length ? (
+                      latestWeeklyResults.lotteryWinners.map((winner) => (
+                        <div
+                          key={`${winner.userId}:${winner.prizeLabel}`}
+                          className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2"
+                        >
+                          <div>
+                            <p className="text-xs font-medium text-white">
+                              {t(`rewards.weekly.prize.${winner.prizeLabel}`)}
+                            </p>
+                            <p className="text-[10px] text-white/40">
+                              {formatWalletAddress(winner.walletAddress)}
+                            </p>
+                          </div>
+                          <p className="text-xs font-semibold text-white">
+                            {formatUsdtAtomic(winner.amountUsdt)} USDT
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-white/50">
+                        {t("rewards.weekly.winnersEmpty")}
+                      </p>
+                    )}
+                  </div>
+                </GlassCard>
+
+                <GlassCard className="p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Gift className="h-4 w-4 text-aura-primary" />
+                    <h3 className="text-sm font-medium text-white">
+                      {t("rewards.weekly.rankingTitle")}
+                    </h3>
+                  </div>
+                  <div className="space-y-2">
+                    {latestWeeklyResults.rankingEntries.length ? (
+                      latestWeeklyResults.rankingEntries.map((entry) => (
+                        <div
+                          key={`${entry.userId}:${entry.rank}`}
+                          className={cn(
+                            "flex items-center justify-between rounded-2xl border px-3 py-2",
+                            entry.isCurrentUser
+                              ? "border-aura-primary/30 bg-aura-primary/10"
+                              : "border-white/10 bg-white/[0.04]",
+                          )}
+                        >
+                          <div>
+                            <p className="text-xs font-medium text-white">
+                              #{entry.rank}
+                            </p>
+                            <p className="text-[10px] text-white/40">
+                              {formatWalletAddress(entry.walletAddress)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-semibold text-white">
+                              {formatUsdtAtomic(entry.amountUsdt)} USDT
+                            </p>
+                            {entry.isCurrentUser ? (
+                              <p className="text-[10px] text-aura-primary">
+                                {t("rewards.weekly.you")}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-white/50">
+                        {t("rewards.weekly.rankingEmpty")}
+                      </p>
+                    )}
+                  </div>
+                </GlassCard>
+              </div>
+            </div>
+          )}
+        </section>
+
         {/* Reward Feed */}
         <section className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
           <div className="flex items-center justify-between mb-3">
@@ -179,6 +467,18 @@ export function RewardsPage() {
                 const isAuraReward =
                   reward.rewardType === RewardType.CONSOLATION_AURA ||
                   BigInt(reward.amountAura) > BigInt(0);
+                const statusLabel = reward.claimStatus
+                  ? t(`shared.promotion.claimStatus.${reward.claimStatus}`)
+                  : reward.status === "CLAIMABLE"
+                    ? t("shared.promotion.claimStatus.CLAIMABLE")
+                    : reward.status === "CLAIMED"
+                      ? t("shared.promotion.claimStatus.CLAIMED")
+                      : reward.status === "VOIDED" || reward.status === "EXPIRED"
+                        ? t("shared.promotion.claimStatus.VOIDED")
+                        : t("shared.promotion.claimStatus.PENDING");
+                const rewardAmountLabel = isAuraReward
+                  ? `+${formatAuraAtomic(reward.amountAura)} ${t("shared.units.aura")}`
+                  : `+${formatUsdtAtomic(reward.amountUsdt)} ${t("shared.units.usdt")}`;
 
                 return (
                 <GlassCard key={reward.rewardId} className="p-4">
@@ -204,10 +504,10 @@ export function RewardsPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-white">
-                        +{formatAuraAtomic(reward.amountAura)} {t("shared.units.aura")}
+                        {rewardAmountLabel}
                       </p>
                       <p className="text-[10px] text-white/40">
-                        {t(`shared.promotion.claimStatus.${reward.claimStatus}`)}
+                        {statusLabel}
                       </p>
                     </div>
                   </div>

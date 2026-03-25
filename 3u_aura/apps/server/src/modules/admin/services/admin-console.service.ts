@@ -4,6 +4,7 @@ import {
   ClaimType as CommonClaimType,
   EpochStatus as CommonEpochStatus,
   NftEligibilityStatus as CommonNftEligibilityStatus,
+  RewardType as CommonRewardType,
 } from '3u-aura-common';
 import type {
   AdminAuditLogView,
@@ -21,6 +22,8 @@ import type {
   AdminPendingPlacementListQuery,
   PaginateData,
 } from '3u-aura-common';
+import { WeeklyEpochRepository } from '../../epoch';
+import { WeeklyRewardRepository } from '../../rewards';
 import { AdminConsoleRepository } from '../repositories/admin-console.repository';
 
 type SubsidyClaimIssueRow = {
@@ -87,10 +90,20 @@ function toCommonNftEligibilityStatus(
 export class AdminConsoleService {
   constructor(
     private readonly adminConsoleRepository: AdminConsoleRepository,
+    private readonly weeklyEpochRepository: WeeklyEpochRepository,
+    private readonly weeklyRewardRepository: WeeklyRewardRepository,
   ) {}
 
   async getOverview(): Promise<AdminOverviewView> {
     const overview = await this.adminConsoleRepository.countOverview();
+    const latestResultEpoch =
+      await this.weeklyEpochRepository.findLatestPromotionResultEpoch();
+    const latestResultRewards = latestResultEpoch
+      ? await this.weeklyRewardRepository.listRewardsByTypes({
+          epochId: latestResultEpoch.id,
+          rewardTypes: ['LOTTERY_USDT', 'RANKING_USDT'],
+        })
+      : [];
 
     return {
       ...overview,
@@ -101,6 +114,41 @@ export class AdminConsoleService {
             participantCount: overview.latestEpoch.participantCount,
             qualifiedTicketCount: overview.latestEpoch.qualifiedTicketCount,
             status: toCommonEpochStatus(overview.latestEpoch.status),
+          }
+        : undefined,
+      latestWeeklyResults: latestResultEpoch
+        ? {
+            epochId: latestResultEpoch.id,
+            epochNo: latestResultEpoch.epochNo,
+            lotteryWinners: latestResultRewards
+              .filter((reward) => reward.rewardType === CommonRewardType.LOTTERY_USDT)
+              .map((reward) => ({
+                amountUsdt: reward.amountUsdt.toFixed(0),
+                prizeLabel: this.toLotteryPrizeLabel(reward.distributionKey),
+                userId: reward.userId,
+                walletAddress: reward.user.walletAddress,
+              })),
+            merkleRoot: latestResultEpoch.merkleRoot ?? undefined,
+            participantCount: latestResultEpoch.participantCount,
+            publishedAt:
+              latestResultEpoch.settledAt ??
+              latestResultEpoch.snapshotAt ??
+              undefined,
+            qualifiedTicketCount: latestResultEpoch.qualifiedTicketCount,
+            rankingEntries: latestResultRewards
+              .filter((reward) => reward.rewardType === CommonRewardType.RANKING_USDT)
+              .sort(
+                (left, right) =>
+                  (left.rank ?? Number.MAX_SAFE_INTEGER) -
+                  (right.rank ?? Number.MAX_SAFE_INTEGER),
+              )
+              .map((reward) => ({
+                amountUsdt: reward.amountUsdt.toFixed(0),
+                rank: reward.rank ?? 0,
+                userId: reward.userId,
+                walletAddress: reward.user.walletAddress,
+              })),
+            status: toCommonEpochStatus(latestResultEpoch.status),
           }
         : undefined,
     };
@@ -242,5 +290,21 @@ export class AdminConsoleService {
         targetType: item.targetType ?? undefined,
       })),
     };
+  }
+
+  private toLotteryPrizeLabel(
+    distributionKey: string,
+  ): 'FIRST' | 'SECOND' | 'THIRD' | 'LUCKY' {
+    if (distributionKey.startsWith('LOTTERY_FIRST_PRIZE')) {
+      return 'FIRST';
+    }
+    if (distributionKey.startsWith('LOTTERY_SECOND_PRIZE')) {
+      return 'SECOND';
+    }
+    if (distributionKey.startsWith('LOTTERY_THIRD_PRIZE')) {
+      return 'THIRD';
+    }
+
+    return 'LUCKY';
   }
 }

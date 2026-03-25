@@ -4,6 +4,10 @@ import type {
   NftReferralSignatureRequest,
   PromotionCheckinRequest,
   PromotionCheckinResult,
+  PromotionCurrentLotteryParticipationView,
+  PromotionLotteryOutcomeView,
+  PromotionLotteryParticipateRequest,
+  PromotionLotteryRevealRequest,
   ReferralMintSignaturePayload,
   ReferralBindInviterInput,
   ReferralBindPlacementInput,
@@ -61,6 +65,33 @@ export async function apiGetCurrentEligibility(walletAddress?: string) {
 export async function apiGetCurrentEpoch() {
   return fetchClient<WeeklyEpochBoundaryView>("/api/v1/epoch/boundary", {
     auth: false,
+  });
+}
+
+export async function apiGetCurrentLotteryParticipation() {
+  return fetchClient<PromotionCurrentLotteryParticipationView>(
+    "/api/v1/lottery/current",
+  );
+}
+
+export async function apiParticipateCurrentLottery(
+  input: PromotionLotteryParticipateRequest = {},
+) {
+  return fetchClient<PromotionCurrentLotteryParticipationView>(
+    "/api/v1/lottery/participate",
+    {
+      body: input,
+      method: "POST",
+    },
+  );
+}
+
+export async function apiRevealLotteryResult(
+  input: PromotionLotteryRevealRequest,
+) {
+  return fetchClient<PromotionLotteryOutcomeView>("/api/v1/lottery/reveal", {
+    body: input,
+    method: "POST",
   });
 }
 

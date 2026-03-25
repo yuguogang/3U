@@ -13,6 +13,10 @@ describe('LotteryTicketService', () => {
         .mockReturnValueOnce('2026-03-08'),
     };
     const lotteryTicketRepository = {
+      countEpochTicketState: jest.fn().mockResolvedValue({
+        participantCount: 1,
+        qualifiedTicketCount: 1,
+      }),
       clearTicketsOutsideUserSet: jest.fn().mockResolvedValue(undefined),
       upsertTicket: jest.fn().mockResolvedValue(undefined),
     };
@@ -28,6 +32,12 @@ describe('LotteryTicketService', () => {
       findById: jest.fn(),
       updateTicketCounts: jest.fn().mockResolvedValue(undefined),
     };
+    const weeklyEpochPolicyEngine = {
+      projectBoundary: jest.fn(),
+    };
+    const weeklyRewardRepository = {
+      listUserRewardsByEpochAndTypes: jest.fn().mockResolvedValue([]),
+    };
 
     const service = new LotteryTicketService(
       auditSeam as any,
@@ -35,7 +45,9 @@ describe('LotteryTicketService', () => {
       lotteryTicketRepository as any,
       statsRepository as any,
       transactionOrchestrator as any,
+      weeklyEpochPolicyEngine as any,
       weeklyEpochRepository as any,
+      weeklyRewardRepository as any,
     );
 
     return {
@@ -44,7 +56,9 @@ describe('LotteryTicketService', () => {
       lotteryTicketRepository,
       service,
       statsRepository,
+      weeklyEpochPolicyEngine,
       weeklyEpochRepository,
+      weeklyRewardRepository,
     };
   };
 

@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
 import { loadBaseEnv, loadManifest, REPO_ROOT } from '../promotion-env/lib.mjs';
 
 const requireFromServer = createRequire(
@@ -6,14 +7,14 @@ const requireFromServer = createRequire(
 );
 const { Client } = requireFromServer('pg');
 
-function readArg(name) {
+function readArg(name, argv = process.argv) {
   const flag = `--${name}`;
-  const index = process.argv.indexOf(flag);
+  const index = argv.indexOf(flag);
   if (index !== -1) {
-    return process.argv[index + 1];
+    return argv[index + 1];
   }
 
-  const inline = process.argv.find((value) => value.startsWith(`${flag}=`));
+  const inline = argv.find((value) => value.startsWith(`${flag}=`));
   return inline ? inline.slice(flag.length + 1) : undefined;
 }
 
@@ -21,7 +22,7 @@ function quoteIdentifier(value) {
   return `"${String(value).replaceAll('"', '""')}"`;
 }
 
-function buildDatabaseConnectionConfig(manifest) {
+export function buildDatabaseConnectionConfig(manifest) {
   const baseEnv = loadBaseEnv(REPO_ROOT);
 
   return {
@@ -34,7 +35,7 @@ function buildDatabaseConnectionConfig(manifest) {
   };
 }
 
-function buildSyntheticWallet(epochNo, index) {
+export function buildSyntheticWallet(epochNo, index) {
   const suffix = (epochNo * 100 + index).toString(16).padStart(40, '0');
   return `0x${suffix}`;
 }
@@ -77,6 +78,84 @@ function buildEpochDateKeys(startAt, endAt, timeZone) {
   }
 
   return result;
+}
+
+export function buildWeeklyForkParticipantWallets({
+  observerWallet,
+  syntheticParticipantCount,
+  targetEpochNo,
+}) {
+  return Array.from(
+    new Set([
+      observerWallet,
+      '0x90F79bf6EB2c4f870365E785982E1f101E93b906',
+      '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+      '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
+      '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+      '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',
+      ...Array.from({ length: syntheticParticipantCount }, (_, index) =>
+        buildSyntheticWallet(targetEpochNo, index + 1),
+      ),
+    ]),
+  );
+}
+
+function buildParticipantIncrements(qualifiedRankingCount) {
+  return [
+    '9000000000',
+    '7500000000',
+    '6800000000',
+    '6200000000',
+    '5800000000',
+    '5200000000',
+    '4800000000',
+    '4400000000',
+    '4000000000',
+    '3600000000',
+    '3400000000',
+    '3200000000',
+    '3000000000',
+    '2800000000',
+    '2600000000',
+    '2400000000',
+    '2200000000',
+    '2000000000',
+    '1900000000',
+    '1800000000',
+    '1700000000',
+    '1600000000',
+    '1500000000',
+    '1400000000',
+    '1300000000',
+  ].map((value, index) => (index < qualifiedRankingCount ? value : '100000000'));
+}
+
+function buildPoolSeeds(participantWallets, poolContributorCount) {
+  return [
+    ['60000000', participantWallets[0]],
+    ['45000000', participantWallets[1]],
+    ['30000000', participantWallets[2]],
+    ['25000000', participantWallets[3]],
+    ['20000000', participantWallets[4]],
+    ['18000000', participantWallets[5]],
+    ['16000000', participantWallets[6]],
+    ['14000000', participantWallets[7]],
+    ['12000000', participantWallets[8]],
+    ['10000000', participantWallets[9]],
+    ['8000000', participantWallets[10]],
+    ['6000000', participantWallets[11]],
+    ['5000000', participantWallets[12]],
+    ['4000000', participantWallets[13]],
+    ['3000000', participantWallets[14]],
+  ]
+    .filter(([, contributorWallet]) => Boolean(contributorWallet))
+    .slice(0, poolContributorCount)
+    .map(([lotteryAmountUsdt, contributorWallet]) => ({
+      contributorWallet,
+      lotteryAmountUsdt,
+      totalAmountUsdt: lotteryAmountUsdt,
+      treasuryAmountUsdt: '0',
+    }));
 }
 
 async function upsertUser(client, schema, data) {
@@ -141,7 +220,13 @@ async function upsertDailyStat(client, schema, data) {
         "smallLegVolumeUsdt" = EXCLUDED."smallLegVolumeUsdt",
         "updatedAt" = NOW()
     `,
-    [data.id, data.userId, data.dateKey, data.countedCheckinDays, data.smallLegVolumeUsdt],
+    [
+      data.id,
+      data.userId,
+      data.dateKey,
+      data.countedCheckinDays,
+      data.smallLegVolumeUsdt,
+    ],
   );
 }
 
@@ -268,34 +353,12 @@ async function upsertCheckinBundle(client, schema, data) {
   );
 }
 
-async function main() {
-  const envName = readArg('env') ?? process.env.PROMOTION_ENV ?? 'fork-anvil';
-  const observerWallet = readArg('observer-wallet');
-  const observerUserId = readArg('observer-user-id');
-  const poolContributorCount = clampInteger(readArg('pool-contributor-count'), 10, 1, 15);
-  const qualifiedRankingCount = clampInteger(readArg('qualified-ranking-count'), 15, 1, 15);
-  const referenceAt = readArg('reference-at');
-  const syntheticParticipantCount = clampInteger(
-    readArg('synthetic-participant-count'),
-    18,
-    0,
-    20,
-  );
-  const targetEpochNo = Number(readArg('target-epoch-no'));
-  const targetStartAt = readArg('target-start-at');
-  const targetEndAt = readArg('target-end-at');
-
-  if (!observerWallet || !referenceAt || !targetEpochNo || !targetStartAt || !targetEndAt) {
-    throw new Error(
-      'Usage: node scripts/uat/seed-weekly-fork-fixtures.mjs --env <env> --observer-wallet <wallet> --reference-at <iso> --target-epoch-no <n> --target-start-at <iso> --target-end-at <iso>',
-    );
-  }
-
-  const manifest = loadManifest(envName);
+export async function seedWeeklyForkFixtures(params) {
+  const manifest = loadManifest(params.envName);
   const schema = manifest.infra.database.schema;
   const client = new Client(buildDatabaseConnectionConfig(manifest));
-  const targetStart = new Date(targetStartAt);
-  const targetEnd = new Date(targetEndAt);
+  const targetStart = new Date(params.targetStartAt);
+  const targetEnd = new Date(params.targetEndAt);
   const dateKeys = buildEpochDateKeys(
     targetStart,
     targetEnd,
@@ -306,160 +369,42 @@ async function main() {
     throw new Error('No epoch date keys generated for weekly fork fixture seeding');
   }
 
-  const participantWallets = Array.from(
-    new Set([
-      observerWallet,
-      '0x90F79bf6EB2c4f870365E785982E1f101E93b906',
-      '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
-      '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
-      '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-      '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',
-      ...Array.from({ length: syntheticParticipantCount }, (_, index) =>
-        buildSyntheticWallet(targetEpochNo, index + 1),
-      ),
-    ]),
+  const participantWallets = buildWeeklyForkParticipantWallets({
+    observerWallet: params.observerWallet,
+    syntheticParticipantCount: params.syntheticParticipantCount,
+    targetEpochNo: params.targetEpochNo,
+  });
+  const participantIncrements = buildParticipantIncrements(
+    params.qualifiedRankingCount,
   );
-  const participantIncrements = [
-    '9000000000',
-    '7500000000',
-    '6800000000',
-    '6200000000',
-    '5800000000',
-    '5200000000',
-    '4800000000',
-    '4400000000',
-    '4000000000',
-    '3600000000',
-    '3400000000',
-    '3200000000',
-    '3000000000',
-    '2800000000',
-    '2600000000',
-    '2400000000',
-    '2200000000',
-    '2000000000',
-    '1900000000',
-    '1800000000',
-    '1700000000',
-    '1600000000',
-    '1500000000',
-    '1400000000',
-    '1300000000',
-  ].map((value, index) => (index < qualifiedRankingCount ? value : '100000000'));
-  const poolSeeds = [
-    {
-      contributorWallet: participantWallets[0],
-      lotteryAmountUsdt: '60000000',
-      totalAmountUsdt: '60000000',
-      treasuryAmountUsdt: '0',
-    },
-    {
-      contributorWallet: participantWallets[1],
-      lotteryAmountUsdt: '45000000',
-      totalAmountUsdt: '45000000',
-      treasuryAmountUsdt: '0',
-    },
-    {
-      contributorWallet: participantWallets[2],
-      lotteryAmountUsdt: '30000000',
-      totalAmountUsdt: '30000000',
-      treasuryAmountUsdt: '0',
-    },
-    {
-      contributorWallet: participantWallets[3],
-      lotteryAmountUsdt: '25000000',
-      totalAmountUsdt: '25000000',
-      treasuryAmountUsdt: '0',
-    },
-    {
-      contributorWallet: participantWallets[4],
-      lotteryAmountUsdt: '20000000',
-      totalAmountUsdt: '20000000',
-      treasuryAmountUsdt: '0',
-    },
-    {
-      contributorWallet: participantWallets[5],
-      lotteryAmountUsdt: '18000000',
-      totalAmountUsdt: '18000000',
-      treasuryAmountUsdt: '0',
-    },
-    {
-      contributorWallet: participantWallets[6],
-      lotteryAmountUsdt: '16000000',
-      totalAmountUsdt: '16000000',
-      treasuryAmountUsdt: '0',
-    },
-    {
-      contributorWallet: participantWallets[7],
-      lotteryAmountUsdt: '14000000',
-      totalAmountUsdt: '14000000',
-      treasuryAmountUsdt: '0',
-    },
-    {
-      contributorWallet: participantWallets[8],
-      lotteryAmountUsdt: '12000000',
-      totalAmountUsdt: '12000000',
-      treasuryAmountUsdt: '0',
-    },
-    {
-      contributorWallet: participantWallets[9],
-      lotteryAmountUsdt: '10000000',
-      totalAmountUsdt: '10000000',
-      treasuryAmountUsdt: '0',
-    },
-    {
-      contributorWallet: participantWallets[10],
-      lotteryAmountUsdt: '8000000',
-      totalAmountUsdt: '8000000',
-      treasuryAmountUsdt: '0',
-    },
-    {
-      contributorWallet: participantWallets[11],
-      lotteryAmountUsdt: '6000000',
-      totalAmountUsdt: '6000000',
-      treasuryAmountUsdt: '0',
-    },
-    {
-      contributorWallet: participantWallets[12],
-      lotteryAmountUsdt: '5000000',
-      totalAmountUsdt: '5000000',
-      treasuryAmountUsdt: '0',
-    },
-    {
-      contributorWallet: participantWallets[13],
-      lotteryAmountUsdt: '4000000',
-      totalAmountUsdt: '4000000',
-      treasuryAmountUsdt: '0',
-    },
-    {
-      contributorWallet: participantWallets[14],
-      lotteryAmountUsdt: '3000000',
-      totalAmountUsdt: '3000000',
-      treasuryAmountUsdt: '0',
-    },
-  ].slice(0, poolContributorCount);
+  const poolSeeds = buildPoolSeeds(
+    participantWallets,
+    params.poolContributorCount,
+  );
 
   await client.connect();
 
   try {
     await client.query('BEGIN');
 
+    const participants = [];
     const userIdsByWallet = new Map();
 
     for (let index = 0; index < participantWallets.length; index += 1) {
       const walletAddress = participantWallets[index];
-      const syntheticId = `wf03_epoch_${targetEpochNo}_user_${String(index + 1).padStart(2, '0')}`;
+      const syntheticId = `wf03_epoch_${params.targetEpochNo}_user_${String(index + 1).padStart(2, '0')}`;
       const userId =
-        index === 0 && observerUserId
+        index === 0 && params.observerUserId
           ? await activateExistingUser(client, schema, {
-              userId: observerUserId,
+              userId: params.observerUserId,
             })
           : await upsertUser(client, schema, {
               id: syntheticId,
-              inviteCode: `WF03${targetEpochNo}${String(index + 1).padStart(2, '0')}`,
+              inviteCode: `WF03${params.targetEpochNo}${String(index + 1).padStart(2, '0')}`,
               walletAddress,
             });
       userIdsByWallet.set(walletAddress, userId);
+      participants.push({ userId, walletAddress });
 
       for (let dayIndex = 0; dayIndex < dateKeys.length; dayIndex += 1) {
         await upsertDailyStat(client, schema, {
@@ -483,15 +428,15 @@ async function main() {
       }
 
       const dateKey = dateKeys[Math.min(index, dateKeys.length - 1)];
-      const txHash = `0x${`${targetEpochNo}${index + 1}`.padStart(64, '0')}`;
+      const txHash = `0x${`${params.targetEpochNo}${index + 1}`.padStart(64, '0')}`;
       await upsertCheckinBundle(client, schema, {
         chainId: manifest.chain.id,
         checkinCountToday: 500 + index,
-        checkinId: `wf03_epoch_${targetEpochNo}_checkin_${index + 1}`,
+        checkinId: `wf03_epoch_${params.targetEpochNo}_checkin_${index + 1}`,
         dateKey,
         payerAddress: walletAddress,
-        paymentReceiptId: `wf03_epoch_${targetEpochNo}_payment_${index + 1}`,
-        poolSplitFactId: `wf03_epoch_${targetEpochNo}_pool_${index + 1}`,
+        paymentReceiptId: `wf03_epoch_${params.targetEpochNo}_payment_${index + 1}`,
+        poolSplitFactId: `wf03_epoch_${params.targetEpochNo}_pool_${index + 1}`,
         receiverAddress: manifest.roles.checkinReceiverAddress,
         totalAmountUsdt: poolSeed.totalAmountUsdt,
         lotteryAmountUsdt: poolSeed.lotteryAmountUsdt,
@@ -503,34 +448,90 @@ async function main() {
     }
 
     await client.query('COMMIT');
+
+    return {
+      dateKeys,
+      minimumParticipants: manifest.promotion.minimumParticipants,
+      observerWallet: params.observerWallet,
+      participantCount: participantWallets.length,
+      participantWallets,
+      participants,
+      poolContributionAtomic: poolSeeds.reduce(
+        (sum, item) => sum + BigInt(item.lotteryAmountUsdt),
+        0n,
+      ).toString(),
+      referenceAt: params.referenceAt,
+      targetEpochNo: params.targetEpochNo,
+    };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
   } finally {
     await client.end();
   }
-
-  console.log(
-    JSON.stringify(
-      {
-        dateKeys,
-        minimumParticipants: manifest.promotion.minimumParticipants,
-        observerWallet,
-        participantCount: participantWallets.length,
-        poolContributionAtomic: poolSeeds.reduce(
-          (sum, item) => sum + BigInt(item.lotteryAmountUsdt),
-          0n,
-        ).toString(),
-        referenceAt,
-        targetEpochNo,
-      },
-      null,
-      2,
-    ),
-  );
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+function parseCliArgs(argv = process.argv.slice(2)) {
+  const envName = readArg('env', argv) ?? process.env.PROMOTION_ENV ?? 'fork-anvil';
+  const observerWallet = readArg('observer-wallet', argv);
+  const observerUserId = readArg('observer-user-id', argv);
+  const poolContributorCount = clampInteger(
+    readArg('pool-contributor-count', argv),
+    10,
+    1,
+    15,
+  );
+  const qualifiedRankingCount = clampInteger(
+    readArg('qualified-ranking-count', argv),
+    15,
+    1,
+    15,
+  );
+  const referenceAt = readArg('reference-at', argv);
+  const syntheticParticipantCount = clampInteger(
+    readArg('synthetic-participant-count', argv),
+    18,
+    0,
+    20,
+  );
+  const targetEpochNo = Number(readArg('target-epoch-no', argv));
+  const targetStartAt = readArg('target-start-at', argv);
+  const targetEndAt = readArg('target-end-at', argv);
+
+  if (
+    !observerWallet ||
+    !referenceAt ||
+    !targetEpochNo ||
+    !targetStartAt ||
+    !targetEndAt
+  ) {
+    throw new Error(
+      'Usage: node scripts/uat/seed-weekly-fork-fixtures.mjs --env <env> --observer-wallet <wallet> --reference-at <iso> --target-epoch-no <n> --target-start-at <iso> --target-end-at <iso>',
+    );
+  }
+
+  return {
+    envName,
+    observerUserId,
+    observerWallet,
+    poolContributorCount,
+    qualifiedRankingCount,
+    referenceAt,
+    syntheticParticipantCount,
+    targetEndAt,
+    targetEpochNo,
+    targetStartAt,
+  };
+}
+
+async function main() {
+  const result = await seedWeeklyForkFixtures(parseCliArgs());
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

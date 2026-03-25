@@ -168,4 +168,22 @@ export class WeeklyEpochRepository {
       },
     });
   }
+
+  async findLatestPromotionResultEpoch(
+    executor: DbExecutor = this.db,
+  ): Promise<WeeklyEpoch | null> {
+    return executor.weeklyEpoch.findFirst({
+      where: {
+        epochType: EpochType.WEEKLY_PROMOTION,
+        status: {
+          in: [
+            EpochStatus.ROOT_POSTED,
+            EpochStatus.SETTLED,
+            EpochStatus.CANCELLED,
+          ],
+        },
+      },
+      orderBy: { epochNo: 'desc' },
+    });
+  }
 }

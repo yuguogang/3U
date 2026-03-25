@@ -343,7 +343,18 @@
     "lottery": {
       "title": "每周抽奖券",
       "progress": "{current}/7 天",
-      "remaining": "再签到 {count} 天即可获得一张抽奖券"
+      "remaining": "再签到 {count} 天即可获得一张抽奖券",
+      "optInTitle": "参与本周抽奖",
+      "optInDescription": "拿到资格后，记得手动确认参与本周抽奖。结算完成后可以去奖励页揭晓结果。",
+      "joinedQualified": "你已经报名本周抽奖，并且当前已经满足门票条件。",
+      "joinedPending": "你已经报名本周抽奖。继续完成本周签到，结算时满足条件就会进入抽奖池。",
+      "joinedBadge": "已参与",
+      "joinButton": "参与本周抽奖",
+      "joining": "参与中...",
+      "qualifiedBadge": "已报名，等待开奖",
+      "pendingBadge": "已报名，等待达标",
+      "waitingEpoch": "当前周期不在参与时间内",
+      "signInHint": "先连接钱包并完成登录后再参与"
     },
     "calendar": {
       "title": "本月签到"
@@ -378,6 +389,43 @@
       "errorTitle": "奖励加载失败",
       "emptyTitle": "还没有奖励记录",
       "emptyDescription": "你的签到奖励、推荐奖励和周期奖励在入账后会显示在这里。"
+    },
+    "weekly": {
+      "title": "上周结果",
+      "publishedAt": "发布时间：{date}",
+      "errorTitle": "每周结果加载失败",
+      "emptyTitle": "暂时没有每周结果",
+      "emptyDescription": "当周结算并发布后，抽奖与排名结果会显示在这里。",
+      "lotteryTitle": "我的抽奖结果",
+      "participants": "参与人数 {participants}，有效门票 {qualified}",
+      "revealButton": "揭晓结果",
+      "revealingTitle": "正在揭晓中...",
+      "revealingDescription": "本次动画只负责展示已经结算好的结果，请稍候。",
+      "pendingTitle": "可以揭晓本周结果了",
+      "pendingDescription": "本周抽奖已经结算完成。点击下方按钮，立即揭晓你的开奖结果。",
+      "wonTitle": "恭喜中奖",
+      "wonDescription": "你本周抽中了 {prize}，可领取 {amount} USDT。",
+      "lostTitle": "这周没有抽中",
+      "lostDescription": "本周未中奖，继续保持签到，下一期继续参与。",
+      "lostDescriptionConsolation": "这周没有抽中，但你获得了 {amount} AURA 安慰奖励。",
+      "notQualifiedTitle": "已报名，但本周未达标",
+      "notQualifiedDescription": "你已经参与本周抽奖，但结算时未满足门票条件，因此未进入抽奖池。",
+      "rolledOverTitle": "本周抽奖顺延",
+      "rolledOverDescription": "本期参与人数不足，奖池已顺延到下一周。",
+      "notParticipatingTitle": "你没有参与这期抽奖",
+      "notParticipatingDescription": "抽奖改为手动参与模式。下周拿到资格后，记得先点击参与。",
+      "viewClaims": "前往领取",
+      "winnersTitle": "抽奖获奖名单",
+      "winnersEmpty": "本期暂无已公布的抽奖获奖名单。",
+      "rankingTitle": "排名奖励",
+      "rankingEmpty": "本期暂无已公布的排名奖励。",
+      "you": "我",
+      "prize": {
+        "FIRST": "一等奖",
+        "SECOND": "二等奖",
+        "THIRD": "三等奖",
+        "LUCKY": "幸运奖"
+      }
     }
   },
   "claims": {

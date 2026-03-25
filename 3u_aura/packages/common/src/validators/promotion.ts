@@ -142,6 +142,22 @@ export type PromotionReferralNftSyncRequest = z.infer<
   typeof PromotionReferralNftSyncRequestSchema
 >;
 
+export const PromotionLotteryParticipateRequestSchema = z.object({
+  epochId: z.string().trim().min(1).optional(),
+});
+
+export type PromotionLotteryParticipateRequest = z.infer<
+  typeof PromotionLotteryParticipateRequestSchema
+>;
+
+export const PromotionLotteryRevealRequestSchema = z.object({
+  epochId: z.string().trim().min(1),
+});
+
+export type PromotionLotteryRevealRequest = z.infer<
+  typeof PromotionLotteryRevealRequestSchema
+>;
+
 export const WeeklyEpochBoundaryQuerySchema = z.object({
   epochType: z.nativeEnum(EpochType).optional(),
   status: z.nativeEnum(EpochStatus).optional(),
