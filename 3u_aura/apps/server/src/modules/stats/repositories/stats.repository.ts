@@ -330,6 +330,47 @@ export class StatsRepository {
     });
   }
 
+  async setProfileConsolationProjection(
+    data: {
+      totalAura: Prisma.Decimal;
+      userId: string;
+    },
+    executor: DbExecutor = this.db,
+  ): Promise<UserProfile> {
+    return executor.userProfile.update({
+      where: { userId: data.userId },
+      data: {
+        totalAuraFromConsolation: data.totalAura,
+      },
+    });
+  }
+
+  async setDailyConsolationProjection(
+    data: {
+      amountAura: Prisma.Decimal;
+      dateKey: string;
+      userId: string;
+    },
+    executor: DbExecutor = this.db,
+  ): Promise<UserDailyStat> {
+    return executor.userDailyStat.upsert({
+      where: {
+        userId_dateKey: {
+          dateKey: data.dateKey,
+          userId: data.userId,
+        },
+      },
+      create: {
+        consolationAura: data.amountAura,
+        dateKey: data.dateKey,
+        userId: data.userId,
+      },
+      update: {
+        consolationAura: data.amountAura,
+      },
+    });
+  }
+
   async summarizeEpochCheckinDays(
     data: {
       dateKeyFromInclusive: string;

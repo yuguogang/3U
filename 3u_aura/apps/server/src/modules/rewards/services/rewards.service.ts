@@ -218,11 +218,20 @@ export class RewardsService {
             tx,
           );
         if (existingLedger) {
+          await this.syncConsolationProjectionForEpoch(
+            {
+              rewardAmountAura: reward.amountAura,
+              rewardId: reward.id,
+              epochId: epoch.id,
+              settlementDateKey,
+              userId: reward.userId,
+            },
+            tx,
+          );
           continue;
         }
 
         consolationCount += 1;
-        await this.statsRepository.ensureUserProfile(reward.userId, tx);
         await this.ledgerRepository.createConsolationReward(
           {
             amount: reward.amountAura,
@@ -234,17 +243,12 @@ export class RewardsService {
           },
           tx,
         );
-        await this.statsRepository.upsertDailyConsolationProjection(
+        await this.syncConsolationProjectionForEpoch(
           {
-            amountAura: reward.amountAura,
-            dateKey: settlementDateKey,
-            userId: reward.userId,
-          },
-          tx,
-        );
-        await this.statsRepository.applyProfileConsolationProjection(
-          {
-            amountAura: reward.amountAura,
+            rewardAmountAura: reward.amountAura,
+            rewardId: reward.id,
+            epochId: epoch.id,
+            settlementDateKey,
             userId: reward.userId,
           },
           tx,
@@ -265,6 +269,53 @@ export class RewardsService {
         mode: 'publish' as const,
         nextEpochId: nextEpoch?.id,
         rankingRolloverUsdt,
+      };
+    });
+  }
+
+  async syncConsolationProjections(data?: {
+    epochId?: string;
+    userId?: string;
+    walletAddress?: string;
+  }): Promise<{
+    processedRewards: number;
+    skippedRewardsWithoutLedger: number;
+    userCount: number;
+    walletAddresses: string[];
+  }> {
+    return this.transactionOrchestrator.run(async (tx) => {
+      const rewards =
+        await this.weeklyRewardRepository.listConsolationRewardsForProjection(
+          data,
+          tx,
+        );
+      const wallets = new Set<string>();
+      let processedRewards = 0;
+      let skippedRewardsWithoutLedger = 0;
+
+      for (const reward of rewards) {
+        wallets.add(reward.user.walletAddress);
+        const settlementDateKey = this.weeklyEpochPolicyEngine.toDateKey(
+          new Date(reward.epoch.endAt.getTime() - 1),
+        );
+        await this.syncConsolationProjectionForEpoch(
+          {
+            rewardAmountAura: reward.amountAura,
+            rewardId: reward.id,
+            epochId: reward.epochId,
+            settlementDateKey,
+            userId: reward.userId,
+          },
+          tx,
+        );
+        processedRewards += 1;
+      }
+
+      return {
+        processedRewards,
+        skippedRewardsWithoutLedger,
+        userCount: wallets.size,
+        walletAddresses: [...wallets].sort(),
       };
     });
   }
@@ -340,6 +391,69 @@ export class RewardsService {
     }
 
     return (pool - distributed).toString();
+  }
+
+  private async syncConsolationProjectionForEpoch(
+    data: {
+      rewardAmountAura: Prisma.Decimal;
+      rewardId: string;
+      epochId: string;
+      settlementDateKey: string;
+      userId: string;
+    },
+    tx: Prisma.TransactionClient,
+  ): Promise<void> {
+    const existingLedger = await this.ledgerRepository.findConfirmedBySource(
+      {
+        sourceRefId: data.rewardId,
+        sourceType: 'CONSOLATION',
+        userId: data.userId,
+      },
+      tx,
+    );
+
+    if (!existingLedger) {
+      await this.ledgerRepository.createConsolationReward(
+        {
+          amount: data.rewardAmountAura,
+          epochId: data.epochId,
+          notes: `weekly consolation reward for ${data.rewardId}`,
+          sourceRefId: data.rewardId,
+          sourceRefType: 'WEEKLY_REWARD',
+          userId: data.userId,
+        },
+        tx,
+      );
+    }
+
+    await this.statsRepository.ensureUserProfile(data.userId, tx);
+
+    const [epochConsolationAmount, totalConsolationAmount] = await Promise.all([
+      this.ledgerRepository.sumConfirmedConsolationAmountByUserAndEpoch(
+        {
+          epochId: data.epochId,
+          userId: data.userId,
+        },
+        tx,
+      ),
+      this.ledgerRepository.sumConfirmedConsolationAmountByUser(data.userId, tx),
+    ]);
+
+    await this.statsRepository.setDailyConsolationProjection(
+      {
+        amountAura: epochConsolationAmount,
+        dateKey: data.settlementDateKey,
+        userId: data.userId,
+      },
+      tx,
+    );
+    await this.statsRepository.setProfileConsolationProjection(
+      {
+        totalAura: totalConsolationAmount,
+        userId: data.userId,
+      },
+      tx,
+    );
   }
 
   private async ensureNextEpoch(

@@ -380,4 +380,56 @@ export class WeeklyRewardRepository {
       },
     });
   }
+
+  async listConsolationRewardsForProjection(
+    data?: {
+      epochId?: string;
+      userId?: string;
+      walletAddress?: string;
+    },
+    executor: DbExecutor = this.db,
+  ): Promise<
+    Array<{
+      amountAura: WeeklyReward['amountAura'];
+      epoch: {
+        endAt: Date;
+      };
+      epochId: string;
+      id: string;
+      userId: string;
+      user: {
+        walletAddress: string;
+      };
+    }>
+  > {
+    return executor.weeklyReward.findMany({
+      where: {
+        epochId: data?.epochId,
+        rewardType: 'CONSOLATION_AURA',
+        userId: data?.userId,
+        user: data?.walletAddress
+          ? {
+              walletAddress: data.walletAddress,
+            }
+          : undefined,
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      select: {
+        amountAura: true,
+        epochId: true,
+        id: true,
+        userId: true,
+        epoch: {
+          select: {
+            endAt: true,
+          },
+        },
+        user: {
+          select: {
+            walletAddress: true,
+          },
+        },
+      },
+    });
+  }
 }

@@ -3,12 +3,22 @@ import { EpochStatus, EpochType } from '3u-aura-common';
 import { RewardsService } from './rewards.service';
 import { RewardAllocationEngine } from '../engines/reward-allocation.engine';
 
+jest.mock('nanoid', () => ({
+  nanoid: () => 'test-nanoid',
+}));
+
 describe('RewardsService', () => {
   const createService = () => {
     const ledgerRepository = {
       createConsolationReward: jest.fn().mockResolvedValue(undefined),
       createReferralReward: jest.fn().mockResolvedValue(undefined),
       findConfirmedBySource: jest.fn().mockResolvedValue(null),
+      sumConfirmedConsolationAmountByUser: jest
+        .fn()
+        .mockResolvedValue(new Prisma.Decimal((100n * 10n ** 18n).toString())),
+      sumConfirmedConsolationAmountByUserAndEpoch: jest
+        .fn()
+        .mockResolvedValue(new Prisma.Decimal((100n * 10n ** 18n).toString())),
     };
     const referralRepository = {
       findUserForBinding: jest.fn(),
@@ -75,12 +85,15 @@ describe('RewardsService', () => {
         .mockResolvedValue(undefined),
       applyProfileConsolationProjection: jest.fn().mockResolvedValue(undefined),
       ensureUserProfile: jest.fn().mockResolvedValue(undefined),
+      setDailyConsolationProjection: jest.fn().mockResolvedValue(undefined),
+      setProfileConsolationProjection: jest.fn().mockResolvedValue(undefined),
       upsertDailyConsolationProjection: jest.fn().mockResolvedValue(undefined),
       upsertDailyReferralRewardProjection: jest
         .fn()
         .mockResolvedValue(undefined),
     };
     const weeklyRewardRepository = {
+      listConsolationRewardsForProjection: jest.fn().mockResolvedValue([]),
       listRewardsByTypes: jest.fn().mockResolvedValue([]),
     };
 
@@ -336,7 +349,7 @@ describe('RewardsService', () => {
       expect.any(Object),
     );
     expect(
-      statsRepository.upsertDailyConsolationProjection,
+      statsRepository.setDailyConsolationProjection,
     ).toHaveBeenCalledWith(
       expect.objectContaining({
         dateKey: '2026-03-15',
@@ -357,5 +370,174 @@ describe('RewardsService', () => {
         rankingRolloverUsdt: '480',
       }),
     );
+  });
+
+  it('self-heals consolation projections when ledger already exists', async () => {
+    const {
+      ledgerRepository,
+      service,
+      statsRepository,
+      weeklyEpochPolicyEngine,
+      weeklyEpochRepository,
+      weeklyRewardRepository,
+    } = createService();
+
+    weeklyEpochRepository.findById.mockResolvedValue({
+      endAt: new Date('2026-03-15T16:00:00.000Z'),
+      epochNo: 1,
+      epochType: EpochType.WEEKLY_PROMOTION,
+      id: 'epoch_1',
+      lotteryPoolUsdt: new Prisma.Decimal(1000),
+      rankingPoolUsdt: new Prisma.Decimal(1000),
+      startAt: new Date('2026-03-08T16:00:00.000Z'),
+      status: EpochStatus.CALCULATING,
+    });
+    weeklyRewardRepository.listRewardsByTypes.mockResolvedValue([
+      {
+        amountAura: new Prisma.Decimal((100n * 10n ** 18n).toString()),
+        amountUsdt: new Prisma.Decimal(0),
+        distributionKey: 'CONSOLATION_DEFAULT',
+        epochId: 'epoch_1',
+        id: 'reward_consolation',
+        rank: null,
+        rewardType: 'CONSOLATION_AURA',
+        status: 'PENDING',
+        user: {
+          walletAddress: '0x0000000000000000000000000000000000000003',
+        },
+        userId: 'user_3',
+      },
+    ]);
+    ledgerRepository.findConfirmedBySource.mockResolvedValue({
+      id: 'ledger_existing',
+    });
+    weeklyEpochPolicyEngine.toDateKey.mockReset();
+    weeklyEpochPolicyEngine.toDateKey.mockReturnValue('2026-03-15');
+
+    const result = await service.publishEpochRewards('epoch_1');
+
+    expect(ledgerRepository.createConsolationReward).not.toHaveBeenCalled();
+    expect(statsRepository.setDailyConsolationProjection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amountAura: new Prisma.Decimal((100n * 10n ** 18n).toString()),
+        dateKey: '2026-03-15',
+        userId: 'user_3',
+      }),
+      expect.any(Object),
+    );
+    expect(statsRepository.setProfileConsolationProjection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        totalAura: new Prisma.Decimal((100n * 10n ** 18n).toString()),
+        userId: 'user_3',
+      }),
+      expect.any(Object),
+    );
+    expect(result.consolationCount).toBe(0);
+  });
+
+  it('reconciles consolation projections for a wallet-scoped backfill run', async () => {
+    const {
+      ledgerRepository,
+      service,
+      statsRepository,
+      weeklyEpochPolicyEngine,
+      weeklyRewardRepository,
+    } = createService();
+
+    weeklyRewardRepository.listConsolationRewardsForProjection.mockResolvedValue([
+        {
+          amountAura: new Prisma.Decimal((100n * 10n ** 18n).toString()),
+          epoch: {
+            endAt: new Date('2026-03-15T16:00:00.000Z'),
+          },
+          epochId: 'epoch_1',
+          id: 'reward_consolation',
+          user: {
+            walletAddress: '0x0000000000000000000000000000000000000003',
+          },
+          userId: 'user_3',
+        },
+      ]);
+    weeklyEpochPolicyEngine.toDateKey.mockReset();
+    weeklyEpochPolicyEngine.toDateKey.mockReturnValue('2026-03-15');
+
+    const result = await service.syncConsolationProjections({
+      walletAddress: '0x0000000000000000000000000000000000000003',
+    });
+
+    expect(
+      weeklyRewardRepository.listConsolationRewardsForProjection,
+    ).toHaveBeenCalledWith(
+      {
+        walletAddress: '0x0000000000000000000000000000000000000003',
+      },
+      expect.any(Object),
+    );
+    expect(
+      ledgerRepository.sumConfirmedConsolationAmountByUserAndEpoch,
+    ).toHaveBeenCalledWith(
+      {
+        epochId: 'epoch_1',
+        userId: 'user_3',
+      },
+      expect.any(Object),
+    );
+    expect(statsRepository.setProfileConsolationProjection).toHaveBeenCalled();
+    expect(result).toEqual({
+      processedRewards: 1,
+      skippedRewardsWithoutLedger: 0,
+      userCount: 1,
+      walletAddresses: ['0x0000000000000000000000000000000000000003'],
+    });
+  });
+
+  it('creates missing consolation ledger during backfill before projecting totals', async () => {
+    const {
+      ledgerRepository,
+      service,
+      statsRepository,
+      weeklyEpochPolicyEngine,
+      weeklyRewardRepository,
+    } = createService();
+
+    weeklyRewardRepository.listConsolationRewardsForProjection.mockResolvedValue([
+      {
+        amountAura: new Prisma.Decimal((100n * 10n ** 18n).toString()),
+        epoch: {
+          endAt: new Date('2026-03-15T16:00:00.000Z'),
+        },
+        epochId: 'epoch_1',
+        id: 'reward_consolation',
+        user: {
+          walletAddress: '0x0000000000000000000000000000000000000003',
+        },
+        userId: 'user_3',
+      },
+    ]);
+    ledgerRepository.findConfirmedBySource.mockResolvedValue(null);
+    ledgerRepository.sumConfirmedConsolationAmountByUserAndEpoch
+      .mockResolvedValueOnce(new Prisma.Decimal(0))
+      .mockResolvedValueOnce(new Prisma.Decimal((100n * 10n ** 18n).toString()));
+    ledgerRepository.sumConfirmedConsolationAmountByUser.mockResolvedValue(
+      new Prisma.Decimal((100n * 10n ** 18n).toString()),
+    );
+    weeklyEpochPolicyEngine.toDateKey.mockReset();
+    weeklyEpochPolicyEngine.toDateKey.mockReturnValue('2026-03-15');
+
+    const result = await service.syncConsolationProjections({
+      walletAddress: '0x0000000000000000000000000000000000000003',
+    });
+
+    expect(ledgerRepository.createConsolationReward).toHaveBeenCalledWith(
+      expect.objectContaining({
+        epochId: 'epoch_1',
+        sourceRefId: 'reward_consolation',
+        userId: 'user_3',
+      }),
+      expect.any(Object),
+    );
+    expect(statsRepository.setDailyConsolationProjection).toHaveBeenCalled();
+    expect(result.processedRewards).toBe(1);
+    expect(result.skippedRewardsWithoutLedger).toBe(0);
   });
 });

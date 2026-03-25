@@ -102,4 +102,44 @@ export class LedgerRepository {
       },
     });
   }
+
+  async sumConfirmedConsolationAmountByUser(
+    userId: string,
+    executor: DbExecutor = this.db,
+  ): Promise<Prisma.Decimal> {
+    const result = await executor.auraLedger.aggregate({
+      where: {
+        sourceType: 'CONSOLATION',
+        status: 'CONFIRMED',
+        userId,
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    return result._sum.amount ?? new Prisma.Decimal(0);
+  }
+
+  async sumConfirmedConsolationAmountByUserAndEpoch(
+    data: {
+      epochId: string;
+      userId: string;
+    },
+    executor: DbExecutor = this.db,
+  ): Promise<Prisma.Decimal> {
+    const result = await executor.auraLedger.aggregate({
+      where: {
+        epochId: data.epochId,
+        sourceType: 'CONSOLATION',
+        status: 'CONFIRMED',
+        userId: data.userId,
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    return result._sum.amount ?? new Prisma.Decimal(0);
+  }
 }
