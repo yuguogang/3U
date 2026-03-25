@@ -1,0 +1,20 @@
+[Unit]
+Description=3U AURA Server (__ENV_NAME__)
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=__APP_USER__
+Group=__APP_GROUP__
+WorkingDirectory=__APP_ROOT__
+EnvironmentFile=-__ENV_DIR__/shared.env
+EnvironmentFile=__ENV_DIR__/server.env
+ExecStart=/bin/zsh -lc 'pnpm --dir apps/server env:start:prod'
+Restart=always
+RestartSec=5
+StandardOutput=append:__LOG_DIR__/server.log
+StandardError=append:__LOG_DIR__/server.error.log
+
+[Install]
+WantedBy=multi-user.target

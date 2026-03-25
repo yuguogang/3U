@@ -1,0 +1,19 @@
+[Unit]
+Description=3U AURA DApp (__ENV_NAME__)
+After=network.target
+
+[Service]
+Type=simple
+User=__APP_USER__
+Group=__APP_GROUP__
+WorkingDirectory=__APP_ROOT__
+EnvironmentFile=-__ENV_DIR__/shared.env
+EnvironmentFile=__ENV_DIR__/dapp.env
+ExecStart=/bin/zsh -lc 'pnpm --dir apps/dapp env:start'
+Restart=always
+RestartSec=5
+StandardOutput=append:__LOG_DIR__/dapp.log
+StandardError=append:__LOG_DIR__/dapp.error.log
+
+[Install]
+WantedBy=multi-user.target

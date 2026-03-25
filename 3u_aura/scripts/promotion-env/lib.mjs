@@ -241,9 +241,12 @@ export function buildDerivedEnv({ manifest, target, baseEnv }) {
     case 'dapp':
       return {
         PROMOTION_ENV: manifest.environment,
-        PORT: resolvePortFromUrl(
-          manifest.infra.dapp.baseUrl,
-          manifest.infra.server.port,
+        PORT: String(
+          manifest.infra.dapp.port ||
+            resolvePortFromUrl(
+              manifest.infra.dapp.baseUrl,
+              manifest.infra.server.port,
+            ),
         ),
         NEXT_PUBLIC_API_BASE_URL: manifest.infra.server.publicApiBaseUrl,
         NEXT_PUBLIC_E2E_INJECTED_WALLET: manifest.frontend
@@ -271,9 +274,12 @@ export function buildDerivedEnv({ manifest, target, baseEnv }) {
     case 'admin':
       return {
         PROMOTION_ENV: manifest.environment,
-        PORT: resolvePortFromUrl(
-          manifest.infra.admin.baseUrl,
-          manifest.infra.server.port,
+        PORT: String(
+          manifest.infra.admin.port ||
+            resolvePortFromUrl(
+              manifest.infra.admin.baseUrl,
+              manifest.infra.server.port,
+            ),
         ),
         NEXT_PUBLIC_API_BASE_URL: manifest.infra.server.publicApiBaseUrl,
         NEXT_PUBLIC_E2E_INJECTED_WALLET: manifest.frontend

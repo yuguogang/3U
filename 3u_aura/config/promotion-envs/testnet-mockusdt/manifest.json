@@ -1,0 +1,82 @@
+{
+  "environment": "testnet-mockusdt",
+  "status": "active",
+  "chain": {
+    "id": 97,
+    "rpcUrl": "https://data-seed-prebsc-1-s1.binance.org:8545/",
+    "referralRpcUrl": "https://data-seed-prebsc-1-s1.binance.org:8545/"
+  },
+  "promotion": {
+    "startAt": "2026-03-11T00:00:00+08:00",
+    "timezone": "Asia/Shanghai",
+    "epochLengthDays": 7,
+    "ticketStreakDays": 7,
+    "minimumParticipants": 12,
+    "referralSignatureTtlSeconds": 900
+  },
+  "contracts": {
+    "paymentTokenAddress": "0x3639e64AB81769fEbBDA96Fd8e5BB9922D8053fF",
+    "paymentTokenKind": "mockusdt",
+    "paymentTokenSymbol": "USDT",
+    "founderNftAddress": "0x5E8D0bBD325c13d661396E7E1eAD7DAD2d902EC2",
+    "nftSaleAddress": "0xa8C4bc346fFCba0F806629F9939BEF722e75c0C2",
+    "merkleDistributorAddress": "0x2d069889DE1d664f3440bEC8030B176019A8823F",
+    "settlementAddress": "0x7Ab52fEaE668b2f012945Db8840498C3A3BCb7eC",
+    "nftName": "3U AURA Founder NFT",
+    "nftSymbol": "3UAURA",
+    "baseUri": "",
+    "maxSubsidyEpochs": 12
+  },
+  "roles": {
+    "owner": "0x951f5f74f8a5b480DC42aA41c04522C8eCED6d64",
+    "financeWallet": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "checkinReceiverAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "rewardFunderAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "referralSignerAddress": "0x951f5f74f8a5b480DC42aA41c04522C8eCED6d64",
+    "settlementPublisher": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "rootPublisher": "0x951f5f74f8a5b480DC42aA41c04522C8eCED6d64",
+    "adminAllowlistWallets": [
+      "0x951f5f74f8a5b480DC42aA41c04522C8eCED6d64",
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    ]
+  },
+  "infra": {
+    "server": {
+      "port": 3110,
+      "host": "http://127.0.0.1:3110",
+      "publicApiBaseUrl": "https://api.goldmint.vip"
+    },
+    "dapp": {
+      "port": 3100,
+      "baseUrl": "https://app.goldmint.vip"
+    },
+    "admin": {
+      "port": 3101,
+      "baseUrl": "https://admin.goldmint.vip"
+    },
+    "database": {
+      "host": "127.0.0.1",
+      "port": 5432,
+      "name": "3u_aura_testnet_mockusdt",
+      "schema": "public"
+    },
+    "redis": {
+      "cacheUrl": "redis://127.0.0.1:6379/21",
+      "throttlerUrl": "redis://127.0.0.1:6379/22",
+      "bullHost": "127.0.0.1",
+      "bullPort": 6379,
+      "bullPrefix": "3u_aura:testnet-mockusdt",
+      "instanceId": "testnet_mockusdt_01"
+    }
+  },
+  "frontend": {
+    "e2eInjectedWallet": false,
+    "walletConnectProjectId": "124353e5a312fdabb5b1d182ada6eca1"
+  },
+  "artifacts": {
+    "deployMockUsdtBroadcast": "apps/contracts/broadcast/DeployMockUSDT.s.sol/97/run-1774437661.json",
+    "deployCoreBroadcast": "apps/contracts/broadcast/DeployNFTCore.s.sol/97/run-1774437685.json",
+    "deploySettlementBroadcast": "apps/contracts/broadcast/DeploySettlementClaim.s.sol/97/run-1774437709.json"
+  }
+}

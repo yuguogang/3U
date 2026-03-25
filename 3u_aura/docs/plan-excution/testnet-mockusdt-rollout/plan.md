@@ -2,223 +2,299 @@
 
 ## 1. Objective
 
-在 BSC Testnet 上为测试服务器提供一套使用 `MockUSDT` 的可部署环境，并明确判断：
+在 **BSC Testnet（chainId=97）** 上按当前 `fork-anvil` 已验证通过的最新代码与资金分工，部署一套**全新的** `MockUSDT` 测试环境，覆盖：
 
-- 是否可以直接复用现有 `testnet-live`
-- 是否需要新发行 `MockUSDT`
-- 是否需要一起重发依赖支付代币地址的业务合约
+- 最新合约能力：`rewardFunder`、split funding wallets
+- 最新后端：奖励发布、claim 可见性、过期补贴判定
+- 最新前端：签到、奖励、NFT、Admin
+- 与旧 `testnet-live` 脱钩；允许删除旧 `testnet-live` 服务器侧部署并重新接到新环境
 
-推荐目标是提供一套与当前 `testnet-live` 隔离、但部署流程与现有 promotion-env 体系保持一致的测试环境。
+本计划聚焦 **链上环境、应用环境、资金角色、验收链路** 的完整落地，不使用本地 Anvil 节点。
 
 ## 2. Scope
 
-- 研究并确认 `testnet-live` 与 `uat-mockusdt` 的差异
-- 评估 `MockUSDT` 与付款代币地址在合约层的耦合方式
-- 设计一套新的 BSC Testnet MockUSDT 环境落地方案
-- 规划配置、部署、验收、回滚步骤
-- 明确“是否需要新发合约”的判断与条件
+- 基于当前最新代码冻结一套新的 BSC Testnet 环境配置
+- 决定“新环境命名”与“是否复用 testnet-live 域名/服务位”的切换策略
+- 在 BSC Testnet 新发完整合约套件：
+  - `MockUSDT`
+  - `FounderNFT`
+  - `NFTSale`
+  - `Settlement`
+  - `MerkleClaim`
+- 以最新 split funding 架构初始化角色地址与发布权限
+- 同步 `server / dapp / admin / contracts` 环境变量
+- 设计并执行最小链上资金准备与手工 UAT 验收路径
 
 ## 3. Out of Scope
 
-- 本轮不实际修改任何环境配置
-- 本轮不实际广播部署交易
-- 本轮不做数据库迁移或数据清洗
-- 本轮不做生产链或 `release` 环境变更
+- 本计划不包含 Ubuntu VPS 的系统安装细节与 Nginx/systemd 编排
+  - 该部分由 `/Users/ygg/vs/ai/3U/3u_aura/docs/plan-excution/testnet-mockusdt-vps-deployment/plan.md` 承担
+- 不修改 `release` 生产环境
+- 不尝试兼容旧 `testnet-live` 的链上地址
+- 不保留旧 `testnet-live` 的链上状态连续性
 
 ## 4. Assumptions
 
-- 目标不是把正式发布环境切到 mock token，而是给测试服务器提供独立的 MockUSDT 测试环境
-- 目标链保持为 BSC Testnet `chainId=97`
-- 目标环境需要与当前 `testnet-live` 及 `uat-mockusdt` 保持数据边界隔离
-- 环境命名暂按 `testnet-mockusdt` 规划；如果你们有既定命名规范，执行前再调整
+- 用户接受在链上与服务器侧都**重建**测试环境，而不是在旧 `testnet-live` 上局部打补丁
+- 目标链为真实 BSC Testnet RPC，不是本地 fork/anvil
+- 允许将旧 `testnet-live` 服务器部署删除后重建为新环境
+- 当前最新业务架构以 `fork-anvil` 最终验证结果为准
+- 有可用的 BSC Testnet 部署私钥、RPC、WalletConnect Project ID、Admin allowlist、域名方案
 
 ## 5. Architecture Impact
 
-### 5.1 Current State
+### 5.1 Verified Reference Architecture From `fork-anvil`
 
-- 当前 `testnet-live` 使用的付款代币地址为 `0x64544969ed7EBf5f083679233325356EbE738930`
-  - `config/promotion-envs/testnet-live/manifest.json`
-  - `config/promotion-envs/testnet-live/dapp.public.env`
-- 仓库中已存在完整的 `uat-mockusdt` 参考环境，使用 `MockUSDT`
-  - `config/promotion-envs/uat-mockusdt/manifest.json`
-- `promotion-env` 脚本已经支持：
-  - 当 `paymentTokenKind === "mockusdt"` 时自动部署 `DeployMockUSDT`
-  - 再继续部署 `DeployNFTCore` 与 `DeploySettlementClaim`
-  - 文件：`scripts/promotion-env/deploy-contract-suite.mjs`
+当前应作为 Testnet 新环境基准的，不是旧 `testnet-live`，而是已经在 `fork-anvil` 中验证通过的最新架构：
 
-### 5.2 Coupling That Drives The Decision
+- `checkinReceiverAddress = rewardFunderAddress`
+- `financeWallet` 独立于 `checkinReceiverAddress`
+- `settlementPublisher` 与 `financeWallet` 对齐
+- `rootPublisher` 与 `owner` 可独立于资金钱包
+- `MerkleClaim` 已支持 `rewardFunder`
+- NFT 补贴过期必须按**链上最新区块时间**判定，不按服务器本机时间
 
-- `NFTSale` 在构造函数里把 `paymentToken` 设为 `immutable`
-  - `apps/contracts/src/NFTSale.sol`
-- `Settlement` 在构造函数里把 `paymentToken` 设为 `immutable`
-  - `apps/contracts/src/Settlement.sol`
-- `DeployNFTCore.s.sol` 通过 `USDT_ADDRESS` 部署 `NFTSale`
-  - `apps/contracts/script/DeployNFTCore.s.sol`
-- `DeploySettlementClaim.s.sol` 通过 `USDT_ADDRESS` 部署 `Settlement` 和 `MerkleClaim`
-  - `apps/contracts/script/DeploySettlementClaim.s.sol`
+参考：
+- `/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/fork-anvil/manifest.json`
+- `/Users/ygg/vs/ai/3U/3u_aura/apps/contracts/src/MerkleClaim.sol`
+- `/Users/ygg/vs/ai/3U/3u_aura/apps/server/src/modules/claims/services/claims-read.service.ts`
 
-### 5.3 Decision
+### 5.2 Funding Model That Must Be Preserved
 
-结论分两档：
+这次 testnet 新环境必须按已确认的运营口径初始化：
 
-1. 如果只是“复用现有 `uat-mockusdt` 整套链上地址”，则不需要新发任何合约。
-   代价是测试服务器会与 `uat-mockusdt` 共用链上状态，不具备独立边界。
+- 抽奖 / 排名 `USDT` 资金来源：
+  - `checkinReceiverAddress`
+  - 同时作为 `rewardFunderAddress`
+- NFT 每周补贴资金来源：
+  - `financeWallet`
+  - 对应 `Settlement` 的发布/注资链路
 
-2. 如果目标是“测试服务器有自己独立的 MockUSDT 测试环境”，则需要新发链上合约。
-   推荐不是只发 `MockUSDT`，而是新发整套环境合约：
-   - `MockUSDT`
-   - `FounderNFT`
-   - `NFTSale`
-   - `Settlement`
-   - `MerkleClaim`
+不能再退回旧的“全部角色复用同一个地址”的初始化方式。
 
-### 5.4 Why The Recommended Scope Is Full Redeploy
+### 5.3 Coupling That Requires Fresh Redeploy
 
-- 只换 token 地址时，`NFTSale / Settlement / MerkleClaim` 必须重发，因为它们在部署时绑定 `USDT_ADDRESS`
-- `FounderNFT` 理论上可以复用，但会继承原环境的 NFT 铸造状态与销售关系，破坏测试边界
-- `MockUSDT` 的 `mint` 是公开可调用的，文件：`apps/contracts/src/mocks/MockUSDT.sol`
-  - 如果复用现有 `uat-mockusdt` token，任何共享该环境的人都能污染余额与测试结果
+以下合约能力在部署时绑定关键地址，不能靠改前后端 env 热切换：
 
-因此，推荐方案是：
+- `NFTSale.paymentToken` 为部署期绑定
+- `NFTSale.financeWallet` 为部署期绑定
+- `Settlement.paymentToken` 为部署期绑定
+- `Settlement.epochPublisher` 为部署期绑定
+- `MerkleClaim.paymentToken` 为部署期绑定
+- `MerkleClaim.rewardFunder` 为部署期绑定/初始化能力相关
 
-- 新建并行环境 `testnet-mockusdt`
-- 新发整套合约，而不是复用 `testnet-live` 或 `uat-mockusdt` 的链上地址
+因此如果要按最新架构上真实 testnet，必须新发完整合约套件。
+
+### 5.4 Environment Naming Decision
+
+推荐技术方案：
+
+1. 链上环境名使用新的 `testnet-mockusdt`
+2. 服务器与域名可以在切换时**取代**旧 `testnet-live` 入口
+3. 旧 `testnet-live` 的服务器部署、数据库、Redis 可删除重建
+4. 不复用旧 `testnet-live` manifest 中任何链上地址
+
+这样兼顾：
+
+- 链上边界全新、可审计
+- 服务器对外入口可以沿用现有测试服域名
+- 回滚时仍能保留旧配置备份
 
 ## 6. Milestones
 
-### Milestone 1: Create New Environment Skeleton
+### Milestone 1: Freeze Fresh Testnet Topology And Cutover Strategy
 
 - Goal:
-  - 新建独立环境目录，例如 `config/promotion-envs/testnet-mockusdt`
+  - 明确新环境名、旧 `testnet-live` 的处理方式、链上与服务器切换策略
 - Affected files/modules:
-  - `config/promotion-envs/testnet-mockusdt/manifest.json`
-  - `config/promotion-envs/testnet-mockusdt/dapp.public.env`
-  - `config/promotion-envs/testnet-mockusdt/server.public.env`
-  - `config/promotion-envs/testnet-mockusdt/admin.public.env`
-  - `config/promotion-envs/testnet-mockusdt/contracts.public.env`
-  - `config/promotion-envs/testnet-mockusdt/notes.md`
+  - `/Users/ygg/vs/ai/3U/3u_aura/docs/plan-excution/testnet-mockusdt-rollout/plan.md`
+  - `/Users/ygg/vs/ai/3U/3u_aura/docs/plan-excution/testnet-mockusdt-vps-deployment/plan.md`
+  - `/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/testnet-live/*`
+  - `/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/testnet-mockusdt/*`
 - Implementation notes:
-  - 以 `testnet-live` 为基底复制业务参数与角色
-  - 将 DB 名、Redis DB、Bull prefix、端口全部切成新的隔离值
-  - 将 `contracts.paymentTokenKind` 改为 `mockusdt`
-  - 初始阶段把链上地址清空，等待部署脚本回填
+  - 冻结以下决策：
+    - 链上合约全部新发
+    - 服务器侧允许删除旧 `testnet-live`
+    - 新环境配置以 `testnet-mockusdt` 命名保留
+    - 对外域名可沿用原测试服域名
+  - 明确切换顺序：
+    - 先部署链上
+    - 再部署新服务
+    - 最后替换流量/域名
 - Risks:
-  - 环境名冲突
-  - DB/Redis 端口或命名与既有环境重叠
+  - 旧 `testnet-live` 的数据库与 Redis 清理过早
+  - 域名复用但环境命名未统一，导致排障混乱
 - Verification commands:
-  - `node scripts/promotion-env/print-env.mjs --env testnet-mockusdt --target dapp`
+  - `rg -n "testnet-live|testnet-mockusdt" config/promotion-envs docs/plan-excution`
+- Expected outputs:
+  - 一套冻结的 cutover 口径
+  - 明确哪些资源“复用入口”、哪些资源“全新重建”
+
+### Milestone 2: Create New Environment Skeleton Using Split Funding Roles
+
+- Goal:
+  - 新建并填充 `config/promotion-envs/testnet-mockusdt`，按最新 split funding 角色初始化
+- Affected files/modules:
+  - `/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/testnet-mockusdt/manifest.json`
+  - `/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/testnet-mockusdt/contracts.public.env`
+  - `/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/testnet-mockusdt/server.public.env`
+  - `/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/testnet-mockusdt/dapp.public.env`
+  - `/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/testnet-mockusdt/admin.public.env`
+  - `/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/testnet-mockusdt/notes.md`
+- Implementation notes:
+  - `paymentTokenKind = mockusdt`
+  - 初始化角色至少分成：
+    - `owner`
+    - `rootPublisher`
+    - `checkinReceiverAddress`
+    - `rewardFunderAddress`
+    - `financeWallet`
+    - `settlementPublisher`
+  - 其中默认口径：
+    - `rewardFunderAddress = checkinReceiverAddress`
+    - `settlementPublisher = financeWallet`
+  - 不再使用单地址收款/注资模型
+  - 为数据库、Redis、Bull prefix 设定全新隔离值
+- Risks:
+  - 地址角色分错，后续发奖/补贴会被资金路径打断
+  - dapp/server/env 不一致，导致签到收款地址错配
+- Verification commands:
+  - `node scripts/promotion-env/print-env.mjs --env testnet-mockusdt --target contracts`
   - `node scripts/promotion-env/print-env.mjs --env testnet-mockusdt --target server`
-- Expected outputs:
-  - 新环境的派生 env 能正常打印
-  - 配置项中不再引用 `testnet-live` 的 DB/Redis/端口
-
-### Milestone 2: Deploy Independent Mock Contract Suite
-
-- Goal:
-  - 在 BSC Testnet 上部署独立 MockUSDT 套件
-- Affected files/modules:
-  - `scripts/promotion-env/deploy-contract-suite.mjs`
-  - `apps/contracts/script/DeployMockUSDT.s.sol`
-  - `apps/contracts/script/DeployNFTCore.s.sol`
-  - `apps/contracts/script/DeploySettlementClaim.s.sol`
-  - `config/promotion-envs/testnet-mockusdt/manifest.json`
-- Implementation notes:
-  - 执行 `pnpm promotion-env:deploy-suite --env testnet-mockusdt`
-  - 由 manifest 驱动部署顺序：
-    - MockUSDT
-    - FounderNFT + NFTSale
-    - Settlement + MerkleClaim
-  - 确认 broadcast artifacts 被写回 manifest
-- Risks:
-  - 合约 owner / finance wallet / publisher 地址填错
-  - 测试网 gas 或 RPC 不稳定
-- Verification commands:
-  - `pnpm promotion-env:deploy-suite --env testnet-mockusdt`
-  - `cat config/promotion-envs/testnet-mockusdt/manifest.json`
-- Expected outputs:
-  - manifest 中出现新的 paymentTokenAddress / founderNftAddress / nftSaleAddress / settlementAddress / merkleDistributorAddress
-  - artifacts 路径完整可追溯
-
-### Milestone 3: Sync App/Server/Admin To New Environment
-
-- Goal:
-  - 让 dapp / server / admin 全部读取新合约地址与新基础设施边界
-- Affected files/modules:
-  - `scripts/promotion-env/sync-public-envs.mjs`
-  - `scripts/promotion-env/lib.mjs`
-  - `config/promotion-envs/testnet-mockusdt/*.public.env`
-  - `apps/dapp/package.json`
-  - `apps/server/package.json`
-  - `apps/admin/package.json`
-- Implementation notes:
-  - 运行全量 env sync
-  - 确认 `NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS` 与 `PROMOTION_PAYMENT_TOKEN_ADDRESS` 都指向新 MockUSDT
-  - 确认钱包连接 project id 与测试服务器域名/CORS 正确
-- Risks:
-  - 只改了 dapp 没改 server，导致链上验证仍查旧 token
-  - CORS / API_BASE_URL 指向旧地址
-- Verification commands:
-  - `pnpm promotion-env:sync`
   - `node scripts/promotion-env/print-env.mjs --env testnet-mockusdt --target dapp`
-  - `node scripts/promotion-env/print-env.mjs --env testnet-mockusdt --target server`
 - Expected outputs:
-  - dapp/server/admin/contracts 四套 public env 与 manifest 完整一致
+  - 新环境 manifest 与四套 env 完整可打印
+  - 可清晰看到 split funding roles 已写入
 
-### Milestone 4: Infra Bring-Up And UAT Smoke
+### Milestone 3: Deploy Fresh Contract Suite To BSC Testnet
 
 - Goal:
-  - 在测试服务器拉起新环境并完成最小验收
+  - 将最新合约部署到真实 BSC Testnet，并把地址回写到新 manifest
 - Affected files/modules:
-  - `scripts/uat/start-promotion-services.mjs`
-  - `scripts/promotion-env/prepare-wallet-fixtures.mjs`
-  - `apps/e2e/phase94/*`
+  - `/Users/ygg/vs/ai/3U/3u_aura/scripts/promotion-env/deploy-contract-suite.mjs`
+  - `/Users/ygg/vs/ai/3U/3u_aura/apps/contracts/script/DeployMockUSDT.s.sol`
+  - `/Users/ygg/vs/ai/3U/3u_aura/apps/contracts/script/DeployNFTCore.s.sol`
+  - `/Users/ygg/vs/ai/3U/3u_aura/apps/contracts/script/DeploySettlementClaim.s.sol`
+  - `/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/testnet-mockusdt/manifest.json`
 - Implementation notes:
-  - 先启动 server/dapp/admin
-  - 再准备测试钱包余额
-  - 重点验证：
-    - Check-in 3 USDT
-    - NFT purchase 1000 USDT
-    - Settlement / claim 读取新 token 地址
+  - 使用真实 BSC Testnet RPC，不得使用本地 node
+  - 执行顺序：
+    - `MockUSDT`
+    - `FounderNFT + NFTSale`
+    - `Settlement + MerkleClaim`
+  - 重点确认：
+    - `NFTSale.financeWallet == financeWallet`
+    - `Settlement.epochPublisher == settlementPublisher`
+    - `MerkleClaim.rewardFunder == rewardFunderAddress`
+  - 将 broadcast artifacts 回写进 manifest
 - Risks:
-  - 钱包仍连接旧环境
-  - MockUSDT 没有给测试钱包 mint/approve
-  - 旧浏览器缓存了旧地址
+  - 私钥/RPC 配置错误
+  - 合约 owner 与实际运营钱包不一致
+  - 广播成功但 manifest 未回写，导致后续服务读旧值
 - Verification commands:
-  - `node scripts/uat/start-promotion-services.mjs --env testnet-mockusdt`
-  - `node scripts/promotion-env/prepare-wallet-fixtures.mjs --env testnet-mockusdt`
-  - `pnpm --dir apps/e2e/phase94 run test:uat`
+  - `node scripts/promotion-env/deploy-contract-suite.mjs --env testnet-mockusdt --force`
+  - `cast call <merkleClaim> "rewardFunder()(address)" --rpc-url <bsc-testnet-rpc>`
+  - `cast call <nftSale> "financeWallet()(address)" --rpc-url <bsc-testnet-rpc>`
+  - `cast call <settlement> "epochPublisher()(address)" --rpc-url <bsc-testnet-rpc>`
 - Expected outputs:
-  - 关键支付路径全部基于新 MockUSDT 通过
-  - 测试服务器不再依赖 `testnet-live` 的 live-test-token 地址
+  - manifest 中出现全新 testnet 合约地址
+  - 三条关键角色校验全部匹配
+
+### Milestone 4: Sync Server/Dapp/Admin To The New Chain Environment
+
+- Goal:
+  - 让 `server / dapp / admin / contracts` 全部运行在新合约与新角色配置上
+- Affected files/modules:
+  - `/Users/ygg/vs/ai/3U/3u_aura/scripts/promotion-env/lib.mjs`
+  - `/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/testnet-mockusdt/*.public.env`
+  - `/Users/ygg/vs/ai/3U/3u_aura/apps/server/package.json`
+  - `/Users/ygg/vs/ai/3U/3u_aura/apps/dapp/package.json`
+  - `/Users/ygg/vs/ai/3U/3u_aura/apps/admin/package.json`
+- Implementation notes:
+  - 使用现有 env 体系：
+    - `apps/server env:start:prod`
+    - `apps/dapp env:build / env:start`
+    - `apps/admin env:build / env:start`
+  - 确认以下关键值一致：
+    - `PROMOTION_CHECKIN_RECEIVER_ADDRESS`
+    - `PROMOTION_REWARD_FUNDER_ADDRESS`
+    - `PROMOTION_SETTLEMENT_ADDRESS`
+    - `NEXT_PUBLIC_CHECKIN_RECEIVER_ADDRESS`
+    - `NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS`
+  - 确认 admin allowlist、WalletConnect、CORS、API_BASE_URL 都指向新测试服
+- Risks:
+  - 前端 bundle 使用旧 env，导致签到继续打到旧地址
+  - server 与 dapp 指向不同 payment token / receiver
+- Verification commands:
+  - `node scripts/promotion-env/print-env.mjs --env testnet-mockusdt --target server`
+  - `node scripts/promotion-env/print-env.mjs --env testnet-mockusdt --target dapp`
+  - `node scripts/promotion-env/print-env.mjs --env testnet-mockusdt --target admin`
+- Expected outputs:
+  - 所有服务读取同一套新合约地址和角色地址
+
+### Milestone 5: Fund Operational Wallets And Run Manual UAT On Real Testnet
+
+- Goal:
+  - 用真实 BSC Testnet 完成一轮最小闭环验收
+- Affected files/modules:
+  - `/Users/ygg/vs/ai/3U/3u_aura/apps/dapp/*`
+  - `/Users/ygg/vs/ai/3U/3u_aura/apps/admin/*`
+  - `/Users/ygg/vs/ai/3U/3u_aura/apps/server/*`
+  - `/Users/ygg/vs/ai/3U/3u_aura/docs/plan-excution/testnet-mockusdt-rollout/execution.md`
+- Implementation notes:
+  - 资金准备至少覆盖三类钱包：
+    - 用户测试钱包：签到 / 购 NFT / claim gas
+    - `checkinReceiver/rewardFunder`：抽奖/排名注资
+    - `financeWallet/settlementPublisher`：周补贴注资
+  - 手工 UAT 覆盖：
+    - 签到支付 `3 USDT` -> 获得 `1000 AURA`
+    - 手动参与抽奖 / 周结算 / 揭晓
+    - 排名奖 claim
+    - 购买型 NFT -> 周补贴 claim
+    - 过期补贴显示为 `已作废`
+- Risks:
+  - 测试币不足
+  - 真实 testnet 区块时间与 UAT 周期推进成本较高
+  - 钱包缓存旧 token / 旧 RPC
+- Verification commands:
+  - `curl -s <api-domain>/api/v1/health`
+  - 手工页面检查：`/checkin` `/rewards` `/claims` `/nft` `/admin`
+  - `cast receipt <txHash> --rpc-url <bsc-testnet-rpc>`
+- Expected outputs:
+  - 一套真实 testnet 的可用测试环境
+  - 与 `fork-anvil` 相同的关键业务行为得到验证
 
 ## 7. Approval Checkpoint
 
-执行前需要你确认这一个关键决策：
+进入实施前，需要你确认以下执行口径：
 
-- 采用推荐方案：新建并行 `testnet-mockusdt` 环境，并部署独立 MockUSDT 套件
-
-不推荐直接修改现有 `testnet-live`，因为：
-
-- 会破坏现有测试网环境的可追踪性
-- 代币地址变更会牵动合约重部署
-- 回滚成本明显更高
+- 采用全新合约部署，不复用旧 `testnet-live` 链上地址
+- 服务器侧允许删除旧 `testnet-live` 部署并重新接线
+- 新环境按 split funding 架构初始化：
+  - `checkinReceiverAddress = rewardFunderAddress`
+  - `financeWallet = settlementPublisher`
+- 验收以真实 BSC Testnet 为准，不依赖本地 fork
 
 ## 8. Rollback / Recovery Notes
 
-- 如果新环境部署失败，不动现有 `testnet-live`
-- 若 MockUSDT 已部署但后续核心合约失败：
-  - 保留 broadcast 记录
-  - 清空新环境 manifest 中不完整地址
-  - 重新执行 `deploy-suite --force` 或重建新环境名
-- 若 server/dapp/admin 指向错误地址：
-  - 以 manifest 为单一事实源重新执行 `pnpm promotion-env:sync`
+- 在新 testnet 合约地址完成写回前，不删除旧服务器部署
+- 新环境部署失败时：
+  - 保留旧服务器
+  - 备份新 manifest 与 broadcast artifacts
+  - 重新执行链上部署或切换到新的环境名
+- 新服务切换失败时：
+  - 恢复旧 systemd / Nginx 配置
+  - 将对外域名重新指回旧实例
+- 若前后端 runtime 使用旧 env：
+  - 以 manifest 为单一事实源重做 env 渲染并重启服务
 
 ## 9. Final Verification Checklist
 
-- 新环境 manifest 已生成且地址齐全
-- `paymentTokenKind` 为 `mockusdt`
-- dapp/server/admin/contracts 的派生 env 与 manifest 一致
-- `NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS` 与 `PROMOTION_PAYMENT_TOKEN_ADDRESS` 指向新 MockUSDT
-- Check-in / NFT purchase / settlement / claim 冒烟通过
-- 旧 `testnet-live` 未被修改
-
+- 新 BSC Testnet 合约已完整部署
+- `MockUSDT / FounderNFT / NFTSale / Settlement / MerkleClaim` 地址齐全
+- `MerkleClaim.rewardFunder` 正确指向 `checkinReceiverAddress`
+- `NFTSale.financeWallet` 正确指向 `financeWallet`
+- `Settlement.epochPublisher` 正确指向 `settlementPublisher`
+- `server / dapp / admin / contracts` 的派生 env 与 manifest 一致
+- 签到、抽奖/排名、NFT 购买、NFT 补贴、过期补贴显示均冒烟通过
+- 旧 `testnet-live` 是否保留/下线已被明确记录

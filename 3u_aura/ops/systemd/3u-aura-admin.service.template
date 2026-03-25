@@ -1,0 +1,19 @@
+[Unit]
+Description=3U AURA Admin (__ENV_NAME__)
+After=network.target
+
+[Service]
+Type=simple
+User=__APP_USER__
+Group=__APP_GROUP__
+WorkingDirectory=__APP_ROOT__
+EnvironmentFile=-__ENV_DIR__/shared.env
+EnvironmentFile=__ENV_DIR__/admin.env
+ExecStart=/bin/zsh -lc 'pnpm --dir apps/admin env:start'
+Restart=always
+RestartSec=5
+StandardOutput=append:__LOG_DIR__/admin.log
+StandardError=append:__LOG_DIR__/admin.error.log
+
+[Install]
+WantedBy=multi-user.target
