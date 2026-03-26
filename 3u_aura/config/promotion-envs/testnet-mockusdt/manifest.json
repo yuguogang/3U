@@ -62,8 +62,8 @@
       "schema": "public"
     },
     "redis": {
-      "cacheUrl": "redis://127.0.0.1:6379/21",
-      "throttlerUrl": "redis://127.0.0.1:6379/22",
+      "cacheUrl": "redis://127.0.0.1:6379/11",
+      "throttlerUrl": "redis://127.0.0.1:6379/12",
       "bullHost": "127.0.0.1",
       "bullPort": 6379,
       "bullPrefix": "3u_aura:testnet-mockusdt",
