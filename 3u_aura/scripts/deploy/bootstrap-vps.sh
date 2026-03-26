@@ -3,10 +3,11 @@ set -euo pipefail
 
 show_help() {
   cat <<'EOF'
-Usage: bootstrap-vps.sh [--app-user USER] [--app-group GROUP] [--help]
+Usage: bootstrap-vps.sh [--app-user USER] [--app-group GROUP] [--node-major VERSION] [--help]
 
 Initialize an Ubuntu VPS for 3U AURA deployment:
 - install base packages
+- install modern Node.js + pnpm
 - create app user/group
 - create standard directories
 EOF
@@ -14,6 +15,7 @@ EOF
 
 APP_USER="3u-aura"
 APP_GROUP="3u-aura"
+NODE_MAJOR="22"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -23,6 +25,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --app-group)
       APP_GROUP="$2"
+      shift 2
+      ;;
+    --node-major)
+      NODE_MAJOR="$2"
       shift 2
       ;;
     --help|-h)
@@ -37,7 +43,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 sudo apt-get update
-sudo apt-get install -y curl git unzip nginx certbot python3-certbot-nginx build-essential
+sudo apt-get install -y curl git unzip nginx certbot python3-certbot-nginx build-essential ca-certificates gnupg
 
 if ! getent group "${APP_GROUP}" >/dev/null; then
   sudo groupadd "${APP_GROUP}"
@@ -50,4 +56,14 @@ fi
 sudo mkdir -p /opt/3u-aura/current /opt/3u-aura/shared /etc/3u-aura /var/log/3u-aura
 sudo chown -R "${APP_USER}:${APP_GROUP}" /opt/3u-aura /var/log/3u-aura
 
+if ! command -v node >/dev/null 2>&1 || ! node --version | grep -Eq '^v'"${NODE_MAJOR}"'\.'; then
+  curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | sudo -E bash -
+  sudo apt-get install -y nodejs
+fi
+
+sudo corepack enable
+sudo corepack prepare pnpm@10.13.1 --activate
+
+echo "node version: $(node --version)"
+echo "pnpm version: $(pnpm --version)"
 echo "bootstrap complete"

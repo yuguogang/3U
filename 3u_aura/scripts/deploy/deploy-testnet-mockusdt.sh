@@ -62,6 +62,8 @@ node scripts/promotion-env/print-env.mjs --env "${ENV_NAME}" --target dapp > "${
 node scripts/promotion-env/print-env.mjs --env "${ENV_NAME}" --target admin > "${ENV_DIR}/admin.env"
 
 pnpm install --frozen-lockfile
+pnpm --dir packages/common build
+PROMOTION_ENV="${ENV_NAME}" pnpm --dir apps/server env:db:generate
 pnpm --dir apps/server build
 PROMOTION_ENV="${ENV_NAME}" pnpm --dir apps/dapp env:build
 PROMOTION_ENV="${ENV_NAME}" pnpm --dir apps/admin env:build

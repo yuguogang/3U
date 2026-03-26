@@ -82,11 +82,34 @@ After deployment:
 
 ## Step 3: Bootstrap Ubuntu VPS
 
+Important:
+
+- do **not** rely on plain `apt install nodejs`
+- this project requires a modern Node runtime that supports ESM `.mjs` scripts
+- `scripts/promotion-env/*.mjs` and deploy helpers are validated against Node `22`
+- deployment is standardized on `pnpm@10.13.1` and the committed `pnpm-lock.yaml` must match it
+
 On the VPS:
 
 ```bash
 bash scripts/deploy/bootstrap-vps.sh
 ```
+
+The bootstrap script will now:
+
+- install Node `22`
+- enable `corepack`
+- activate `pnpm@10.13.1`
+- print `node --version` and `pnpm --version`
+
+Expected result:
+
+```bash
+node --version
+pnpm --version
+```
+
+should show a modern Node 22 runtime and `pnpm 10.13.1` before you continue.
 
 Create infra env from:
 
@@ -126,6 +149,10 @@ bash scripts/deploy/deploy-testnet-mockusdt.sh \
 This will:
 
 - generate env files
+- install dependencies
+- use `pnpm install --frozen-lockfile`
+- build `packages/common`
+- run `PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:generate`
 - build server/dapp/admin
 - read shared secrets from `/etc/3u-aura/testnet-mockusdt/shared.env`
 - install systemd units
@@ -179,3 +206,15 @@ Validate:
 - If claims show expired subsidy as claimable, ensure server is running the latest code and not an old build
 - Keep manifest as the single source of truth for addresses and public URLs
 - The Ubuntu VPS does not need Foundry if contracts are already deployed locally
+- If you see:
+  - `SyntaxError: Unexpected identifier`
+  - failing at `import path from 'node:path'`
+  then the VPS is still using an old Node runtime; rerun bootstrap or install Node 22 manually before continuing
+- If `apps/server build` fails with:
+  - `Property 'user' does not exist on type 'DbService'`
+  - or similar missing Prisma model properties
+  then Prisma client generation was skipped or stale; rerun deployment after `PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:generate`
+- If Prisma generation fails with:
+  - `Cannot resolve environment variable: DATABASE_URL`
+  then the wrong command was used; `db:generate` does not inject promotion-env runtime config, use `env:db:generate`
+- If TypeScript cannot resolve `3u-aura-common`, ensure `pnpm --dir packages/common build` has been run before the app builds

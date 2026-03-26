@@ -1,8 +1,7 @@
 import 'reflect-metadata';
-import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
-import { Pool } from 'pg';
 import {
+  createPrismaPgAdapter,
   resolveDatabaseSchemaFromEnv,
   splitPrismaPgPoolConfig,
 } from '../src/db/prisma-pg-config';
@@ -72,8 +71,7 @@ async function main() {
   }
 
   const { poolConfig, schema } = splitPrismaPgPoolConfig(buildDatabaseConfig());
-  const pool = new Pool(poolConfig);
-  const adapter = new PrismaPg(pool, schema ? { schema } : undefined);
+  const { adapter, pool } = createPrismaPgAdapter(poolConfig, schema);
   const prisma = new PrismaClient({ adapter });
   const timezone = process.env.PROMOTION_TIMEZONE || 'Asia/Shanghai';
 

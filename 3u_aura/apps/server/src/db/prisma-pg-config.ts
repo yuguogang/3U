@@ -1,3 +1,5 @@
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import type { PoolConfig } from 'pg';
 
 const POSTGRES_SCHEMA_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
@@ -36,6 +38,24 @@ export function splitPrismaPgPoolConfig(config: PrismaPgPoolConfig): {
     poolConfig,
     schema,
   };
+}
+
+type PrismaPgPoolInput = ConstructorParameters<typeof PrismaPg>[0];
+
+export function createPrismaPgAdapter(
+  poolConfig: PoolConfig,
+  schema?: string,
+): { adapter: PrismaPg; pool: Pool } {
+  const pool = new Pool(poolConfig);
+
+  // pnpm 10 can materialize multiple compatible pg type packages in the graph,
+  // so we bridge the constructor input through PrismaPg's declared parameter type.
+  const adapter = new PrismaPg(
+    pool as unknown as PrismaPgPoolInput,
+    schema ? { schema } : undefined,
+  );
+
+  return { adapter, pool };
 }
 
 function normalizeSchema(schema: string): string {

@@ -2,17 +2,17 @@ import { Prisma, PrismaClient } from 'generated/prisma/client';
 
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
-import { splitPrismaPgPoolConfig } from './prisma-pg-config';
+import {
+  createPrismaPgAdapter,
+  splitPrismaPgPoolConfig,
+} from './prisma-pg-config';
 
 @Injectable()
 export class DbService extends PrismaClient {
   constructor(configService: ConfigService) {
     const database = configService.getOrThrow<any>('db');
     const { poolConfig, schema } = splitPrismaPgPoolConfig(database);
-    const pool = new Pool(poolConfig);
-    const adapter = new PrismaPg(pool, schema ? { schema } : undefined);
+    const { adapter } = createPrismaPgAdapter(poolConfig, schema);
     const options: Prisma.PrismaClientOptions = { adapter };
 
     const isProd = configService.get<boolean>('prod');

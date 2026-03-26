@@ -141,3 +141,92 @@
   - gas warnings for `rewardFunder` / `settlementPublisher`
 - See:
   - `/Users/ygg/vs/ai/3U/3u_aura/docs/runbooks/testnet-mockusdt-remote-handoff.md`
+
+## 2026-03-25 Remote Runtime Issue Found
+
+- Remote operator reported:
+  - `node scripts/promotion-env/sync-public-envs.mjs`
+  - failing with `SyntaxError: Unexpected identifier`
+  - at `import path from 'node:path'`
+- Root cause:
+  - VPS used plain `apt install nodejs`
+  - installed Node runtime was too old for the repo's ESM `.mjs` scripts
+- Fix applied in repo:
+  - `scripts/deploy/bootstrap-vps.sh` now installs Node `22`
+  - bootstrap also enables `corepack` and activates `pnpm@8.15.9`
+  - runbooks now explicitly warn against relying on legacy distro Node packages
+
+### Follow-up Remote Operator Action
+
+- rerun:
+  - `bash scripts/deploy/bootstrap-vps.sh`
+- verify:
+  - `node --version`
+  - `pnpm --version`
+- then rerun:
+  - `node scripts/promotion-env/sync-public-envs.mjs`
+
+## 2026-03-25 Remote Lockfile Compatibility Issue
+
+- Remote operator then hit:
+  - `ERR_PNPM_LOCKFILE_BREAKING_CHANGE`
+  - while `deploy-testnet-mockusdt.sh` was running `pnpm install --frozen-lockfile`
+- Root cause:
+  - repo had `packageManager` set to `pnpm@10.13.1`
+  - current `pnpm-lock.yaml` is still `lockfileVersion: '6.0'`
+  - deployment with pnpm 10 pushed the remote operator toward non-deterministic installs
+- Repo fix:
+  - root `packageManager` changed to `pnpm@8.15.9`
+  - `bootstrap-vps.sh` now activates `pnpm@8.15.9`
+  - deploy script returned to deterministic `pnpm install --frozen-lockfile`
+  - runbooks updated to explain that deployment must stay on pnpm 8 until the lockfile is formally migrated
+
+## 2026-03-26 Remote Prisma Generation Issue
+
+- Remote operator later hit `apps/server build` TypeScript failures such as:
+  - `Property 'user' does not exist on type 'DbService'`
+- Root cause:
+  - `DbService` extends generated Prisma client types from `generated/prisma/client`
+  - deployment script installed dependencies but did not explicitly run `apps/server db:generate`
+  - on a clean VPS, generated Prisma types were missing/stale before Nest build
+- Repo fix:
+  - `scripts/deploy/deploy-testnet-mockusdt.sh` now runs:
+    - `PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:generate`
+    - before `pnpm --dir apps/server build`
+  - both runbooks now document this failure mode and recovery step
+
+## 2026-03-26 Remote DATABASE_URL Injection Issue
+
+- Remote operator then tried:
+  - `pnpm --dir apps/server db:generate`
+- and hit:
+  - `PrismaConfigEnvError: Cannot resolve environment variable: DATABASE_URL`
+- Root cause:
+  - bare `db:generate` bypasses `promotion-env`
+  - Prisma config in `apps/server/prisma.config.ts` expects injected `DATABASE_URL`
+- Repo fix:
+  - deployment script corrected to run:
+    - `PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:generate`
+  - runbooks updated to explicitly warn against using bare `db:generate` on VPS
+
+## 2026-03-26 Deployment Baseline Pivot
+
+- User later chose to pause the current VPS rollout and first complete a full local repository migration to `pnpm@10.13.1`.
+- Therefore the earlier emergency guidance that pinned deployment to `pnpm 8.15.9` is no longer the intended final state.
+- After local migration verifies successfully:
+  - bootstrap should provision `pnpm@10.13.1`
+  - runbooks should instruct remote operators to stay on `pnpm@10.13.1`
+  - the lockfile should be regenerated and treated as the single source of truth for both local and VPS installs
+
+## 2026-03-26 Remote Shared Package Build Issue
+
+- Remote operator also hit:
+  - `Cannot find module '3u-aura-common' or its corresponding type declarations`
+- Root cause:
+  - `packages/common` exports built artifacts from `dist/`
+  - clean VPS deploy had not built the shared package before app builds
+- Repo fix:
+  - `scripts/deploy/deploy-testnet-mockusdt.sh` now runs:
+    - `pnpm --dir packages/common build`
+    - before server/dapp/admin builds
+  - runbooks updated to call out this dependency explicitly

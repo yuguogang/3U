@@ -1,9 +1,8 @@
 import { PrismaClient, Prisma } from 'generated/prisma/client';
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
 
 import { userSeed } from './seeds/user.seed';
 import {
+  createPrismaPgAdapter,
   resolveDatabaseSchemaFromEnv,
   splitPrismaPgPoolConfig,
 } from '../src/db/prisma-pg-config';
@@ -12,8 +11,7 @@ const { poolConfig, schema } = splitPrismaPgPoolConfig({
   connectionString: process.env.DATABASE_URL,
   schema: resolveDatabaseSchemaFromEnv(),
 });
-const pool = new Pool(poolConfig);
-const adapter = new PrismaPg(pool, schema ? { schema } : undefined);
+const { adapter } = createPrismaPgAdapter(poolConfig, schema);
 const prisma = new PrismaClient({ adapter });
 
 const main = async () => {

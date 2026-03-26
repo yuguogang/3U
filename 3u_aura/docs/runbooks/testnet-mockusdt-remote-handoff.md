@@ -147,11 +147,37 @@ Use examples:
 
 ### 4. Bootstrap VPS
 
+Do **not** use the distro default `apt install nodejs` alone. It may install an old Node
+release that cannot run repo ESM scripts such as:
+
+- `scripts/promotion-env/sync-public-envs.mjs`
+- `scripts/deploy/render-nginx-config.mjs`
+
+The required runtime is Node `22` with `pnpm@10.13.1`.
+
 ```bash
 bash scripts/deploy/bootstrap-vps.sh
 bash scripts/deploy/install-docker-stack.sh \
   --infra-env /etc/3u-aura/testnet-mockusdt/infra.env \
   --compose ops/docker/testnet-mockusdt.compose.yml
+```
+
+After bootstrap, verify:
+
+```bash
+node --version
+pnpm --version
+```
+
+If bootstrap was skipped and you already installed an old Node version, fix it with:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+sudo corepack enable
+sudo corepack prepare pnpm@10.13.1 --activate
+node --version
+pnpm --version
 ```
 
 ### 5. Confirm Contracts Are Already Deployed
@@ -162,6 +188,13 @@ Before the remote operator continues, confirm locally that:
 - `node scripts/promotion-env/sync-public-envs.mjs` has been run after deployment
 - the updated repo content or deployment bundle has been transferred to the VPS
 
+If `node scripts/promotion-env/sync-public-envs.mjs` fails with:
+
+- `SyntaxError: Unexpected identifier`
+- pointing at `import path from 'node:path'`
+
+the VPS is still using an outdated Node runtime. Upgrade Node first, then rerun the command.
+
 ### 6. Build And Start Apps
 
 ```bash
@@ -170,6 +203,40 @@ bash scripts/deploy/deploy-testnet-mockusdt.sh \
   --app-root /opt/3u-aura/current \
   --env-dir /etc/3u-aura/testnet-mockusdt
 ```
+
+Notes:
+
+- the deploy script uses `pnpm install --frozen-lockfile`
+- use the repository-standard `pnpm@10.13.1`; do not fall back to pnpm 8 or mix pnpm major versions during deployment
+- the deploy script builds `packages/common` before app builds
+- the deploy script now also runs `PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:generate` before `apps/server build`
+- do not use `pnpm install --force` or `--no-frozen-lockfile` manually unless you are debugging outside the scripted flow
+
+If `apps/server build` fails with TypeScript errors such as:
+
+- `Property 'user' does not exist on type 'DbService'`
+
+that means Prisma client generation did not happen. Fix with:
+
+```bash
+PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:generate
+```
+
+then rerun the deploy script.
+
+If Prisma generation fails with:
+
+- `Cannot resolve environment variable: DATABASE_URL`
+
+you used the wrong command. Do not run bare `pnpm --dir apps/server db:generate` on the VPS; it bypasses promotion-env injection.
+
+If TypeScript cannot resolve `3u-aura-common`, that means the shared package was not built. Fix with:
+
+```bash
+pnpm --dir packages/common build
+```
+
+then rerun the deploy script.
 
 ### 7. Render And Install Nginx Config
 
