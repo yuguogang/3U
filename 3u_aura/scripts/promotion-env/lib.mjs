@@ -137,10 +137,11 @@ function buildDatabaseUrl(baseEnv, database) {
   const user = process.env.DATABASE_USER || baseEnv.DATABASE_USER || 'postgres';
   const password =
     process.env.DATABASE_PASSWORD || baseEnv.DATABASE_PASSWORD || 'password';
-  const host = database.host;
-  const port = database.port;
-  const name = database.name;
-  const schema = database.schema || 'public';
+  const host = process.env.DATABASE_HOST || baseEnv.DATABASE_HOST || database.host;
+  const port = process.env.DATABASE_PORT || baseEnv.DATABASE_PORT || database.port;
+  const name = process.env.DATABASE_NAME || baseEnv.DATABASE_NAME || database.name;
+  const schema =
+    process.env.DATABASE_SCHEMA || baseEnv.DATABASE_SCHEMA || database.schema || 'public';
   const encodedUser = encodeURIComponent(user);
   const encodedPassword = encodeURIComponent(password);
 
@@ -448,7 +449,10 @@ export function buildTargetContext({
         DATABASE_URL: buildDatabaseUrl({ ...baseEnv, ...process.env }, manifest.infra.database),
       }
     : {};
-  const mergedEnv = { ...baseEnv, ...process.env, ...derivedEnv, ...runtimeEnv };
+  // Allow explicit shell-provided overrides (for example local verification ports/origins)
+  // to win over manifest-derived defaults, while still letting runtime-only values such as
+  // DATABASE_URL be synthesized last.
+  const mergedEnv = { ...baseEnv, ...derivedEnv, ...process.env, ...runtimeEnv };
 
   if (strict) {
     assertRunnable({ manifest, target, env: mergedEnv });

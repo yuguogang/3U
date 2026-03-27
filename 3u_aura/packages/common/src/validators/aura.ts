@@ -8,6 +8,7 @@ export const AuthSignatureMessageSchema = z.object({
 
 export const AuthSignatureSigninSchema = z.object({
     address: z.string().min(1, 'Address required'),
+    message: z.string().min(1, 'Message required').optional(),
     signature: z
         .string()
         .regex(/^0x[a-fA-F0-9]{130,132}$/, 'Invalid signature format'),

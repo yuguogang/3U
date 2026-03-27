@@ -125,6 +125,7 @@ export function AdminWalletButton() {
         address,
         chain: chainId,
         device: DEVICES.BROWSER,
+        message,
         name: displayName || shortenAddress(address),
         signature,
       });

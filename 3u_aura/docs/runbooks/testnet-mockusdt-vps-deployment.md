@@ -22,6 +22,8 @@ Before remote execution, prepare:
 - BSC Testnet RPC
 - WalletConnect Project ID
 - deployment private key
+  - local operator machine only
+  - do not place it on the VPS
 - final role addresses:
   - `owner`
   - `rootPublisher`
@@ -127,6 +129,18 @@ Write it to:
 
 - `/etc/3u-aura/testnet-mockusdt/shared.env`
 
+At minimum, `shared.env` must contain:
+
+```bash
+DATABASE_USER=postgres
+DATABASE_PASSWORD=change-me
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=change-me
+AUTH_JWT_SECRET=<long-random-secret>
+AUTH_JWT_REFRESH_SECRET=<another-long-random-secret>
+AUTH_JWT_SECRET_EXPIRES_SECONDS=604800
+AUTH_JWT_REFRESH_SECRET_EXPIRES_SECONDS=2592000
+```
+
 Then install Docker stack:
 
 ```bash
@@ -154,6 +168,7 @@ This will:
 - build `packages/common`
 - run `PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:generate`
 - build server/dapp/admin
+- chown build artifacts back to `3u-aura` so systemd services can start cleanly
 - read shared secrets from `/etc/3u-aura/testnet-mockusdt/shared.env`
 - install systemd units
 - restart services
@@ -170,15 +185,45 @@ node scripts/deploy/render-nginx-config.mjs \
   --output /tmp/testnet-mockusdt.conf
 ```
 
-Install config into Nginx and enable it, then:
+Install config into Nginx, disable the Ubuntu default site, enable the rendered site, then:
 
 ```bash
+sudo cp /tmp/testnet-mockusdt.conf /etc/nginx/sites-available/testnet-mockusdt.conf
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo ln -sf /etc/nginx/sites-available/testnet-mockusdt.conf /etc/nginx/sites-enabled/testnet-mockusdt.conf
 sudo nginx -t
 sudo systemctl reload nginx
-sudo certbot --nginx
+```
+
+Verify plain HTTP before requesting TLS:
+
+```bash
+curl -I http://api.example.com/api/v1/health
+curl -I http://app.example.com
+curl -I http://admin.example.com/dashboard
+```
+
+Then request the subdomain certificate explicitly:
+
+```bash
+sudo certbot --nginx \
+  -d api.example.com \
+  -d app.example.com \
+  -d admin.example.com
 ```
 
 ## Step 6: Smoke Check
+
+If you run smoke checks from the VPS itself and the public domain does not loop back cleanly,
+first verify local Nginx routing with:
+
+```bash
+curl -vk --resolve api.example.com:443:127.0.0.1 https://api.example.com/api/v1/health
+curl -vk --resolve app.example.com:443:127.0.0.1 https://app.example.com
+curl -vk --resolve admin.example.com:443:127.0.0.1 https://admin.example.com/dashboard
+```
+
+Then run the external smoke check:
 
 ```bash
 bash scripts/deploy/smoke-test-testnet-mockusdt.sh \
@@ -206,6 +251,9 @@ Validate:
 - If claims show expired subsidy as claimable, ensure server is running the latest code and not an old build
 - Keep manifest as the single source of truth for addresses and public URLs
 - The Ubuntu VPS does not need Foundry if contracts are already deployed locally
+- If server fails with:
+  - `JwtStrategy requires a secret or key`
+  add `AUTH_JWT_SECRET` and `AUTH_JWT_REFRESH_SECRET` to `shared.env`, then restart `3u-aura-server`
 - If you see:
   - `SyntaxError: Unexpected identifier`
   - failing at `import path from 'node:path'`
@@ -218,3 +266,11 @@ Validate:
   - `Cannot resolve environment variable: DATABASE_URL`
   then the wrong command was used; `db:generate` does not inject promotion-env runtime config, use `env:db:generate`
 - If TypeScript cannot resolve `3u-aura-common`, ensure `pnpm --dir packages/common build` has been run before the app builds
+- If any systemd unit exits with:
+  - `status=203/EXEC`
+  inspect `/etc/systemd/system/3u-aura-*.service`; old deployments may still reference `/bin/zsh`. Pull the latest repo and rerun the deploy script so the units are re-rendered with `/bin/bash`
+- If `3u-aura-server` exits with:
+  - `EACCES: permission denied, symlink '../generated' -> .../apps/server/dist/generated`
+  the app was built as `root` but started as `3u-aura`. Pull the latest repo and rerun the deploy script; it now fixes build artifact ownership automatically
+- If the subdomains return the Ubuntu default Nginx page or `404`, the default site is still enabled or the rendered `testnet-mockusdt` site was not installed
+- If `certbot --nginx` says it cannot find a matching server block, install the rendered Nginx config first and request certificates for the explicit subdomains instead of relying on the default `goldmint.vip` site

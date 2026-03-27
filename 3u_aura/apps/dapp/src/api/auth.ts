@@ -23,6 +23,7 @@ export async function apiAuthGetSignatureMessage(
   const response = await fetchClient<AuthSignatureMessageResponse>(
     `/api/v1/auth/signature_message`,
     {
+      auth: false,
       method: "GET",
       query: data,
     },
@@ -34,9 +35,9 @@ export async function apiAuthSigninBySignature(body: AuthSignatureSigninInput) {
   const response = await fetchClient<AuthSignatureSigninResponse>(
     `/api/v1/auth/signature_signin`,
     {
+      auth: false,
       method: "POST",
-      // 接收服务端写入的 httpOnly refresh_token Cookie
-      // credentials: "include",
+      credentials: "include",
       body,
     },
   );

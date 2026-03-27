@@ -183,6 +183,5 @@ describe('ClaimsReadService', () => {
         status: ClaimStatus.PENDING,
       }),
     ]);
-
   });
 });

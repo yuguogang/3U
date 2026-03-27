@@ -23,6 +23,28 @@ if (isDev() && proxyUrl) {
 }
 
 export const configuration = () => {
+  const cachePassword = process.env.CACHE_PASSWORD;
+  const throttlerPassword =
+    process.env.THROTTLER_PASSWORD || process.env.CACHE_PASSWORD;
+  const buildRedisUrl = (rawUrl?: string, password?: string) => {
+    if (!rawUrl) {
+      return rawUrl;
+    }
+
+    if (!password) {
+      return rawUrl;
+    }
+
+    try {
+      const url = new URL(rawUrl);
+      if (!url.password) {
+        url.password = password;
+      }
+      return url.toString();
+    } catch {
+      return rawUrl;
+    }
+  };
   const databaseSchema = resolveDatabaseSchemaFromEnv();
   const config: ConfigOptions = {
     prod: !isDev(),
@@ -54,14 +76,18 @@ export const configuration = () => {
       schema: databaseSchema,
     },
     cache: {
-      url: process.env.CACHE_URL || 'redis://localhost:6379',
-      password: process.env.CACHE_PASSWORD,
+      url: buildRedisUrl(
+        process.env.CACHE_URL || 'redis://localhost:6379',
+        cachePassword,
+      ),
+      password: cachePassword,
     },
     bull: {
       prefix: process.env.BULL_PREFIX || undefined,
       connection: {
         host: process.env.BULL_HOST,
         port: Number.parseInt(process.env.BULL_PORT || '6379'),
+        password: process.env.BULL_PASSWORD || cachePassword,
       },
     },
     throttler: {
@@ -75,7 +101,9 @@ export const configuration = () => {
           ), // 默认 最大请求次数60次
         },
       ],
-      redis: (process.env.THROTTLER_REDIS as string) || undefined,
+      redis:
+        buildRedisUrl(process.env.THROTTLER_REDIS as string, throttlerPassword) ||
+        undefined,
     },
     auth: {
       jwt: {

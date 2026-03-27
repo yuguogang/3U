@@ -61,12 +61,33 @@ node scripts/promotion-env/print-env.mjs --env "${ENV_NAME}" --target server > "
 node scripts/promotion-env/print-env.mjs --env "${ENV_NAME}" --target dapp > "${ENV_DIR}/dapp.env"
 node scripts/promotion-env/print-env.mjs --env "${ENV_NAME}" --target admin > "${ENV_DIR}/admin.env"
 
+INFRA_ENV="${ENV_DIR}/infra.env"
+if [[ -f "${INFRA_ENV}" ]]; then
+  REDIS_PASSWORD="$(
+    awk -F '=' '/^REDIS_PASSWORD=/{sub(/^[^=]*=/, "", $0); print $0}' "${INFRA_ENV}" | tail -n 1
+  )"
+  if [[ -n "${REDIS_PASSWORD}" ]]; then
+    cat >> "${ENV_DIR}/server.env" <<EOF
+CACHE_PASSWORD=${REDIS_PASSWORD}
+BULL_PASSWORD=${REDIS_PASSWORD}
+THROTTLER_PASSWORD=${REDIS_PASSWORD}
+EOF
+  fi
+fi
+
 pnpm install --frozen-lockfile
 pnpm --dir packages/common build
 PROMOTION_ENV="${ENV_NAME}" pnpm --dir apps/server env:db:generate
 pnpm --dir apps/server build
 PROMOTION_ENV="${ENV_NAME}" pnpm --dir apps/dapp env:build
 PROMOTION_ENV="${ENV_NAME}" pnpm --dir apps/admin env:build
+
+sudo chown -R "${APP_USER}:${APP_GROUP}" \
+  "${APP_ROOT}/apps/server/dist" \
+  "${APP_ROOT}/apps/server/generated" \
+  "${APP_ROOT}/apps/dapp/.next" \
+  "${APP_ROOT}/apps/admin/.next" \
+  "${APP_ROOT}/packages/common/dist"
 
 render_unit() {
   local template="$1"

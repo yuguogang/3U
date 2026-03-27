@@ -44,7 +44,9 @@ export async function fetchClient<T>(
   });
 
   if (response.status === 401) {
-    useAuthStore.getState().logout();
+    if (auth) {
+      useAuthStore.getState().logout();
+    }
     throw new Error("Unauthorized");
   }
 

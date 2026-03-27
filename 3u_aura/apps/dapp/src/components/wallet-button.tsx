@@ -225,6 +225,7 @@ export function WalletButton() {
         address,
         name: displayName || shortenAddress(address),
         chain: chainId,
+        message,
         signature,
         device: DEVICES.BROWSER,
         referralCode: pendingReferralCode ?? undefined,

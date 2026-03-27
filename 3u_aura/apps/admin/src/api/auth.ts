@@ -44,6 +44,7 @@ export async function apiAdminSigninBySignature(
 ) {
   return fetchClient<AdminSignatureLoginResponse>("/api/v1/admin/auth/login", {
     auth: false,
+    credentials: "include",
     body: {
       ...body,
       device: body.device || DEVICES.BROWSER,
@@ -58,6 +59,7 @@ export async function apiAdminMe() {
 
 export async function apiAdminLogout() {
   return fetchClient<{ success: boolean }>("/api/v1/admin/auth/logout", {
+    credentials: "include",
     method: "POST",
   });
 }

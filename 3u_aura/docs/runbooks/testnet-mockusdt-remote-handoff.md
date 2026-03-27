@@ -100,15 +100,14 @@ Otherwise:
 
 These must **not** be committed into the repo:
 
-- deployment private key
 - VPS local infra secrets:
   - Postgres password
   - Redis password
-- WalletConnect Project ID secret handling, if reissued
-- any per-wallet private keys used for:
-  - `owner`
-  - `rewardFunderAddress`
-  - `settlementPublisher`
+- JWT secrets for app auth
+- WalletConnect Project ID, if it is reissued
+
+Do **not** place the deployment private key for `owner` on the VPS.
+Contracts are already deployed from the trusted local operator machine.
 
 ## Remote Execution Order
 
@@ -144,6 +143,18 @@ Use examples:
 
 - `/Users/ygg/vs/ai/3U/3u_aura/ops/env/testnet-mockusdt.server.env.example`
 - `/Users/ygg/vs/ai/3U/3u_aura/ops/env/testnet-mockusdt.shared.env.example`
+
+`shared.env` must include at least:
+
+```bash
+DATABASE_USER=postgres
+DATABASE_PASSWORD=change-me
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=124353e5a312fdabb5b1d182ada6eca1
+AUTH_JWT_SECRET=<long-random-secret>
+AUTH_JWT_REFRESH_SECRET=<another-long-random-secret>
+AUTH_JWT_SECRET_EXPIRES_SECONDS=604800
+AUTH_JWT_REFRESH_SECRET_EXPIRES_SECONDS=2592000
+```
 
 ### 4. Bootstrap VPS
 
@@ -210,6 +221,7 @@ Notes:
 - use the repository-standard `pnpm@10.13.1`; do not fall back to pnpm 8 or mix pnpm major versions during deployment
 - the deploy script builds `packages/common` before app builds
 - the deploy script now also runs `PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:generate` before `apps/server build`
+- the deploy script now also fixes build artifact ownership for the `3u-aura` service user
 - do not use `pnpm install --force` or `--no-frozen-lockfile` manually unless you are debugging outside the scripted flow
 
 If `apps/server build` fails with TypeScript errors such as:
@@ -238,6 +250,28 @@ pnpm --dir packages/common build
 
 then rerun the deploy script.
 
+If `3u-aura-server` crashes with:
+
+- `JwtStrategy requires a secret or key`
+
+then `shared.env` is missing JWT secrets. Add `AUTH_JWT_SECRET` and
+`AUTH_JWT_REFRESH_SECRET`, then restart the service.
+
+If any of the systemd services fail with:
+
+- `status=203/EXEC`
+
+you are still using an older deployment that rendered `/bin/zsh` into the unit
+files. Pull the latest repo and rerun the deploy script so the units are
+rewritten with `/bin/bash`.
+
+If `3u-aura-server` fails with:
+
+- `EACCES: permission denied, symlink '../generated'`
+
+the repo was built as `root` but the service runs as `3u-aura`. Pull the latest
+repo and rerun the deploy script; it now applies the required ownership fix.
+
 ### 7. Render And Install Nginx Config
 
 ```bash
@@ -251,10 +285,24 @@ node scripts/deploy/render-nginx-config.mjs \
 Install the rendered file into Nginx, then:
 
 ```bash
+sudo cp /tmp/testnet-mockusdt.conf /etc/nginx/sites-available/testnet-mockusdt.conf
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo ln -sf /etc/nginx/sites-available/testnet-mockusdt.conf /etc/nginx/sites-enabled/testnet-mockusdt.conf
 sudo nginx -t
 sudo systemctl reload nginx
-sudo certbot --nginx
+curl -I http://api.goldmint.vip/api/v1/health
+curl -I http://app.goldmint.vip
+curl -I http://admin.goldmint.vip/dashboard
+sudo certbot --nginx \
+  -d api.goldmint.vip \
+  -d app.goldmint.vip \
+  -d admin.goldmint.vip
 ```
+
+If you see the default Ubuntu Nginx page or `404`, the default site is still
+enabled or the rendered config was not installed. If `certbot --nginx` says it
+cannot find a matching server block, install the rendered config first and
+request certificates for the three explicit subdomains.
 
 ### 8. Smoke Check
 
@@ -310,3 +358,27 @@ Validate:
 5. ranking/lottery rewards become claimable
 6. NFT subsidy becomes claimable
 7. expired subsidy shows as `已作废`
+
+## Last Rollout Issue Summary
+
+The previous VPS rollout hit these real issues:
+
+1. Old distro Node could not run repo `.mjs` scripts.
+2. Mixed `pnpm` versions caused lockfile and dependency drift.
+3. `shared.env` was missing JWT secrets, causing `JwtStrategy requires a secret or key`.
+4. Older systemd units still referenced `zsh`, which was not installed on Ubuntu.
+5. Root-owned server build artifacts caused `EACCES` when `3u-aura-server` tried to create the Prisma runtime symlink.
+6. The default Ubuntu Nginx site stayed enabled, so subdomains served the wrong content.
+7. Certbot was first run against the wrong site context, so certificates were not installed onto the subdomain reverse proxies.
+
+The current repo now includes:
+
+- Node 22 + `pnpm@10.13.1` bootstrap instructions
+- `env:db:generate` in the deploy flow
+- `bash`-based systemd templates
+- Redis password propagation into generated `server.env`
+- build artifact ownership correction in the deploy script
+
+See also:
+
+- `/Users/ygg/vs/ai/3U/3u_aura/docs/runbooks/testnet-mockusdt-online-repair.md`

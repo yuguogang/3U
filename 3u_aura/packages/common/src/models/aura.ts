@@ -118,6 +118,7 @@ export interface ClientWeeklyReward {
 
 export interface AuthSignatureSigninInput {
     address: string;
+    message?: string;
     signature: string;
     device: DEVICES | string;
     name?: string;

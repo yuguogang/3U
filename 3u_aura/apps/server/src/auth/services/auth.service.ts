@@ -85,18 +85,22 @@ export class AuthService {
   }): Promise<AuthSignatureMessagePayload> {
     const expiredSeconds = 5 * 60; // 5 minutes
     const key = `sign_msg:${scenario}:${address}`;
-    let data = await this.cacheManager.get<AuthSignatureMessagePayload>(key);
+    let data: AuthSignatureMessagePayload | undefined;
+    try {
+      data = await this.cacheManager.get<AuthSignatureMessagePayload>(key);
+    } catch {
+      data = undefined;
+    }
     if (
       !data ||
       dayjs.unix(data.expired).subtract(15, 'seconds').isBefore(new Date())
     ) {
-      const nonce = this.generateNonce();
-      const expired = dayjs().add(expiredSeconds, 'seconds');
-
-      const message = `${scenario} Nonce: ${nonce}
-Expired: ${expired.format('YYYY/MM/DD HH:mm:ss')}`;
-      data = { message, expired: expired.unix() };
-      await this.cacheManager.set(key, data, expiredSeconds * 1000);
+      data = this.buildChallengeMessage(scenario, expiredSeconds);
+      try {
+        await this.cacheManager.set(key, data, expiredSeconds * 1000);
+      } catch {
+        // Fall back to stateless challenge delivery when cache is unavailable.
+      }
     }
 
     return data;
@@ -107,13 +111,19 @@ Expired: ${expired.format('YYYY/MM/DD HH:mm:ss')}`;
   }
 
   async signinBySignature(payload: AuthSignatureSigninInput): Promise<User> {
-    const { message: storedMessage } = await this.generateMessage({
-      address: payload.address,
-      scenario: SignatureScenarios.SIGNIN,
-    });
+    const challengeMessage =
+      payload.message ||
+      (
+        await this.generateMessage({
+          address: payload.address,
+          scenario: SignatureScenarios.SIGNIN,
+        })
+      ).message;
+
+    this.assertChallengeMessage(challengeMessage, SignatureScenarios.SIGNIN);
 
     const valid = await verifyMessage({
-      message: storedMessage,
+      message: challengeMessage,
       signature: payload.signature as any,
       address: payload.address as any,
     });
@@ -191,6 +201,40 @@ Expired: ${expired.format('YYYY/MM/DD HH:mm:ss')}`;
     }
 
     return user;
+  }
+
+  private buildChallengeMessage(
+    scenario: SignatureScenarios,
+    expiredSeconds: number,
+  ): AuthSignatureMessagePayload {
+    const nonce = this.generateNonce();
+    const expired = dayjs().add(expiredSeconds, 'seconds');
+
+    return {
+      message: `${scenario} Nonce: ${nonce}
+Expired: ${expired.format('YYYY/MM/DD HH:mm:ss')}`,
+      expired: expired.unix(),
+    };
+  }
+
+  private assertChallengeMessage(
+    message: string,
+    scenario: SignatureScenarios,
+  ) {
+    const [scenarioLine, expiredLine] = message.split('\n');
+
+    if (!scenarioLine?.startsWith(`${scenario} Nonce: `)) {
+      throw new UnauthorizedException('Invalid signature challenge');
+    }
+
+    const expiredAt = expiredLine?.replace('Expired: ', '').trim();
+    if (!expiredAt) {
+      throw new UnauthorizedException('Invalid signature challenge');
+    }
+
+    if (dayjs(expiredAt, 'YYYY/MM/DD HH:mm:ss', true).isBefore(dayjs())) {
+      throw new UnauthorizedException('Signature challenge expired');
+    }
   }
 
   async createRefreshTokenRecord(
