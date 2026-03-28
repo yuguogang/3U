@@ -173,6 +173,59 @@ This will:
 - install systemd units
 - restart services
 
+Important:
+
+- the deploy script currently does **not** run `prisma migrate deploy`
+- on a fresh or stale VPS database, app services may start successfully while some API routes still fail at runtime because required tables / columns are missing
+
+Before continuing to Nginx and smoke tests, run:
+
+```bash
+bash scripts/deploy/repair-testnet-mockusdt-db.sh \
+  --env testnet-mockusdt \
+  --app-root /opt/3u-aura/current \
+  --env-dir /etc/3u-aura/testnet-mockusdt
+```
+
+If that migration step fails on a fresh VPS database with
+`relation "User" does not exist`, the schema baseline has not been applied yet.
+Repair it once with:
+
+```bash
+node scripts/promotion-env/run-with-env.mjs --target server -- prisma db execute \
+  --file apps/server/prisma/migrations/20260311_schema_model_alignment_hardening/migration.sql
+
+node scripts/promotion-env/run-with-env.mjs --target server -- prisma migrate resolve \
+  --applied 20260311_schema_model_alignment_hardening
+
+PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:migrate deploy
+sudo systemctl restart 3u-aura-server 3u-aura-dapp 3u-aura-admin
+```
+
+If Prisma reports `P3009` for
+`20260311_phase2_checkin_pool_split_fact` and the database only contains
+`_prisma_migrations` plus `PoolSplitFact`, the first migration partially ran
+before the base schema existed. For a disposable fresh VPS database, repair it
+with:
+
+```bash
+docker exec 3u-aura-testnet-mockusdt-postgres \
+  psql -U postgres -d 3u_aura_testnet_mockusdt \
+  -c 'DROP TABLE IF EXISTS "PoolSplitFact" CASCADE;'
+
+node scripts/promotion-env/run-with-env.mjs --target server -- prisma migrate resolve \
+  --rolled-back 20260311_phase2_checkin_pool_split_fact
+
+node scripts/promotion-env/run-with-env.mjs --target server -- prisma db execute \
+  --file apps/server/prisma/migrations/20260311_schema_model_alignment_hardening/migration.sql
+
+node scripts/promotion-env/run-with-env.mjs --target server -- prisma migrate resolve \
+  --applied 20260311_schema_model_alignment_hardening
+
+PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:migrate deploy
+sudo systemctl restart 3u-aura-server 3u-aura-dapp 3u-aura-admin
+```
+
 ## Step 5: Configure Nginx And TLS
 
 Render Nginx config:
@@ -265,6 +318,7 @@ Validate:
 - If Prisma generation fails with:
   - `Cannot resolve environment variable: DATABASE_URL`
   then the wrong command was used; `db:generate` does not inject promotion-env runtime config, use `env:db:generate`
+- If pages still show `500 Internal server error` after all services are `active (running)`, inspect the database schema next; app redeploy alone does not guarantee the Postgres schema has been migrated
 - If TypeScript cannot resolve `3u-aura-common`, ensure `pnpm --dir packages/common build` has been run before the app builds
 - If any systemd unit exits with:
   - `status=203/EXEC`

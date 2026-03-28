@@ -54,6 +54,8 @@ coverage/
 # pnpm
 .pnpm-store/
 .pnpm-debug.log
+config/promotion-envs/*/local.override.env
+config/promotion-envs/*/*.local.override.env
 
 # Misc
 *.local

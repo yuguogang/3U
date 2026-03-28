@@ -2,7 +2,7 @@
 
 ## Current Progress
 - [x] Created `docs/plan-excution/multilingual-notification-center/plan.md`.
-- [x] Split notification-center scope out of `ui-migration-kimiui-to-dapp` so UI work can remain low-reasoning-agent friendly.
+- [x] Split notification-center scope out of the earlier DApp UI migration stream so UI work can remain low-reasoning-agent friendly.
 - [x] Reconfirmed the current baseline:
   - no dedicated Prisma notification schema
   - no admin notification publish API

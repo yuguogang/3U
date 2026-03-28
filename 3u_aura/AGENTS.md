@@ -277,6 +277,31 @@ then the result must be recoverable and auditable afterward.
 - Use `forge test` and fork tests for contracts.
 - Keep iterations small and reviewable.
 
+### Local `testnet-mockusdt` Bring-Up
+- For local manual validation of `server` / `dapp` / `admin` against the developer's real localhost Postgres/Redis, prefer direct non-sandbox execution instead of first attempting sandboxed runs.
+- When the user asks to start the local `testnet-mockusdt` stack, Codex should immediately request escalated execution for long-running dev servers and localhost health checks.
+- Do not change committed `config/promotion-envs/testnet-mockusdt/**` values just to fit one developer machine. Treat those files as the canonical shared environment definition for deployment.
+- Machine-specific values must live in gitignored override files under `config/promotion-envs/testnet-mockusdt/`.
+- Supported local override files:
+  - `config/promotion-envs/testnet-mockusdt/local.override.env`
+  - `config/promotion-envs/testnet-mockusdt/server.local.override.env`
+  - `config/promotion-envs/testnet-mockusdt/dapp.local.override.env`
+  - `config/promotion-envs/testnet-mockusdt/admin.local.override.env`
+- Current known local overrides for this repo are:
+  - `DATABASE_PORT=5433`
+  - `CORS_ORIGIN=http://127.0.0.1:3100,http://127.0.0.1:3101`
+  - `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:3110`
+- Preferred local start commands:
+  - `pnpm run local:testnet:common`
+  - `pnpm run local:testnet:server`
+  - `pnpm run local:testnet:dapp`
+  - `pnpm run local:testnet:admin`
+- Preferred debug commands:
+  - `pnpm run local:testnet:print:server`
+  - `pnpm run local:testnet:print:dapp`
+  - `pnpm run local:testnet:print:admin`
+- Before starting those services, check whether ports `3100`, `3101`, or `3110` are already occupied and stop the conflicting processes if the user requested a clean relaunch.
+
 ---
 
 ## Verification & Completion Rules

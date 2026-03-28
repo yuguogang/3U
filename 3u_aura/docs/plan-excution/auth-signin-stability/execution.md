@@ -151,8 +151,39 @@
   - root-owned server build artifacts
   - Nginx default site conflicts
   - explicit subdomain `certbot` issuance
+  - manual Prisma commands must source `/etc/3u-aura/testnet-mockusdt/shared.env` and `server.env`
+  - fresh VPS databases may require a one-time baseline alignment using `20260311_schema_model_alignment_hardening` before `prisma migrate deploy` can succeed
 - Updated the remote handoff document with the same rollout issue summary and the corrected secret / Nginx / certbot flow.
 - Added `/Users/ygg/vs/ai/3U/3u_aura/docs/runbooks/testnet-mockusdt-online-repair.md` as a focused production repair plan.
+
+## Additional Remote Findings
+- Remote VPS app services can be `active (running)` while page routes still return `500` if the Postgres schema baseline is missing.
+- Manual `env:db:migrate deploy` on the VPS initially failed with:
+  - `P1000 Authentication failed`
+  - because interactive shells did not load `/etc/3u-aura/testnet-mockusdt/shared.env` / `server.env`
+- After loading the env files explicitly, the real blocker became:
+  - `P3018`
+  - `relation "User" does not exist`
+  - while applying `20260311_phase2_checkin_pool_split_fact`
+- Repository inspection confirmed this is a baseline-order problem on fresh databases:
+  - `20260311_phase2_checkin_pool_split_fact` adds foreign keys to `User`, `Checkin`, and `PaymentReceipt`
+  - those base tables are actually created in `20260311_schema_model_alignment_hardening`
+- The repair path was documented as:
+  - use `node scripts/promotion-env/run-with-env.mjs --target server -- prisma ...` for manual Prisma commands so `DATABASE_URL` is present
+  - if the fresh VPS database is half-initialized with only `_prisma_migrations` and `PoolSplitFact`, drop `PoolSplitFact` and mark `20260311_phase2_checkin_pool_split_fact` as rolled back
+  - `prisma db execute --file apps/server/prisma/migrations/20260311_schema_model_alignment_hardening/migration.sql`
+  - `prisma migrate resolve --applied 20260311_schema_model_alignment_hardening`
+  - rerun `PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:migrate deploy`
+- Remote auth signin still returned `500` after the baseline repair because `RefreshToken` was missing from the VPS database.
+- Repository inspection confirmed `apps/server/prisma/schema.prisma` defines `model RefreshToken`, but no existing migration created that table.
+- Added a new Prisma migration:
+  - `/Users/ygg/vs/ai/3U/3u_aura/apps/server/prisma/migrations/20260327_refresh_token_table/migration.sql`
+  - to create `RefreshToken`, its unique token index, the `userId` index, and the `User` foreign key.
+- Added `/Users/ygg/vs/ai/3U/3u_aura/scripts/deploy/repair-testnet-mockusdt-db.sh` so VPS operators can repair and migrate the testnet-mockusdt database in one command instead of manually running:
+  - password alignment
+  - failed phase2 rollback
+  - baseline SQL execution
+  - `prisma migrate deploy`
 
 ## Additional Verification
 - `bash -n scripts/deploy/deploy-testnet-mockusdt.sh`

@@ -3,8 +3,8 @@
 ## Objective
 Add a first-version persisted multilingual notification center that lets admins author and publish announcements, and lets DApp users view them with unread/read state.
 
-This plan is intentionally separate from `ui-migration-kimiui-to-dapp`:
-- `ui-migration-kimiui-to-dapp` stays focused on DApp presentation and current-API adaptation.
+This plan is intentionally separate from the earlier DApp UI migration stream:
+- the earlier UI migration stays focused on DApp presentation and current-API adaptation.
 - This task owns the new shared models, persistence, server APIs, admin authoring flows, and DApp inbox integration needed for notifications.
 
 ## Scope

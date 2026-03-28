@@ -15,4 +15,10 @@ const context = buildTargetContext({
   target: args.target,
 });
 
-process.stdout.write(formatEnvFile(context.derivedEnv));
+process.stdout.write(
+  formatEnvFile({
+    ...context.derivedEnv,
+    ...context.localOverrideEnv,
+    ...context.runtimeEnv,
+  }),
+);

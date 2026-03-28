@@ -78,6 +78,113 @@ systemctl status 3u-aura-dapp --no-pager
 systemctl status 3u-aura-admin --no-pager
 ```
 
+## Step 4.5: Migrate The VPS Database Schema
+
+App redeploy does **not** automatically migrate Postgres.
+
+Preferred one-step repair:
+
+```bash
+bash scripts/deploy/repair-testnet-mockusdt-db.sh \
+  --env testnet-mockusdt \
+  --app-root /opt/3u-aura/current \
+  --env-dir /etc/3u-aura/testnet-mockusdt
+```
+
+This script will:
+
+- align the live Postgres password with `shared.env`
+- repair the known failed `20260311_phase2_checkin_pool_split_fact` state
+- apply the `20260311_schema_model_alignment_hardening` baseline if needed
+- run `prisma migrate deploy`
+- restart `server / dapp / admin`
+
+If you need to run the Prisma steps manually, first load the runtime env files
+that systemd normally provides:
+
+```bash
+cd /opt/3u-aura/current
+set -a
+source /etc/3u-aura/testnet-mockusdt/shared.env
+source /etc/3u-aura/testnet-mockusdt/server.env
+set +a
+```
+
+Then run:
+
+```bash
+PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:migrate deploy
+sudo systemctl restart 3u-aura-server 3u-aura-dapp 3u-aura-admin
+```
+
+If the services are `active (running)` but pages still return `500`, the
+database schema is the next thing to verify.
+
+If `env:db:migrate deploy` fails on a fresh VPS database with:
+
+- `P3018`
+- `relation "User" does not exist`
+
+then the database is missing the baseline schema that later migrations depend
+on. Repair it in this order:
+
+```bash
+cd /opt/3u-aura/current
+set -a
+source /etc/3u-aura/testnet-mockusdt/shared.env
+source /etc/3u-aura/testnet-mockusdt/server.env
+set +a
+
+node scripts/promotion-env/run-with-env.mjs --target server -- prisma db execute \
+  --file apps/server/prisma/migrations/20260311_schema_model_alignment_hardening/migration.sql
+
+node scripts/promotion-env/run-with-env.mjs --target server -- prisma migrate resolve \
+  --applied 20260311_schema_model_alignment_hardening
+
+PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:migrate deploy
+sudo systemctl restart 3u-aura-server 3u-aura-dapp 3u-aura-admin
+```
+
+If Prisma instead reports `P3009` and the failed migration is
+`20260311_phase2_checkin_pool_split_fact`, check whether the database is in a
+half-initialized state with only `_prisma_migrations` and `PoolSplitFact`.
+
+If so, and the environment is disposable or empty, repair it like this:
+
+```bash
+cd /opt/3u-aura/current
+set -a
+source /etc/3u-aura/testnet-mockusdt/shared.env
+source /etc/3u-aura/testnet-mockusdt/server.env
+set +a
+
+docker exec 3u-aura-testnet-mockusdt-postgres \
+  psql -U postgres -d 3u_aura_testnet_mockusdt \
+  -c 'DROP TABLE IF EXISTS "PoolSplitFact" CASCADE;'
+
+node scripts/promotion-env/run-with-env.mjs --target server -- prisma migrate resolve \
+  --rolled-back 20260311_phase2_checkin_pool_split_fact
+
+node scripts/promotion-env/run-with-env.mjs --target server -- prisma db execute \
+  --file apps/server/prisma/migrations/20260311_schema_model_alignment_hardening/migration.sql
+
+node scripts/promotion-env/run-with-env.mjs --target server -- prisma migrate resolve \
+  --applied 20260311_schema_model_alignment_hardening
+
+PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:migrate deploy
+sudo systemctl restart 3u-aura-server 3u-aura-dapp 3u-aura-admin
+```
+
+If Prisma instead fails with `P1000 Authentication failed`, first reset the
+actual Postgres password inside the running container to match
+`/etc/3u-aura/testnet-mockusdt/shared.env`:
+
+```bash
+docker exec 3u-aura-testnet-mockusdt-postgres \
+  psql -U postgres -d postgres \
+  -c "ALTER USER postgres WITH PASSWORD 'change-me';"
+```
+
 ## Step 5: If App Services Still Fail
 
 ### A. `status=203/EXEC`
@@ -129,6 +236,27 @@ pnpm --dir apps/server build
 ```
 
 Then rerun the deploy script.
+
+### E. Pages still return `500` after all services are healthy
+
+Cause:
+
+- the VPS app code was redeployed, but the Postgres schema was not migrated
+
+First try:
+
+```bash
+PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:migrate deploy
+sudo systemctl restart 3u-aura-server 3u-aura-dapp 3u-aura-admin
+```
+
+Then inspect:
+
+```bash
+journalctl -u 3u-aura-server -n 200 --no-pager
+```
+
+and compare the VPS database schema with current migrations.
 
 ## Step 6: Repair Nginx
 

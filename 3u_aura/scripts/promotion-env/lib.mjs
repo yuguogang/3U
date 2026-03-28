@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..');
 
-const TARGETS = new Set(['contracts', 'server', 'dapp', 'admin', 'kimiui']);
+const TARGETS = new Set(['contracts', 'server', 'dapp', 'admin']);
 const DEFAULT_ENV = 'testnet-live';
 
 function normalizeValue(rawValue) {
@@ -53,6 +53,24 @@ export function loadBaseEnv(cwd = process.cwd()) {
 
   for (const fileName of candidateFiles) {
     Object.assign(env, parseEnvFile(path.join(cwd, fileName)));
+  }
+
+  return env;
+}
+
+export function getPromotionEnvDir(envName) {
+  return path.join(REPO_ROOT, 'config', 'promotion-envs', envName);
+}
+
+export function loadLocalOverrideEnv(envName, target) {
+  ensureTarget(target);
+
+  const env = {};
+  const envDir = getPromotionEnvDir(envName);
+  const candidateFiles = ['local.override.env', `${target}.local.override.env`];
+
+  for (const fileName of candidateFiles) {
+    Object.assign(env, parseEnvFile(path.join(envDir, fileName)));
   }
 
   return env;
@@ -121,7 +139,7 @@ function ensureTarget(target) {
 }
 
 export function getManifestPath(envName) {
-  return path.join(REPO_ROOT, 'config', 'promotion-envs', envName, 'manifest.json');
+  return path.join(getPromotionEnvDir(envName), 'manifest.json');
 }
 
 export function loadManifest(envName) {
@@ -293,21 +311,6 @@ export function buildDerivedEnv({ manifest, target, baseEnv }) {
           manifest,
         ),
       };
-    case 'kimiui':
-      return {
-        PROMOTION_ENV: manifest.environment,
-        VITE_API_BASE_URL: manifest.infra.server.publicApiBaseUrl,
-        VITE_PROMOTION_RPC_URL: manifest.chain.rpcUrl,
-        VITE_PROMOTION_CHAIN_ID: String(manifest.chain.id),
-        VITE_WALLETCONNECT_PROJECT_ID: resolveWalletConnectProjectId(
-          baseEnv,
-          manifest,
-        ),
-        VITE_PAYMENT_TOKEN_ADDRESS: manifest.contracts.paymentTokenAddress || '',
-        VITE_NFT_SALE_ADDRESS: manifest.contracts.nftSaleAddress || '',
-        VITE_MERKLE_CLAIM_ADDRESS: manifest.contracts.merkleDistributorAddress || '',
-        VITE_SETTLEMENT_ADDRESS: manifest.contracts.settlementAddress || '',
-      };
     case 'contracts':
       return {
         PROMOTION_ENV: manifest.environment,
@@ -442,17 +445,32 @@ export function buildTargetContext({
 
   const resolvedEnv = resolvePromotionEnv(envName, cwd);
   const baseEnv = loadBaseEnv(cwd);
+  const localOverrideEnv = loadLocalOverrideEnv(resolvedEnv, target);
+  const effectiveBaseEnv = { ...baseEnv, ...localOverrideEnv };
   const manifest = loadManifest(resolvedEnv);
-  const derivedEnv = buildDerivedEnv({ manifest, target, baseEnv });
+  const derivedEnv = buildDerivedEnv({
+    manifest,
+    target,
+    baseEnv: effectiveBaseEnv,
+  });
   const runtimeEnv = target === 'server'
     ? {
-        DATABASE_URL: buildDatabaseUrl({ ...baseEnv, ...process.env }, manifest.infra.database),
+        DATABASE_URL: buildDatabaseUrl(
+          { ...effectiveBaseEnv, ...process.env },
+          manifest.infra.database,
+        ),
       }
     : {};
   // Allow explicit shell-provided overrides (for example local verification ports/origins)
   // to win over manifest-derived defaults, while still letting runtime-only values such as
   // DATABASE_URL be synthesized last.
-  const mergedEnv = { ...baseEnv, ...derivedEnv, ...process.env, ...runtimeEnv };
+  const mergedEnv = {
+    ...baseEnv,
+    ...localOverrideEnv,
+    ...derivedEnv,
+    ...process.env,
+    ...runtimeEnv,
+  };
 
   if (strict) {
     assertRunnable({ manifest, target, env: mergedEnv });
@@ -463,7 +481,9 @@ export function buildTargetContext({
     derivedEnv,
     env: mergedEnv,
     envName: resolvedEnv,
+    localOverrideEnv,
     manifest,
+    runtimeEnv,
   };
 }
 

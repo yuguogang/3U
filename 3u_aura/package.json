@@ -4,6 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "local:testnet:common": "pnpm --dir packages/common build",
+    "local:testnet:print:server": "PROMOTION_ENV=testnet-mockusdt node scripts/promotion-env/print-env.mjs --target server",
+    "local:testnet:print:dapp": "PROMOTION_ENV=testnet-mockusdt node scripts/promotion-env/print-env.mjs --target dapp",
+    "local:testnet:print:admin": "PROMOTION_ENV=testnet-mockusdt node scripts/promotion-env/print-env.mjs --target admin",
+    "local:testnet:server": "PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:start:dev",
+    "local:testnet:dapp": "PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/dapp env:dev",
+    "local:testnet:admin": "PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/admin env:dev",
     "promotion-env:fork:create": "node scripts/uat/create-weekly-fork-env.mjs --env ${PROMOTION_ENV:-fork-anvil}",
     "promotion-env:fork:db:prepare": "node scripts/uat/prepare-weekly-fork-db.mjs --env ${PROMOTION_ENV:-fork-anvil}",
     "promotion-env:fork:db:reset": "node scripts/uat/reset-weekly-fork-db.mjs --env ${PROMOTION_ENV:-fork-anvil}",

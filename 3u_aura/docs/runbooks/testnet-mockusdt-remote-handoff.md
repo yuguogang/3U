@@ -223,6 +223,14 @@ Notes:
 - the deploy script now also runs `PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:generate` before `apps/server build`
 - the deploy script now also fixes build artifact ownership for the `3u-aura` service user
 - do not use `pnpm install --force` or `--no-frozen-lockfile` manually unless you are debugging outside the scripted flow
+- the deploy script does **not** run `prisma migrate deploy`; you must run the DB migration step explicitly on a fresh or stale VPS database
+
+After the deploy script finishes, run:
+
+```bash
+PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:db:migrate deploy
+sudo systemctl restart 3u-aura-server 3u-aura-dapp 3u-aura-admin
+```
 
 If `apps/server build` fails with TypeScript errors such as:
 
@@ -370,6 +378,7 @@ The previous VPS rollout hit these real issues:
 5. Root-owned server build artifacts caused `EACCES` when `3u-aura-server` tried to create the Prisma runtime symlink.
 6. The default Ubuntu Nginx site stayed enabled, so subdomains served the wrong content.
 7. Certbot was first run against the wrong site context, so certificates were not installed onto the subdomain reverse proxies.
+8. App redeploy alone did not migrate the VPS database schema, so some pages still returned `500` even though all systemd services showed `active (running)`.
 
 The current repo now includes:
 
