@@ -65,17 +65,17 @@ const themeOptions: ThemeOption[] = [
   {
     id: "night",
     labelKey: "moreMenu.themes.night",
-    previewClassName: "from-[#050505] via-[#1a0e0b] to-[#fa2b15]",
+    previewClassName: "from-[#120b08] via-[#6f451c] to-[#f6dfab]",
   },
   {
     id: "day",
     labelKey: "moreMenu.themes.day",
-    previewClassName: "from-[#ffd29a] via-[#ff9452] to-[#5f3118]",
+    previewClassName: "from-[#fff8ee] via-[#d8ab57] to-[#6a4018]",
   },
   {
     id: "aura",
     labelKey: "moreMenu.themes.aura",
-    previewClassName: "from-[#08131a] via-[#1b6f93] to-[#876eff]",
+    previewClassName: "from-[#0d1521] via-[#295882] to-[#f6e1aa]",
   },
 ];
 
@@ -324,9 +324,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
                             onClick={handleActionItemClick}
                             className={cn(
                               "flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border p-3 text-center transition-all duration-200",
-                              "border-[var(--shell-border)] bg-[var(--shell-surface)] hover:bg-[var(--shell-control-hover)]",
-                              isActive && "border-aura-primary/35 bg-aura-primary/10",
-                            )}
+                  "border-[var(--shell-border)] bg-[var(--shell-surface)] hover:bg-[var(--shell-control-hover)]",
+                  isActive && "border-aura-primary/35 bg-aura-primary/10",
+                )}
                           >
                             <div className="relative">
                               <Icon
@@ -381,7 +381,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
                             className="flex min-h-[96px] items-center justify-between gap-3 rounded-2xl border border-[var(--shell-border)] bg-[var(--shell-surface)] px-3 py-3 text-left transition-all duration-200 hover:bg-[var(--shell-control-hover)]"
                           >
                             <div className="flex min-w-0 items-center gap-3">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--shell-control)] text-aura-primary">
+                              <div className="goldmint-pill flex h-10 w-10 items-center justify-center rounded-2xl text-aura-primary">
                                 <Icon className="h-5 w-5" />
                               </div>
                               <div className="min-w-0">
@@ -413,7 +413,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
       <nav 
         className={cn(
           "fixed bottom-0 left-0 right-0 z-50",
-          "border-t border-[var(--shell-border)] bg-[var(--shell-chrome)] backdrop-blur-xl transition-colors duration-300",
+          "border-t border-[var(--toolbar-border)] bg-[var(--toolbar-bg)] shadow-[0_-10px_28px_rgba(23,15,8,0.2)] backdrop-blur-xl transition-colors duration-300",
           "pb-[env(safe-area-inset-bottom,16px)]",
           className
         )}
@@ -430,11 +430,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
                   href={item.id}
                   onClick={handleMainNavClick}
                 className={cn(
-                  "relative flex flex-col items-center gap-1 py-2 px-3 rounded-xl",
+                  "relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl",
                   "transition-all duration-200",
                   isActive 
                       ? "text-aura-primary" 
-                      : "text-[var(--shell-text-soft)] hover:text-[var(--shell-text-muted)]"
+                      : "text-[#e9d3a7] hover:text-[#fff0c9]"
                   )}
                 >
                   <Icon className={cn(
@@ -461,8 +461,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
                 onClick={handleActionButtonClick}
                 aria-label={t("moreMenu.triggerAria")}
                 className={cn(
-                  "relative -mt-10 h-14 w-14 rounded-full",
-                  "bg-gradient-to-r from-aura-primary to-aura-primary-dark",
+                  "goldmint-metal-button relative -mt-10 h-14 w-14 rounded-full",
                   "flex items-center justify-center",
                   "shadow-glow transition-all duration-300",
                   "hover:scale-105 active:scale-95",

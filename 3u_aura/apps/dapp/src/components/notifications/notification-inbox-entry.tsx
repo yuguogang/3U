@@ -31,8 +31,8 @@ export function NotificationInboxEntry() {
       className={cn(
         "relative inline-flex h-10 w-10 items-center justify-center rounded-2xl border transition-colors",
         isActive
-          ? "border-aura-primary/40 bg-aura-primary/12 text-aura-primary"
-          : "border-white/[0.08] bg-white/[0.04] text-white/70 hover:bg-white/[0.08] hover:text-white",
+          ? "goldmint-toolbar-pill text-[#f6df9d]"
+          : "goldmint-toolbar-pill text-[var(--toolbar-pill-text)] hover:brightness-[1.06]",
       )}
     >
       <Bell className="h-4 w-4" />

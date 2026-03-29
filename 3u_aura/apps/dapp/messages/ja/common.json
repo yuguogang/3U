@@ -73,7 +73,7 @@
       "unknown": "unknown"
     },
     "units": {
-      "aura": "AURA",
+      "aura": "$GM",
       "usdt": "USDT"
     },
     "promotion": {
@@ -100,7 +100,7 @@
       "rewardType": {
         "LOTTERY_USDT": "Lottery USDT",
         "RANKING_USDT": "Ranking USDT",
-        "CONSOLATION_AURA": "Consolation AURA",
+        "CONSOLATION_AURA": "Consolation $GM",
         "NFT_WEEKLY_USDT": "NFT Weekly USDT",
         "TOKEN_DIVIDEND_USDT": "Token Dividend USDT",
         "MANUAL": "Manual"
@@ -151,10 +151,10 @@
     }
   },
   "dashboard": {
-    "eyebrow": "Promotion Dashboard",
-    "title": "AURA HUB",
+    "eyebrow": "Goldmint Wealth Panel",
+    "title": "Goldmint",
     "hero": {
-      "totalAura": "Total Accumulated AURA",
+      "totalAura": "Total Accumulated $GM",
       "approxUsd": "≈ $0.00 USD",
       "weeklyChange": "+0.0%",
       "thisWeek": "this week"
@@ -179,14 +179,14 @@
         "description": "{count} {count, plural, one {user waiting} other {users waiting}} for tree placement"
       },
       "nftEligibility": {
-        "title": "NFT Eligibility"
+        "title": "Founder Card Access"
       }
     },
     "features": {
       "title": "Features",
       "checkin": {
         "title": "Daily Check-In",
-        "description": "Earn 1000 AURA daily"
+        "description": "Earn 1000 $GM daily"
       },
       "team": {
         "title": "My Team",
@@ -197,8 +197,8 @@
         "description": "View earnings"
       },
       "nft": {
-        "title": "NFT Market",
-        "description": "Buy & Claim NFTs"
+        "title": "Founder Card",
+        "description": "Buy & unlock founder access"
       },
       "claims": {
         "title": "Claims",
@@ -215,7 +215,7 @@
     }
   },
   "team": {
-    "eyebrow": "Promotion / Team",
+    "eyebrow": "Goldmint / Team",
     "title": "My Team",
     "overview": {
       "leftLeg": "Left Leg",
@@ -254,7 +254,7 @@
       "depthBadge": "D{depth}",
       "visibleNodes": "Visible Nodes",
       "pending": "Pending",
-      "treeAura": "Tree AURA",
+      "treeAura": "Tree $GM",
       "errorTitle": "Unable to load tree snapshot",
       "snapshotUnavailableTitle": "Tree snapshot unavailable",
       "snapshotUnavailableDescription": "Reconnect and refresh after your latest placement changes.",
@@ -316,13 +316,13 @@
     }
   },
   "checkin": {
-    "eyebrow": "Promotion / Check-In",
+    "eyebrow": "Goldmint / Check-In",
     "title": "Daily Check-In",
     "hero": {
       "waitingForPayment": "Waiting for payment...",
       "finalizing": "Finalizing check-in...",
       "success": "Success!",
-      "successReward": "+1000 AURA",
+      "successReward": "+1000 $GM",
       "payAndCheckIn": "Pay & Check In",
       "checkedToday": "You can still check in today",
       "tapToSend": "Tap to send 3 USDT"
@@ -379,10 +379,10 @@
     }
   },
   "rewards": {
-    "eyebrow": "Promotion / Rewards",
+    "eyebrow": "Goldmint / Rewards",
     "title": "My Rewards",
     "summary": {
-      "totalAura": "Total Accumulated AURA",
+      "totalAura": "Total Accumulated $GM",
       "fromCheckin": "From Check-In",
       "fromReferrals": "From Referrals"
     },
@@ -425,7 +425,7 @@
       "wonDescription": "You landed the {prize} and can claim {amount} USDT.",
       "lostTitle": "No luck this week",
       "lostDescription": "You did not win this week's lottery. Keep your streak going for the next round.",
-      "lostDescriptionConsolation": "You did not win this week, but you earned {amount} AURA as a consolation reward.",
+      "lostDescriptionConsolation": "You did not win this week, but you earned {amount} $GM as a consolation reward.",
       "notQualifiedTitle": "Joined but not qualified",
       "notQualifiedDescription": "You opted in, but did not meet the ticket requirement by settlement time.",
       "rolledOverTitle": "Lottery rolled over",
@@ -475,7 +475,7 @@
         "badgeClaimable": "{count} claimable",
         "badgeTotal": "{count} total",
         "emptyTitle": "No subsidy claims found",
-        "emptyDescription": "Purchase a Founder NFT to start earning weekly subsidies"
+        "emptyDescription": "Purchase a Goldmint Founder Card to start earning weekly subsidies"
       }
     },
     "rows": {
@@ -484,8 +484,8 @@
     }
   },
   "nft": {
-    "eyebrow": "Promotion / NFT",
-    "title": "Founder NFT",
+    "eyebrow": "Goldmint / Founder Card",
+    "title": "Goldmint Founder Card",
     "stats": {
       "purchasedMinted": "Purchased Minted",
       "referralMinted": "Referral Minted"
@@ -498,36 +498,73 @@
       "description": "Please switch your wallet to the promotion chain (ID: {chainId}) to interact with NFTs."
     },
     "purchased": {
-      "sectionTitle": "Purchased NFT",
-      "cardTitle": "Founder NFT (Sale)",
-      "cardDescription": "Exclusive benefits and weekly USDT subsidies.",
+      "sectionTitle": "Founder Card Purchase",
+      "cardTitle": "Goldmint Founder Card",
+      "cardDescription": "Bullion-style founder access with weekly subsidy rights.",
       "price": "Price",
       "yourBalance": "Your Balance",
       "approving": "Approving...",
       "approveButton": "Approve USDT",
       "purchasing": "Purchasing...",
       "buyButton": "Buy Now",
-      "success": "Purchase successful! Check your wallet."
+      "success": "Purchase successful! Check your wallet.",
+      "surfaceBadge": "Bullion grade",
+      "availability": "Live offer",
+      "remaining": "Remaining",
+      "approvalHint": "Approval needed",
+      "approvalHelp": "The current sale contract still uses approve + buyNFT. First purchase needs one approval transaction before payment.",
+      "approvalReady": "Approval ready",
+      "purchaseHint": "Allowance is already prepared. The next step is a direct purchase transaction.",
+      "previewFront": "Front",
+      "previewBack": "Back",
+      "previewDetail": "Detail",
+      "frontRibbon": "Founder vault plate",
+      "frontSubtitle": "Bullion shield with weekly founder rights engraving.",
+      "backBadge": "Engraved back",
+      "backSerialLabel": "Serial",
+      "backTierLabel": "Tier",
+      "backTierValue": "Founder",
+      "backRightsLabel": "Holder rights",
+      "utilityOne": "Founder-grade access card",
+      "utilityTwo": "Weekly subsidy eligibility",
+      "utilityThree": "60% tax-share pool access",
+      "detailBadge": "Material spec",
+      "detailSubtitle": "Stamped metal, enamel core, and rights summary.",
+      "detailLabelSurface": "Surface",
+      "detailValueSurface": "Shield bullion",
+      "detailLabelCore": "Core",
+      "detailValueCore": "Blue enamel",
+      "detailLabelSupply": "Supply",
+      "detailValueSupply": "30 buy / 70 referral",
+      "detailLabelFinish": "Finish",
+      "detailValueFinish": "Brushed metal",
+      "detailLabelClaim": "Claim",
+      "detailValueClaim": "Weekly subsidy",
+      "footerFront": "Bullion shield, crest core, and founder seal.",
+      "footerBack": "Serial engraving, tier plate, and rights ledger.",
+      "footerDetail": "Material stack, supply split, and weekly claim spec."
     },
     "referral": {
-      "sectionTitle": "Referral NFT",
-      "cardTitle": "Milestone NFT",
-      "cardDescription": "Earned through team growth.",
+      "sectionTitle": "Referral Milestone Card",
+      "cardTitle": "Royal Shield Card",
+      "cardDescription": "A blue-enamel milestone card unlocked through team growth.",
       "personalCheckins": "Personal Check-Ins",
       "smallLegVolume": "Small Leg Volume",
       "minting": "Minting...",
       "button": "Claim Milestone NFT",
-      "success": "NFT minted successfully!"
+      "success": "NFT minted successfully!",
+      "readyHint": "Your milestone card can be minted now. Keep this card aligned with your team-growth proof.",
+      "lockedHint": "Referral card unlocks after your personal check-ins and small-leg volume reach the required thresholds."
     },
     "benefits": {
-      "title": "NFT Holder Benefits",
+      "title": "Card Holder Benefits",
       "weeklySubsidies": {
         "title": "Weekly Subsidies",
-        "description": "Purchased NFT holders receive 30 USDT weekly during the promotion phase."
+        "description": "Purchased founder cards receive 30 USDT weekly during the promotion phase."
       },
       "revenueSharing": {
         "title": "Revenue Sharing",
-        "description": "All Founder NFT holders share 60% of transaction taxes after AURA token launch."
+        "description": "All Goldmint Founder Card holders share 60% of transaction taxes after the $GM token launch."
       }
     }
   }

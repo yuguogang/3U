@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import { GoldmintEmblem } from "@/components/branding/goldmint-emblem";
 import { NotificationInboxEntry } from "@/components/notifications/notification-inbox-entry";
 import { WalletButton } from "@/components/wallet-button";
 import { BottomNav } from "@/components/ui-custom/bottom-nav";
@@ -16,7 +17,7 @@ type MobileLayoutProps = {
 export function MobileLayout({
   children,
   title,
-  eyebrow = "Promotion Baseline",
+  eyebrow = "Goldmint Wealth Access",
   description,
   actions,
 }: MobileLayoutProps) {
@@ -32,19 +33,21 @@ export function MobileLayout({
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col pb-32">
         {/* Header */}
-        <header className="sticky top-0 z-30 border-b border-[var(--shell-border)] bg-[var(--shell-chrome)] backdrop-blur-xl transition-colors duration-300">
-          <div className="px-4 pt-3 pb-3 flex items-center justify-between">
-            <div className="flex min-w-0 flex-1 items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-aura-primary to-aura-primary-dark flex items-center justify-center shadow-glow-sm flex-shrink-0">
-                <span className="text-white font-bold text-sm">3U</span>
+        <header className="sticky top-0 z-30 overflow-hidden border-b border-[var(--toolbar-border)] bg-[var(--toolbar-bg)] shadow-[0_14px_34px_rgba(20,10,4,0.3)] backdrop-blur-xl transition-colors duration-300">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[rgba(255,239,196,0.65)]" />
+          <div className="pointer-events-none absolute inset-x-8 bottom-0 h-px bg-[linear-gradient(90deg,rgba(0,0,0,0),rgba(255,220,155,0.62),rgba(0,0,0,0))]" />
+          <div className="px-4 pb-3 pt-3 flex items-center justify-between">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <div className="goldmint-plaque flex h-11 w-11 shrink-0 items-center justify-center rounded-[1.15rem] p-1.5">
+                <GoldmintEmblem compact className="h-full w-full" />
               </div>
-              <div className="min-w-0 flex flex-col gap-0.5">
-                <h1 className="truncate text-base font-semibold tracking-tight text-[var(--shell-title)] leading-none">
-                  {title || "AURA"}
-                </h1>
-                <p className="truncate text-[10px] uppercase tracking-widest text-[var(--shell-text-soft)] leading-none">
+              <div className="min-w-0 flex flex-col gap-1">
+                <p className="truncate text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ecd7aa] leading-none">
                   {eyebrow}
                 </p>
+                <h1 className="font-brand truncate text-[1.15rem] font-semibold leading-none text-[#fff0c9] drop-shadow-[0_1px_1px_rgba(66,42,20,0.5)]">
+                  {title || "Goldmint"}
+                </h1>
               </div>
             </div>
             <div className="ml-2 flex shrink-0 items-center gap-1">

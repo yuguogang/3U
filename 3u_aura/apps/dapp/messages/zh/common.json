@@ -73,7 +73,7 @@
       "unknown": "未知"
     },
     "units": {
-      "aura": "AURA",
+      "aura": "$GM",
       "usdt": "USDT"
     },
     "promotion": {
@@ -100,7 +100,7 @@
       "rewardType": {
         "LOTTERY_USDT": "抽奖 USDT",
         "RANKING_USDT": "排行 USDT",
-        "CONSOLATION_AURA": "安慰奖 AURA",
+        "CONSOLATION_AURA": "安慰奖 $GM",
         "NFT_WEEKLY_USDT": "NFT 周补贴 USDT",
         "TOKEN_DIVIDEND_USDT": "代币分红 USDT",
         "MANUAL": "手动发放"
@@ -151,10 +151,10 @@
     }
   },
   "dashboard": {
-    "eyebrow": "推广仪表盘",
-    "title": "AURA HUB",
+    "eyebrow": "Goldmint 财富面板",
+    "title": "Goldmint",
     "hero": {
-      "totalAura": "累计获得 AURA",
+      "totalAura": "累计获得 $GM",
       "approxUsd": "≈ $0.00 USD",
       "weeklyChange": "+0.0%",
       "thisWeek": "本周"
@@ -179,14 +179,14 @@
         "description": "还有 {count} 人等待入树"
       },
       "nftEligibility": {
-        "title": "NFT 达标状态"
+        "title": "创始卡资格"
       }
     },
     "features": {
       "title": "功能入口",
       "checkin": {
         "title": "每日签到",
-        "description": "每天获取 1000 AURA"
+        "description": "每天获取 1000 $GM"
       },
       "team": {
         "title": "我的团队",
@@ -197,8 +197,8 @@
         "description": "查看收益数据"
       },
       "nft": {
-        "title": "NFT 市场",
-        "description": "购买并领取 NFT"
+        "title": "创始卡",
+        "description": "购买并解锁创始权益"
       },
       "claims": {
         "title": "奖励领取",
@@ -215,7 +215,7 @@
     }
   },
   "team": {
-    "eyebrow": "推广 / 团队",
+    "eyebrow": "Goldmint / 团队",
     "title": "我的团队",
     "overview": {
       "leftLeg": "左区",
@@ -254,7 +254,7 @@
       "depthBadge": "D{depth}",
       "visibleNodes": "可见节点",
       "pending": "待安置",
-      "treeAura": "树内 AURA",
+      "treeAura": "树内 $GM",
       "errorTitle": "树快照加载失败",
       "snapshotUnavailableTitle": "树快照暂不可用",
       "snapshotUnavailableDescription": "请在最新安置完成后重新连接并刷新页面。",
@@ -316,13 +316,13 @@
     }
   },
   "checkin": {
-    "eyebrow": "推广 / 签到",
+    "eyebrow": "Goldmint / 签到",
     "title": "每日签到",
     "hero": {
       "waitingForPayment": "等待支付确认...",
       "finalizing": "签到提交中...",
       "success": "成功！",
-      "successReward": "+1000 AURA",
+      "successReward": "+1000 $GM",
       "payAndCheckIn": "支付并签到",
       "checkedToday": "今天仍可继续签到",
       "tapToSend": "点击发送 3 USDT"
@@ -379,10 +379,10 @@
     }
   },
   "rewards": {
-    "eyebrow": "推广 / 奖励",
+    "eyebrow": "Goldmint / 奖励",
     "title": "我的奖励",
     "summary": {
-      "totalAura": "累计获得 AURA",
+      "totalAura": "累计获得 $GM",
       "fromCheckin": "签到获得",
       "fromReferrals": "推荐获得"
     },
@@ -425,7 +425,7 @@
       "wonDescription": "你本周抽中了 {prize}，可领取 {amount} USDT。",
       "lostTitle": "这周没有抽中",
       "lostDescription": "本周未中奖，继续保持签到，下一期继续参与。",
-      "lostDescriptionConsolation": "这周没有抽中，但你获得了 {amount} AURA 安慰奖励。",
+      "lostDescriptionConsolation": "这周没有抽中，但你获得了 {amount} $GM 安慰奖励。",
       "notQualifiedTitle": "已报名，但本周未达标",
       "notQualifiedDescription": "你已经参与本周抽奖，但结算时未满足门票条件，因此未进入抽奖池。",
       "rolledOverTitle": "本周抽奖顺延",
@@ -475,7 +475,7 @@
         "badgeClaimable": "{count} 条可领",
         "badgeTotal": "共 {count} 条",
         "emptyTitle": "暂无补贴领取记录",
-        "emptyDescription": "购买 Founder NFT 后即可开始获得每周补贴。"
+        "emptyDescription": "购买 Goldmint 创始卡后即可开始获得每周补贴。"
       }
     },
     "rows": {
@@ -484,8 +484,8 @@
     }
   },
   "nft": {
-    "eyebrow": "推广 / NFT",
-    "title": "Founder NFT",
+    "eyebrow": "Goldmint / 创始卡",
+    "title": "Goldmint 创始卡",
     "stats": {
       "purchasedMinted": "已售 NFT",
       "referralMinted": "已发推荐 NFT"
@@ -498,36 +498,73 @@
       "description": "请把钱包切换到推广链（ID: {chainId}）后再与 NFT 交互。"
     },
     "purchased": {
-      "sectionTitle": "购买型 NFT",
-      "cardTitle": "Founder NFT（售卖）",
-      "cardDescription": "享有专属权益和每周 USDT 补贴。",
+      "sectionTitle": "创始卡购买",
+      "cardTitle": "Goldmint 创始卡",
+      "cardDescription": "贵金属凭证风格的创始卡，附带每周补贴权益。",
       "price": "价格",
       "yourBalance": "你的余额",
       "approving": "授权中...",
       "approveButton": "授权 USDT",
       "purchasing": "购买中...",
       "buyButton": "立即购买",
-      "success": "购买成功，请到钱包中查看。"
+      "success": "购买成功，请到钱包中查看。",
+      "surfaceBadge": "金属铭牌",
+      "availability": "正在发售",
+      "remaining": "剩余数量",
+      "approvalHint": "需先授权",
+      "approvalHelp": "当前售卖合约仍是 approve + buyNFT 模式，因此首次购买前仍需先完成一次授权交易。",
+      "approvalReady": "已可直购",
+      "purchaseHint": "当前额度已经就绪，下一步就是直接发起购买交易。",
+      "previewFront": "正面",
+      "previewBack": "卡背",
+      "previewDetail": "详情",
+      "frontRibbon": "创始金库铭牌",
+      "frontSubtitle": "金胚盾牌搭配每周创始权益铭刻。",
+      "backBadge": "背部蚀刻",
+      "backSerialLabel": "编号",
+      "backTierLabel": "等级",
+      "backTierValue": "创始",
+      "backRightsLabel": "持有权益",
+      "utilityOne": "创始级访问凭证",
+      "utilityTwo": "每周补贴资格",
+      "utilityThree": "60% 税费分成池资格",
+      "detailBadge": "材质规格",
+      "detailSubtitle": "压铸金属、珐琅核心与权益摘要。",
+      "detailLabelSurface": "材质",
+      "detailValueSurface": "盾牌金胚",
+      "detailLabelCore": "核心",
+      "detailValueCore": "蓝色珐琅",
+      "detailLabelSupply": "配额",
+      "detailValueSupply": "购买 30 / 推荐 70",
+      "detailLabelFinish": "工艺",
+      "detailValueFinish": "拉丝金属",
+      "detailLabelClaim": "权益",
+      "detailValueClaim": "每周补贴",
+      "footerFront": "金盾徽记、核心盾章与创始封印。",
+      "footerBack": "编号蚀刻、等级铭牌与权益账本。",
+      "footerDetail": "材质层次、配额拆分与每周领取规格。"
     },
     "referral": {
-      "sectionTitle": "推荐 NFT",
-      "cardTitle": "里程碑 NFT",
-      "cardDescription": "通过团队增长达标后获得。",
+      "sectionTitle": "推荐里程碑卡",
+      "cardTitle": "皇家盾牌卡",
+      "cardDescription": "以蓝金珐琅盾牌为主视觉，通过团队成长达标后解锁。",
       "personalCheckins": "个人签到",
       "smallLegVolume": "小区业绩",
       "minting": "铸造中...",
       "button": "领取里程碑 NFT",
-      "success": "NFT 铸造成功！"
+      "success": "NFT 铸造成功！",
+      "readyHint": "你的里程碑卡已经可以铸造，建议尽快完成领取并保留团队成长证明。",
+      "lockedHint": "推荐卡会在个人签到次数和小区业绩都达到要求后解锁。"
     },
     "benefits": {
-      "title": "NFT 持有人权益",
+      "title": "卡牌持有人权益",
       "weeklySubsidies": {
         "title": "每周补贴",
-        "description": "购买型 NFT 持有人在推广阶段每周可获得 30 USDT 补贴。"
+        "description": "购买型创始卡在推广阶段每周可获得 30 USDT 补贴。"
       },
       "revenueSharing": {
         "title": "收益分成",
-        "description": "AURA 代币上线后，所有 Founder NFT 持有人共享 60% 的交易税分成。"
+        "description": "在 $GM 代币上线后，所有 Goldmint 创始卡持有人共享 60% 的交易税分成。"
       }
     }
   }

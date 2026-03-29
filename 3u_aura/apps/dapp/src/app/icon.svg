@@ -1,21 +1,36 @@
 <svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="64" cy="64" r="56" fill="url(#bg)"/>
+  <defs>
+    <linearGradient id="rim" x1="12" y1="12" x2="116" y2="116" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6D4215"/>
+      <stop offset="0.18" stop-color="#F7DA8B"/>
+      <stop offset="0.5" stop-color="#C28832"/>
+      <stop offset="0.82" stop-color="#F5D88E"/>
+      <stop offset="1" stop-color="#6B4318"/>
+    </linearGradient>
+    <radialGradient id="face" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(64 64) rotate(90) scale(48)">
+      <stop offset="0" stop-color="#FFF3C8"/>
+      <stop offset="0.18" stop-color="#E6C06A"/>
+      <stop offset="0.55" stop-color="#AE7528"/>
+      <stop offset="0.84" stop-color="#E3BF6E"/>
+      <stop offset="1" stop-color="#7D4F20"/>
+    </radialGradient>
+  </defs>
+  <circle cx="64" cy="64" r="56" fill="#4A2D12"/>
+  <circle cx="64" cy="64" r="54" fill="url(#rim)"/>
+  <circle cx="64" cy="64" r="44" fill="url(#face)"/>
+  <circle cx="64" cy="64" r="44" fill="white" fill-opacity="0.06"/>
+  <circle cx="64" cy="64" r="44.5" stroke="rgba(255,244,210,0.72)" stroke-width="1.5"/>
+  <path d="M34 62.5C46.5 51 83 49 95.5 59.5" stroke="white" stroke-opacity="0.22" stroke-width="3.5" stroke-linecap="round"/>
   <text
     x="64"
-    y="72"
-    fill="white"
-    font-family="Arial, Helvetica, sans-serif"
-    font-size="42"
+    y="76"
+    fill="#FFF8DE"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="34"
     font-weight="700"
-    letter-spacing="-2"
+    letter-spacing="-3"
     text-anchor="middle"
   >
-    3U
+    GM
   </text>
-  <defs>
-    <linearGradient id="bg" x1="20" y1="16" x2="108" y2="112" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FA2B15"/>
-      <stop offset="1" stop-color="#D51E08"/>
-    </linearGradient>
-  </defs>
 </svg>

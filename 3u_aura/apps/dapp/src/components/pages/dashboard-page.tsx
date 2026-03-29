@@ -10,12 +10,12 @@ import {
   Trophy,
   Users,
   TrendingUp,
-  Clock,
   Zap,
   Gift,
   Share2,
 } from "lucide-react";
 import { useAccount } from "wagmi";
+import { GoldmintEmblem } from "@/components/branding/goldmint-emblem";
 import { MobileLayout } from "@/components/layout/mobile-layout";
 import { GlassCard } from "@/components/ui-custom/glass-card";
 import StatCard from "@/components/ui-custom/stat-card";
@@ -67,6 +67,10 @@ export function DashboardPage() {
   const eligibilityStatusLabel = eligibilityQuery.data?.status
     ? t(`shared.promotion.eligibilityStatus.${eligibilityQuery.data.status}`)
     : t("shared.status.checking");
+  const canMintReferralNft =
+    eligibilityQuery.data?.status === "APPROVED" ||
+    eligibilityQuery.data?.status === "EXPIRED" ||
+    eligibilityQuery.data?.status === "SIGNED";
   const featureCards = [
     {
       href: "/checkin",
@@ -74,47 +78,47 @@ export function DashboardPage() {
       description: t("dashboard.features.checkin.description"),
       icon: CalendarCheck2,
       color: "text-aura-primary",
-      bgColor: "bg-aura-primary/10",
+      bgColor: "goldmint-pill",
     },
     {
       href: "/team",
       title: t("dashboard.features.team.title"),
       description: t("dashboard.features.team.description"),
       icon: Users,
-      color: "text-blue-400",
-      bgColor: "bg-blue-500/10",
+      color: "text-[#2d668f]",
+      bgColor: "border border-[rgba(45,102,143,0.18)] bg-[rgba(45,102,143,0.14)]",
     },
     {
       href: "/rewards",
       title: t("dashboard.features.rewards.title"),
       description: t("dashboard.features.rewards.description"),
       icon: Trophy,
-      color: "text-yellow-400",
-      bgColor: "bg-yellow-500/10",
+      color: "text-[#94703a]",
+      bgColor: "border border-[rgba(212,171,93,0.22)] bg-[rgba(212,171,93,0.18)]",
     },
     {
       href: "/nft",
       title: t("dashboard.features.nft.title"),
       description: t("dashboard.features.nft.description"),
       icon: Gem,
-      color: "text-purple-400",
-      bgColor: "bg-purple-500/10",
+      color: "text-[#315f87]",
+      bgColor: "border border-[rgba(41,88,130,0.22)] bg-[rgba(41,88,130,0.16)]",
     },
     {
       href: "/claims",
       title: t("dashboard.features.claims.title"),
       description: t("dashboard.features.claims.description"),
       icon: Gift,
-      color: "text-green-400",
-      bgColor: "bg-green-500/10",
+      color: "text-[#3f8f5c]",
+      bgColor: "border border-[rgba(63,143,92,0.18)] bg-[rgba(63,143,92,0.14)]",
     },
     {
       href: "/", // Placeholder
       title: t("dashboard.features.lottery.title"),
       description: t("dashboard.features.lottery.description", { count: 0 }),
       icon: Zap,
-      color: "text-orange-400",
-      bgColor: "bg-orange-500/10",
+      color: "text-[#9d6a29]",
+      bgColor: "border border-[rgba(197,138,52,0.18)] bg-[rgba(197,138,52,0.14)]",
     },
   ];
 
@@ -126,33 +130,65 @@ export function DashboardPage() {
       <div className="space-y-6">
         {/* Hero Stats */}
         <section className="animate-fade-in">
-          <GlassCard variant="highlight" className="p-6">
-            <div className="text-center">
-              <p className="mb-2 text-sm text-[var(--shell-text-soft)]">
-                {t("dashboard.hero.totalAura")}
-              </p>
-              <h1
-                className="mb-1 bg-clip-text text-4xl font-bold font-mono text-transparent"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(135deg, var(--shell-heading-gradient-start), var(--shell-heading-gradient-end))",
-                }}
-              >
-                {formatAuraAtomic(totalAura.toString())}
-              </h1>
-              <p className="text-sm text-[var(--shell-text-soft)]">{t("dashboard.hero.approxUsd")}</p>
-              <div className="flex items-center justify-center gap-1 mt-3">
-                <TrendingUp className="w-4 h-4 text-aura-success" />
-                <span className="text-sm text-aura-success">{t("dashboard.hero.weeklyChange")}</span>
-                <span className="ml-1 text-xs text-[var(--shell-text-soft)]">{t("dashboard.hero.thisWeek")}</span>
+          <GlassCard variant="highlight" className="goldmint-brushed-panel goldmint-brushed-panel-radial goldmint-outline-card p-5 sm:p-6">
+            <div className="flex items-start gap-4">
+              <div className="goldmint-plaque flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.35rem] p-2">
+                <GoldmintEmblem compact className="h-full w-full" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm text-[var(--shell-text-soft)]">
+                    {t("dashboard.hero.totalAura")}
+                  </p>
+                  <div className="goldmint-pill rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-[var(--shell-badge-fg)]">
+                    $GM
+                  </div>
+                </div>
+                <h1 className="font-brand goldmint-heading mt-2 text-4xl font-semibold leading-none">
+                  {formatAuraAtomic(totalAura.toString())}
+                </h1>
+                <p className="mt-2 text-sm text-[var(--shell-text-soft)]">
+                  {t("dashboard.hero.approxUsd")}
+                </p>
+                <div className="mt-4 flex items-center gap-2 text-sm">
+                  <div className="goldmint-coin flex h-8 w-8 items-center justify-center rounded-full">
+                    <TrendingUp className="w-4 h-4 text-aura-success" />
+                  </div>
+                  <span className="text-aura-success">{t("dashboard.hero.weeklyChange")}</span>
+                  <span className="text-xs text-[var(--shell-text-soft)]">
+                    {t("dashboard.hero.thisWeek")}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="goldmint-outline-card rounded-2xl border px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--shell-text-soft)]">
+                  {t("dashboard.stats.currentEpoch.label")}
+                </p>
+                <p className="mt-2 text-xl font-mono font-semibold text-[var(--shell-title)]">
+                  #{epoch?.epochNo || 0}
+                </p>
+                <p className="mt-1 text-xs text-[var(--shell-text-soft)]">{epochStatusLabel}</p>
+              </div>
+              <div className="goldmint-outline-card rounded-2xl border px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--shell-text-soft)]">
+                  {t("dashboard.stats.smallLeg.label")}
+                </p>
+                <p className="mt-2 text-xl font-mono font-semibold text-[var(--shell-title)]">
+                  {profile ? formatUsdtAtomic(profile.smallLegVolume) : "0"}
+                </p>
+                <p className="mt-1 text-xs text-[var(--shell-text-soft)]">
+                  {t("dashboard.stats.smallLeg.subValue")}
+                </p>
               </div>
             </div>
           </GlassCard>
         </section>
 
         {!isConnected || !isAuthenticated ? (
-          <GlassCard className="border border-amber-400/20 bg-amber-400/10 p-5">
-            <div className="mb-3 flex items-center gap-3 text-amber-500">
+          <GlassCard className="border border-[rgba(197,138,52,0.3)] bg-[rgba(197,138,52,0.1)] p-5">
+            <div className="mb-3 flex items-center gap-3 text-[#9d6a29]">
               <ShieldAlert className="h-5 w-5" />
               <h2 className="text-sm font-semibold">{t("dashboard.auth.title")}</h2>
             </div>
@@ -166,19 +202,11 @@ export function DashboardPage() {
         <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
           <div className="grid grid-cols-2 gap-3">
             <StatCard
-              label={t("dashboard.stats.currentEpoch.label")}
-              value={`#${epoch?.epochNo || 0}`}
-              subValue={epochStatusLabel}
-              icon={<Clock className="w-5 h-5" />}
-            />
-            <StatCard
-              label={t("dashboard.stats.smallLeg.label")}
-              value={profile ? formatUsdtAtomic(profile.smallLegVolume) : "0"}
-              unit="USDT"
-              subValue={t("dashboard.stats.smallLeg.subValue")}
-              icon={<Users className="w-5 h-5" />}
-              trend="up"
-              change={{ value: 0, type: "neutral" }}
+              label={t("dashboard.milestones.nftEligibility.title")}
+              value={canMintReferralNft ? "1" : "0"}
+              subValue={eligibilityStatusLabel}
+              icon={<Gem className="w-5 h-5" />}
+              className="col-span-2"
             />
           </div>
         </section>
@@ -196,14 +224,14 @@ export function DashboardPage() {
               pendingPlacementQuery.data.length > 0 && (
                 <GlassCard
                   variant="elevated"
-                  className="p-4 border-blue-500/20 bg-blue-500/5"
+                  className="goldmint-outline-card bg-[linear-gradient(180deg,rgba(255,248,232,0.96)_0%,rgba(244,230,198,0.92)_100%)] p-4"
                   hoverEffect
                 >
                   <Link href="/team">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                          <Users className="w-5 h-5 text-blue-400" />
+                        <div className="goldmint-coin flex h-10 w-10 items-center justify-center rounded-xl">
+                          <Users className="w-5 h-5 text-[#2d668f]" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-[var(--shell-title)]">
@@ -216,7 +244,7 @@ export function DashboardPage() {
                           </p>
                         </div>
                       </div>
-                      <span className="text-xs text-blue-400 font-medium">
+                      <span className="text-xs font-medium text-[#2d668f]">
                         {t("shared.buttons.view")}
                       </span>
                     </div>
@@ -224,12 +252,12 @@ export function DashboardPage() {
                 </GlassCard>
               )}
 
-            <GlassCard variant="elevated" className="p-4" hoverEffect>
+            <GlassCard variant="elevated" className="goldmint-outline-card goldmint-brushed-panel p-4" hoverEffect>
               <Link href="/nft">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
-                      <Zap className="w-5 h-5 text-orange-400" />
+                    <div className="goldmint-coin flex h-10 w-10 items-center justify-center rounded-xl">
+                      <Zap className="w-5 h-5 text-aura-primary" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-[var(--shell-title)]">
@@ -240,7 +268,7 @@ export function DashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <span className="text-xs text-orange-400 font-medium">
+                  <span className="text-xs font-medium text-aura-primary">
                     {t("shared.buttons.details")}
                   </span>
                 </div>
@@ -257,10 +285,13 @@ export function DashboardPage() {
               const Icon = card.icon;
               return (
                 <Link key={card.href} href={card.href}>
-                  <GlassCard variant="interactive" className="h-full p-4">
+                  <GlassCard
+                    variant="interactive"
+                    className="goldmint-outline-card h-full bg-[linear-gradient(180deg,rgba(255,252,244,0.98)_0%,rgba(244,231,202,0.94)_100%)] p-4"
+                  >
                     <div
                       className={cn(
-                        "mb-3 flex h-10 w-10 items-center justify-center rounded-xl",
+                        "mb-3 flex h-10 w-10 items-center justify-center rounded-xl goldmint-coin",
                         card.bgColor,
                       )}
                     >
@@ -279,7 +310,7 @@ export function DashboardPage() {
 
         {/* Referral Banner */}
         <section className="animate-slide-up" style={{ animationDelay: "0.4s" }}>
-          <GlassCard variant="highlight" className="p-4">
+          <GlassCard variant="highlight" className="goldmint-brushed-panel goldmint-outline-card p-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="mb-1 text-sm font-medium text-[var(--shell-title)]">
@@ -291,7 +322,7 @@ export function DashboardPage() {
               </div>
               <Button
                 size="sm"
-                className="bg-aura-primary hover:bg-aura-primary-dark"
+                className="goldmint-metal-button hover:brightness-[1.02]"
                 asChild
               >
                 <Link href="/team">

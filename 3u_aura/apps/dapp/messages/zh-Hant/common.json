@@ -73,7 +73,7 @@
       "unknown": "未知"
     },
     "units": {
-      "aura": "AURA",
+      "aura": "$GM",
       "usdt": "USDT"
     },
     "promotion": {
@@ -100,7 +100,7 @@
       "rewardType": {
         "LOTTERY_USDT": "抽獎 USDT",
         "RANKING_USDT": "排行 USDT",
-        "CONSOLATION_AURA": "安慰獎 AURA",
+        "CONSOLATION_AURA": "安慰獎 $GM",
         "NFT_WEEKLY_USDT": "NFT 週補貼 USDT",
         "TOKEN_DIVIDEND_USDT": "代幣分紅 USDT",
         "MANUAL": "手動發放"
@@ -151,10 +151,10 @@
     }
   },
   "dashboard": {
-    "eyebrow": "推廣儀表板",
-    "title": "AURA HUB",
+    "eyebrow": "Goldmint 財富面板",
+    "title": "Goldmint",
     "hero": {
-      "totalAura": "累計獲得 AURA",
+      "totalAura": "累計獲得 $GM",
       "approxUsd": "≈ $0.00 USD",
       "weeklyChange": "+0.0%",
       "thisWeek": "本週"
@@ -179,14 +179,14 @@
         "description": "還有 {count} 人等待入樹"
       },
       "nftEligibility": {
-        "title": "NFT 達標狀態"
+        "title": "創始卡資格"
       }
     },
     "features": {
       "title": "功能入口",
       "checkin": {
         "title": "每日簽到",
-        "description": "每天獲得 1000 AURA"
+        "description": "每天獲得 1000 $GM"
       },
       "team": {
         "title": "我的團隊",
@@ -197,8 +197,8 @@
         "description": "查看收益資料"
       },
       "nft": {
-        "title": "NFT 市場",
-        "description": "購買並領取 NFT"
+        "title": "創始卡",
+        "description": "購買並解鎖創始權益"
       },
       "claims": {
         "title": "獎勵領取",
@@ -215,7 +215,7 @@
     }
   },
   "team": {
-    "eyebrow": "推廣 / 團隊",
+    "eyebrow": "Goldmint / 團隊",
     "title": "我的團隊",
     "overview": {
       "leftLeg": "左區",
@@ -254,7 +254,7 @@
       "depthBadge": "D{depth}",
       "visibleNodes": "可見節點",
       "pending": "待安置",
-      "treeAura": "樹內 AURA",
+      "treeAura": "樹內 $GM",
       "errorTitle": "樹快照載入失敗",
       "snapshotUnavailableTitle": "樹快照暫不可用",
       "snapshotUnavailableDescription": "請在最新安置完成後重新連接並刷新頁面。",
@@ -316,13 +316,13 @@
     }
   },
   "checkin": {
-    "eyebrow": "推廣 / 簽到",
+    "eyebrow": "Goldmint / 簽到",
     "title": "每日簽到",
     "hero": {
       "waitingForPayment": "等待支付確認...",
       "finalizing": "簽到提交中...",
       "success": "成功！",
-      "successReward": "+1000 AURA",
+      "successReward": "+1000 $GM",
       "payAndCheckIn": "支付並簽到",
       "checkedToday": "今天仍可繼續簽到",
       "tapToSend": "點擊發送 3 USDT"
@@ -379,10 +379,10 @@
     }
   },
   "rewards": {
-    "eyebrow": "推廣 / 獎勵",
+    "eyebrow": "Goldmint / 獎勵",
     "title": "我的獎勵",
     "summary": {
-      "totalAura": "累計獲得 AURA",
+      "totalAura": "累計獲得 $GM",
       "fromCheckin": "簽到獲得",
       "fromReferrals": "推薦獲得"
     },
@@ -425,7 +425,7 @@
       "wonDescription": "你本週抽中了 {prize}，可領取 {amount} USDT。",
       "lostTitle": "這週沒有抽中",
       "lostDescription": "本週未中獎，繼續保持簽到，下一期再來。",
-      "lostDescriptionConsolation": "這週沒有抽中，但你獲得了 {amount} AURA 安慰獎勵。",
+      "lostDescriptionConsolation": "這週沒有抽中，但你獲得了 {amount} $GM 安慰獎勵。",
       "notQualifiedTitle": "已報名，但本週未達標",
       "notQualifiedDescription": "你已參與本週抽獎，但結算時未滿足門票條件，因此未進入抽獎池。",
       "rolledOverTitle": "本週抽獎順延",
@@ -475,7 +475,7 @@
         "badgeClaimable": "{count} 條可領",
         "badgeTotal": "共 {count} 條",
         "emptyTitle": "暫無補貼領取紀錄",
-        "emptyDescription": "購買 Founder NFT 後即可開始獲得每週補貼。"
+        "emptyDescription": "購買 Goldmint 創始卡後即可開始獲得每週補貼。"
       }
     },
     "rows": {
@@ -484,8 +484,8 @@
     }
   },
   "nft": {
-    "eyebrow": "推廣 / NFT",
-    "title": "Founder NFT",
+    "eyebrow": "Goldmint / 創始卡",
+    "title": "Goldmint 創始卡",
     "stats": {
       "purchasedMinted": "已售 NFT",
       "referralMinted": "已發推薦 NFT"
@@ -498,36 +498,73 @@
       "description": "請把錢包切換到推廣鏈（ID: {chainId}）後再與 NFT 互動。"
     },
     "purchased": {
-      "sectionTitle": "購買型 NFT",
-      "cardTitle": "Founder NFT（售賣）",
-      "cardDescription": "享有專屬權益和每週 USDT 補貼。",
+      "sectionTitle": "創始卡購買",
+      "cardTitle": "Goldmint 創始卡",
+      "cardDescription": "貴金屬憑證風格的創始卡，附帶每週補貼權益。",
       "price": "價格",
       "yourBalance": "你的餘額",
       "approving": "授權中...",
       "approveButton": "授權 USDT",
       "purchasing": "購買中...",
       "buyButton": "立即購買",
-      "success": "購買成功，請到錢包中查看。"
+      "success": "購買成功，請到錢包中查看。",
+      "surfaceBadge": "金屬銘牌",
+      "availability": "正在發售",
+      "remaining": "剩餘數量",
+      "approvalHint": "需先授權",
+      "approvalHelp": "當前售賣合約仍是 approve + buyNFT 模式，因此首次購買前仍需先完成一次授權交易。",
+      "approvalReady": "已可直購",
+      "purchaseHint": "當前額度已就緒，下一步就是直接發起購買交易。",
+      "previewFront": "正面",
+      "previewBack": "卡背",
+      "previewDetail": "詳情",
+      "frontRibbon": "創始金庫銘牌",
+      "frontSubtitle": "金胚盾牌搭配每週創始權益銘刻。",
+      "backBadge": "背部蝕刻",
+      "backSerialLabel": "編號",
+      "backTierLabel": "等級",
+      "backTierValue": "創始",
+      "backRightsLabel": "持有權益",
+      "utilityOne": "創始級訪問憑證",
+      "utilityTwo": "每週補貼資格",
+      "utilityThree": "60% 稅費分成池資格",
+      "detailBadge": "材質規格",
+      "detailSubtitle": "壓鑄金屬、琺瑯核心與權益摘要。",
+      "detailLabelSurface": "材質",
+      "detailValueSurface": "盾牌金胚",
+      "detailLabelCore": "核心",
+      "detailValueCore": "藍色琺瑯",
+      "detailLabelSupply": "配額",
+      "detailValueSupply": "購買 30 / 推薦 70",
+      "detailLabelFinish": "工藝",
+      "detailValueFinish": "拉絲金屬",
+      "detailLabelClaim": "權益",
+      "detailValueClaim": "每週補貼",
+      "footerFront": "金盾徽記、核心盾章與創始封印。",
+      "footerBack": "編號蝕刻、等級銘牌與權益帳本。",
+      "footerDetail": "材質層次、配額拆分與每週領取規格。"
     },
     "referral": {
-      "sectionTitle": "推薦 NFT",
-      "cardTitle": "里程碑 NFT",
-      "cardDescription": "透過團隊成長達標後獲得。",
+      "sectionTitle": "推薦里程碑卡",
+      "cardTitle": "皇家盾牌卡",
+      "cardDescription": "以藍金琺瑯盾牌為主視覺，通過團隊成長達標後解鎖。",
       "personalCheckins": "個人簽到",
       "smallLegVolume": "小區業績",
       "minting": "鑄造中...",
       "button": "領取里程碑 NFT",
-      "success": "NFT 鑄造成功！"
+      "success": "NFT 鑄造成功！",
+      "readyHint": "你的里程碑卡已經可以鑄造，建議盡快完成領取並保留團隊成長證明。",
+      "lockedHint": "推薦卡會在個人簽到次數和小區業績都達到要求後解鎖。"
     },
     "benefits": {
-      "title": "NFT 持有人權益",
+      "title": "卡牌持有人權益",
       "weeklySubsidies": {
         "title": "每週補貼",
-        "description": "購買型 NFT 持有人在推廣階段每週可獲得 30 USDT 補貼。"
+        "description": "購買型創始卡在推廣階段每週可獲得 30 USDT 補貼。"
       },
       "revenueSharing": {
         "title": "收益分成",
-        "description": "AURA 代幣上線後，所有 Founder NFT 持有人共享 60% 的交易稅分成。"
+        "description": "在 $GM 代幣上線後，所有 Goldmint 創始卡持有人共享 60% 的交易稅分成。"
       }
     }
   }

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const glassCardVariants = cva(
-  "relative overflow-hidden backdrop-blur-xl transition-all duration-300",
+  "relative overflow-hidden backdrop-blur-xl transition-all duration-300 before:pointer-events-none before:absolute before:inset-px before:rounded-[inherit] before:bg-[var(--glass-overlay)] before:opacity-80 after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:ring-1 after:ring-inset after:ring-[var(--glass-inner-ring)]",
   {
     variants: {
       variant: {

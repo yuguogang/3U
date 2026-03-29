@@ -271,8 +271,8 @@ export function WalletButton() {
         type="button"
         onClick={handleConnect}
         className={cn(
-          "flex h-9 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium text-white transition-all duration-200",
-          "bg-gradient-to-r from-aura-primary to-aura-primary-dark shadow-glow-sm hover:scale-[1.02] active:scale-[0.98]",
+          "goldmint-toolbar-pill flex h-9 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium transition-all duration-200",
+          "hover:scale-[1.02] active:scale-[0.98]",
           "disabled:cursor-not-allowed disabled:opacity-50",
         )}
         disabled={isConnecting}
@@ -303,7 +303,7 @@ export function WalletButton() {
         className={cn(
           "flex h-9 items-center gap-2 rounded-xl border px-2.5 text-sm font-medium transition-all",
           chainId === promotionChainId
-            ? "border-[var(--shell-border)] bg-[var(--shell-control)] text-[var(--shell-title)] hover:bg-[var(--shell-control-hover)]"
+            ? "goldmint-toolbar-pill hover:brightness-[1.05]"
             : "border-aura-error/30 bg-aura-error/10 text-aura-error hover:bg-aura-error/20",
         )}
         aria-label={`Current network: ${getChainLabel(chainId)}`}
@@ -338,7 +338,7 @@ export function WalletButton() {
           }
           disabled={isSigning}
           className={cn(
-            "flex h-9 items-center gap-2 rounded-xl border border-[var(--shell-border)] bg-[var(--shell-control)] px-2.5 text-sm font-medium text-[var(--shell-title)] transition-all hover:bg-[var(--shell-control-hover)]",
+            "goldmint-toolbar-pill flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium transition-all hover:brightness-[1.05]",
             isSigning && "opacity-60",
           )}
           aria-label={isAuthenticated ? "Account options" : "Sign in with wallet"}
@@ -346,8 +346,8 @@ export function WalletButton() {
         >
           {isSigning ? (
             <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin flex-shrink-0 text-[var(--shell-text-soft)]" />
-              <span className="hidden text-xs font-medium text-[var(--shell-text-soft)] sm:inline">
+              <Loader2 className="h-3.5 w-3.5 animate-spin flex-shrink-0 text-[var(--toolbar-pill-text)]" />
+              <span className="hidden text-xs font-medium text-[var(--toolbar-pill-text)] sm:inline">
                 Signing...
               </span>
             </>
@@ -360,7 +360,7 @@ export function WalletButton() {
                 {address.slice(0, 4)}...
               </span>
               {isAuthenticated ? (
-                <ChevronDown className="h-3 w-3 flex-shrink-0 text-[var(--shell-text-soft)]" />
+                <ChevronDown className="h-3 w-3 flex-shrink-0 text-[var(--toolbar-pill-text)]" />
               ) : null}
             </>
           )}

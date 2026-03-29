@@ -63,7 +63,7 @@ const StatCard: React.FC<StatCardProps> = ({
               className={cn(
                 "text-2xl font-bold font-mono",
                 highlight
-                  ? "bg-gradient-to-r from-aura-primary to-aura-primary-light bg-clip-text text-transparent"
+                  ? "goldmint-heading"
                   : "text-[var(--shell-title)]",
               )}
             >
@@ -90,7 +90,7 @@ const StatCard: React.FC<StatCardProps> = ({
           )}
         </div>
         {icon && (
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--shell-inset)] text-aura-primary">
+          <div className="goldmint-pill flex h-10 w-10 items-center justify-center rounded-xl text-aura-primary">
             {icon}
           </div>
         )}
