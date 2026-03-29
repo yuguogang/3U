@@ -38,14 +38,14 @@ const StatCard: React.FC<StatCardProps> = ({
       return <TrendingUp className="w-4 h-4 text-aura-success" />;
     if (trend === "down")
       return <TrendingDown className="w-4 h-4 text-aura-error" />;
-    return <Minus className="w-4 h-4 text-white/50" />;
+    return <Minus className="w-4 h-4 text-[var(--shell-text-soft)]" />;
   };
 
   const getChangeColor = () => {
     if (!change) return "";
     if (change.type === "increase") return "text-aura-success";
     if (change.type === "decrease") return "text-aura-error";
-    return "text-white/50";
+    return "text-[var(--shell-text-soft)]";
   };
 
   return (
@@ -57,22 +57,22 @@ const StatCard: React.FC<StatCardProps> = ({
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-xs text-white/50 mb-1">{label}</p>
+          <p className="mb-1 text-xs text-[var(--shell-text-soft)]">{label}</p>
           <div className="flex items-baseline gap-1">
             <span
               className={cn(
                 "text-2xl font-bold font-mono",
                 highlight
                   ? "bg-gradient-to-r from-aura-primary to-aura-primary-light bg-clip-text text-transparent"
-                  : "text-white",
+                  : "text-[var(--shell-title)]",
               )}
             >
               {value}
             </span>
-            {unit && <span className="text-sm text-white/50">{unit}</span>}
+            {unit && <span className="text-sm text-[var(--shell-text-soft)]">{unit}</span>}
           </div>
           {subValue && (
-            <p className="text-xs text-white/40 mt-1">{subValue}</p>
+            <p className="mt-1 text-xs text-[var(--shell-text-soft)]">{subValue}</p>
           )}
           {change && (
             <div
@@ -90,7 +90,7 @@ const StatCard: React.FC<StatCardProps> = ({
           )}
         </div>
         {icon && (
-          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-aura-primary">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--shell-inset)] text-aura-primary">
             {icon}
           </div>
         )}

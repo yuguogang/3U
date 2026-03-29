@@ -9,6 +9,7 @@ import {
   ReferralBindPlacementInput,
   ReferralPlacementSlotView,
   ReferralPlacementView,
+  TeamPosition,
 } from '3u-aura-common';
 
 type PlacementUser = Pick<
@@ -32,6 +33,34 @@ export class PlacementPolicyEngine {
 
   buildPlacementKey(command: ReferralBindPlacementInput): string {
     return `${command.parentId}:${command.teamPosition}`;
+  }
+
+  selectWeakLeg(params: {
+    leftMemberCount: number;
+    leftTeamVolume: string;
+    rightMemberCount: number;
+    rightTeamVolume: string;
+  }): TeamPosition {
+    const leftVolume = BigInt(params.leftTeamVolume);
+    const rightVolume = BigInt(params.rightTeamVolume);
+
+    if (leftVolume < rightVolume) {
+      return TeamPosition.LEFT;
+    }
+
+    if (leftVolume > rightVolume) {
+      return TeamPosition.RIGHT;
+    }
+
+    if (params.leftMemberCount < params.rightMemberCount) {
+      return TeamPosition.LEFT;
+    }
+
+    if (params.leftMemberCount > params.rightMemberCount) {
+      return TeamPosition.RIGHT;
+    }
+
+    return TeamPosition.LEFT;
   }
 
   assertUserExists(user?: PlacementUser | null): asserts user is PlacementUser {

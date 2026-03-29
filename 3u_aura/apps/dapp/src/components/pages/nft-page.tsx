@@ -255,13 +255,13 @@ export function NftPage() {
         <section className="animate-slide-up" style={{ animationDelay: "0.05s" }}>
           <div className="grid grid-cols-2 gap-3">
             <GlassCard className="p-3">
-              <p className="text-xs text-white/50 mb-1">{t("nft.summary.owned")}</p>
-              <p className="text-2xl font-bold text-white font-mono">
+              <p className="text-xs text-[var(--shell-text-soft)] mb-1">{t("nft.summary.owned")}</p>
+              <p className="text-2xl font-bold text-[var(--shell-title)] font-mono">
                 {nftBalance.toString()}
               </p>
             </GlassCard>
             <GlassCard className="p-3">
-              <p className="text-xs text-white/50 mb-1">{t("nft.summary.claimable")}</p>
+              <p className="text-xs text-[var(--shell-text-soft)] mb-1">{t("nft.summary.claimable")}</p>
               <p className="text-2xl font-bold text-aura-primary font-mono">
                 {canMintReferralNft ? "1" : "0"}
               </p>
@@ -270,12 +270,12 @@ export function NftPage() {
         </section>
 
         {!isCorrectReadChain && (
-          <GlassCard className="border border-amber-400/20 bg-amber-400/5 p-5">
-            <div className="flex items-center gap-3 text-amber-200">
+          <GlassCard className="border border-amber-400/20 bg-amber-400/10 p-5">
+            <div className="flex items-center gap-3 text-amber-500">
               <ShieldAlert className="h-5 w-5" />
               <p className="text-sm font-medium">{t("shared.status.wrongNetwork")}</p>
             </div>
-            <p className="mt-2 text-xs text-amber-100/60 leading-relaxed">
+            <p className="mt-2 text-xs text-[var(--shell-text-muted)] leading-relaxed">
               {t("nft.wrongNetwork.description", { chainId: promotionChainId })}
             </p>
           </GlassCard>
@@ -283,7 +283,7 @@ export function NftPage() {
 
         {/* Purchased NFT Section */}
         <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
-          <h2 className="text-sm font-medium text-white/70 mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-medium text-[var(--shell-text-muted)] mb-3 flex items-center gap-2">
             <ShoppingBag className="w-4 h-4" />
             <span>{t("nft.purchased.sectionTitle")}</span>
           </h2>
@@ -301,25 +301,25 @@ export function NftPage() {
             </div>
             <div className="p-5 space-y-4">
               <div>
-                <h3 className="text-lg font-bold text-white">{t("nft.purchased.cardTitle")}</h3>
-                <p className="text-xs text-white/50">{t("nft.purchased.cardDescription")}</p>
+                <h3 className="text-lg font-bold text-[var(--shell-title)]">{t("nft.purchased.cardTitle")}</h3>
+                <p className="text-xs text-[var(--shell-text-soft)]">{t("nft.purchased.cardDescription")}</p>
               </div>
               
-              <div className="flex items-center justify-between py-3 border-y border-white/[0.08]">
+              <div className="flex items-center justify-between py-3 border-y border-[var(--shell-border)]">
                 <div>
-                  <p className="text-[10px] text-white/40 uppercase">{t("nft.purchased.price")}</p>
-                  <p className="text-lg font-mono font-bold text-white">{formatUsdtAtomic(purchasePrice)} USDT</p>
+                  <p className="text-[10px] text-[var(--shell-text-soft)] uppercase">{t("nft.purchased.price")}</p>
+                  <p className="text-lg font-mono font-bold text-[var(--shell-title)]">{formatUsdtAtomic(purchasePrice)} USDT</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] text-white/40 uppercase">{t("nft.purchased.yourBalance")}</p>
-                  <p className="text-sm font-mono text-white/70">{formatUsdtAtomic(usdtBalance)} USDT</p>
+                  <p className="text-[10px] text-[var(--shell-text-soft)] uppercase">{t("nft.purchased.yourBalance")}</p>
+                  <p className="text-sm font-mono text-[var(--shell-copy)]">{formatUsdtAtomic(usdtBalance)} USDT</p>
                 </div>
               </div>
 
               {!isApprovalSatisfied ? (
                 <Button
                   onClick={handleApprove}
-                  className="w-full h-12 bg-white text-black hover:bg-white/90 font-bold rounded-xl"
+                  className="w-full h-12 bg-[var(--shell-badge-bg)] text-[var(--shell-badge-fg)] hover:opacity-90 font-bold rounded-xl"
                   disabled={approveWrite.isPending || !isCorrectWriteChain}
                 >
                   {approveWrite.isPending ? t("nft.purchased.approving") : t("nft.purchased.approveButton")}
@@ -346,19 +346,19 @@ export function NftPage() {
 
         {/* Referral NFT Section */}
         <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
-          <h2 className="text-sm font-medium text-white/70 mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-medium text-[var(--shell-text-muted)] mb-3 flex items-center gap-2">
             <Gem className="w-4 h-4" />
             <span>{t("nft.referral.sectionTitle")}</span>
           </h2>
           <GlassCard className="p-5 space-y-5">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
-                <h3 className="font-bold text-white">{t("nft.referral.cardTitle")}</h3>
-                <p className="text-xs text-white/50">{t("nft.referral.cardDescription")}</p>
+                <h3 className="font-bold text-[var(--shell-title)]">{t("nft.referral.cardTitle")}</h3>
+                <p className="text-xs text-[var(--shell-text-soft)]">{t("nft.referral.cardDescription")}</p>
               </div>
               <div className={cn(
                 "px-2 py-1 rounded text-[10px] font-bold",
-                canMintReferralNft ? "bg-aura-success/20 text-aura-success" : "bg-white/5 text-white/40"
+                canMintReferralNft ? "bg-aura-success/20 text-aura-success" : "bg-[var(--shell-inset)] text-[var(--shell-text-soft)]"
               )}>
                 {eligibilityStatusLabel}
               </div>
@@ -367,10 +367,10 @@ export function NftPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="flex justify-between text-[10px] uppercase tracking-wider">
-                  <span className="text-white/40">{t("nft.referral.personalCheckins")}</span>
-                  <span className="text-white/70">{eligibility?.personalCheckinCount || 0} / {eligibility?.requiredCheckinCount || 30}</span>
+                  <span className="text-[var(--shell-text-soft)]">{t("nft.referral.personalCheckins")}</span>
+                  <span className="text-[var(--shell-copy)]">{eligibility?.personalCheckinCount || 0} / {eligibility?.requiredCheckinCount || 30}</span>
                 </div>
-                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-[var(--shell-inset)] rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-aura-primary transition-all duration-500" 
                     style={{ width: `${checkinProgress}%` }} 
@@ -380,10 +380,10 @@ export function NftPage() {
 
               <div className="space-y-2">
                 <div className="flex justify-between text-[10px] uppercase tracking-wider">
-                  <span className="text-white/40">{t("nft.referral.smallLegVolume")}</span>
-                  <span className="text-white/70">{formatUsdtAtomic(eligibility?.smallLegVolumeUsdt || "0")} / {formatUsdtAtomic(eligibility?.requiredSmallLegUsdt || "6000000000")}</span>
+                  <span className="text-[var(--shell-text-soft)]">{t("nft.referral.smallLegVolume")}</span>
+                  <span className="text-[var(--shell-copy)]">{formatUsdtAtomic(eligibility?.smallLegVolumeUsdt || "0")} / {formatUsdtAtomic(eligibility?.requiredSmallLegUsdt || "6000000000")}</span>
                 </div>
-                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-[var(--shell-inset)] rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-blue-500 transition-all duration-500" 
                     style={{ width: `${smallLegProgress}%` }} 
@@ -394,7 +394,7 @@ export function NftPage() {
 
             <Button
               onClick={handleReferralMint}
-              className="w-full h-11 bg-white/5 border border-white/10 text-white hover:bg-white/10 rounded-xl"
+              className="w-full h-11 bg-[var(--shell-inset)] border border-[var(--shell-border)] text-[var(--shell-title)] hover:bg-[var(--shell-control-hover)] rounded-xl"
               disabled={!canMintReferralNft || referralMintWrite.isPending || !isCorrectWriteChain}
             >
               {referralMintWrite.isPending ? t("nft.referral.minting") : t("nft.referral.button")}
@@ -411,15 +411,15 @@ export function NftPage() {
 
         {/* Benefits Info */}
         <section className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
-          <h2 className="text-sm font-medium text-white/70 mb-3">{t("nft.benefits.title")}</h2>
+          <h2 className="text-sm font-medium text-[var(--shell-text-muted)] mb-3">{t("nft.benefits.title")}</h2>
           <div className="grid grid-cols-1 gap-3">
             <GlassCard className="p-4 flex items-start gap-4">
               <div className="w-10 h-10 rounded-xl bg-aura-primary/10 flex items-center justify-center shrink-0">
                 <Zap className="w-5 h-5 text-aura-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium text-white">{t("nft.benefits.weeklySubsidies.title")}</p>
-                <p className="text-xs text-white/50 leading-relaxed">{t("nft.benefits.weeklySubsidies.description")}</p>
+                <p className="text-sm font-medium text-[var(--shell-title)]">{t("nft.benefits.weeklySubsidies.title")}</p>
+                <p className="text-xs text-[var(--shell-text-soft)] leading-relaxed">{t("nft.benefits.weeklySubsidies.description")}</p>
               </div>
             </GlassCard>
             <GlassCard className="p-4 flex items-start gap-4">
@@ -427,8 +427,8 @@ export function NftPage() {
                 <TrendingUp className="w-5 h-5 text-blue-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-white">{t("nft.benefits.revenueSharing.title")}</p>
-                <p className="text-xs text-white/50 leading-relaxed">{t("nft.benefits.revenueSharing.description")}</p>
+                <p className="text-sm font-medium text-[var(--shell-title)]">{t("nft.benefits.revenueSharing.title")}</p>
+                <p className="text-xs text-[var(--shell-text-soft)] leading-relaxed">{t("nft.benefits.revenueSharing.description")}</p>
               </div>
             </GlassCard>
           </div>

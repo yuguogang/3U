@@ -43,11 +43,14 @@ describe('AuthService', () => {
       deleteAll: jest.fn(),
     };
     const referralService = {
-      bindInviterForUserTx: jest.fn(),
       issueInviteCodeIfMissingForUserTx: jest.fn(),
+    };
+    const referralOnboardingService = {
+      bindInviterForUserTx: jest.fn(),
     };
     const treeTopologyService = {
       initializeRootUserTx: jest.fn(),
+      tryAutoPlaceForBoundUser: jest.fn(),
     };
 
     const service = new AuthService(
@@ -58,16 +61,18 @@ describe('AuthService', () => {
       jwtService as any,
       refreshTokenService as any,
       referralService as any,
+      referralOnboardingService as any,
       treeTopologyService as any,
     );
 
     jest.spyOn(service, 'generateMessage').mockResolvedValue({
       expired: Math.floor(Date.now() / 1000) + 300,
-      message: `${SignatureScenarios.SIGNIN} Nonce: nonce`,
+      message: `${SignatureScenarios.SIGNIN} Nonce: nonce\nExpired: 2099/01/01 00:00:00`,
     });
 
     return {
       db,
+      referralOnboardingService,
       referralService,
       service,
       treeTopologyService,
@@ -76,7 +81,14 @@ describe('AuthService', () => {
   };
 
   it('creates a new referred user without issuing invite code before auto-bind', async () => {
-    const { db, referralService, service, treeTopologyService, userService } = createService();
+    const {
+      db,
+      referralOnboardingService,
+      referralService,
+      service,
+      treeTopologyService,
+      userService,
+    } = createService();
     userService.findOne.mockResolvedValue(null);
 
     const tx = {
@@ -99,6 +111,16 @@ describe('AuthService', () => {
     db.$transaction.mockImplementation((operation: (tx: object) => Promise<unknown>) =>
       operation(tx as any),
     );
+    userService.findOne
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 'user_1',
+        walletAddress: basePayload.address,
+        inviterId: 'inviter_1',
+        parentId: 'parent_1',
+        inviteCode: 'SHARE123',
+        status: UserStatus.ACTIVE,
+      });
 
     const result = await service.signinBySignature({
       ...basePayload,
@@ -112,19 +134,32 @@ describe('AuthService', () => {
         walletAddress: basePayload.address,
       },
     });
-    expect(referralService.bindInviterForUserTx).toHaveBeenCalledWith(
+    expect(referralOnboardingService.bindInviterForUserTx).toHaveBeenCalledWith(
       { id: 'user_1' },
       { inviteCode: 'INVITER01' },
       tx,
       expect.objectContaining({
-        auditAction: 'referral.bind-inviter.auto-onboarded',
+        bindAuditAction: 'referral.bind-inviter.auto-onboarded',
       }),
     );
-    expect(result.inviteCode).toBeNull();
+    expect(treeTopologyService.tryAutoPlaceForBoundUser).toHaveBeenCalledWith(
+      'user_1',
+      expect.objectContaining({
+        auditAction: 'tree.bind-placement.auto-onboarded',
+      }),
+    );
+    expect(result.inviteCode).toBe('SHARE123');
   });
 
   it('creates a new unreferred user without auto-binding', async () => {
-    const { db, referralService, service, treeTopologyService, userService } = createService();
+    const {
+      db,
+      referralOnboardingService,
+      referralService,
+      service,
+      treeTopologyService,
+      userService,
+    } = createService();
     userService.findOne.mockResolvedValue(null);
 
     const tx = {
@@ -150,14 +185,23 @@ describe('AuthService', () => {
 
     const result = await service.signinBySignature(basePayload);
 
-    expect(referralService.bindInviterForUserTx).not.toHaveBeenCalled();
+    expect(
+      referralOnboardingService.bindInviterForUserTx,
+    ).not.toHaveBeenCalled();
     expect(referralService.issueInviteCodeIfMissingForUserTx).not.toHaveBeenCalled();
     expect(treeTopologyService.initializeRootUserTx).not.toHaveBeenCalled();
     expect(result.inviteCode).toBeNull();
   });
 
   it('issues invite code for the first root user', async () => {
-    const { db, referralService, service, treeTopologyService, userService } = createService();
+    const {
+      db,
+      referralOnboardingService,
+      referralService,
+      service,
+      treeTopologyService,
+      userService,
+    } = createService();
     userService.findOne.mockResolvedValue(null);
 
     const tx = {
@@ -189,7 +233,9 @@ describe('AuthService', () => {
 
     const result = await service.signinBySignature(basePayload);
 
-    expect(referralService.bindInviterForUserTx).not.toHaveBeenCalled();
+    expect(
+      referralOnboardingService.bindInviterForUserTx,
+    ).not.toHaveBeenCalled();
     expect(referralService.issueInviteCodeIfMissingForUserTx).toHaveBeenCalledWith(
       'user_root',
       tx,
@@ -213,5 +259,64 @@ describe('AuthService', () => {
     await expect(service.signinBySignature(basePayload)).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
+  });
+
+  it('attempts auto-placement when a previously created user signs in with a referral code', async () => {
+    const { db, referralOnboardingService, service, treeTopologyService, userService } = createService();
+    userService.findOne.mockResolvedValue({
+      id: 'user_existing',
+      inviterId: null,
+      parentId: null,
+      inviteCode: null,
+      walletAddress: basePayload.address,
+      status: UserStatus.ACTIVE,
+    });
+
+    const tx = {
+      user: {},
+    };
+    db.$transaction.mockImplementation((operation: (tx: object) => Promise<unknown>) =>
+      operation(tx as any),
+    );
+    userService.findOne
+      .mockResolvedValueOnce({
+        id: 'user_existing',
+        inviterId: null,
+        parentId: null,
+        inviteCode: null,
+        walletAddress: basePayload.address,
+        status: UserStatus.ACTIVE,
+      })
+      .mockResolvedValueOnce({
+        id: 'user_existing',
+        inviterId: 'inviter_1',
+        parentId: 'parent_1',
+        inviteCode: 'SHARE123',
+        walletAddress: basePayload.address,
+        status: UserStatus.ACTIVE,
+      });
+
+    const result = await service.signinBySignature({
+      ...basePayload,
+      referralCode: 'inviter01',
+    });
+
+    expect(
+      referralOnboardingService.bindInviterForUserTx,
+    ).toHaveBeenCalledWith(
+      { id: 'user_existing' },
+      { inviteCode: 'INVITER01' },
+      tx,
+      expect.objectContaining({
+        bindAuditAction: 'referral.bind-inviter.auto-signin-recovered',
+      }),
+    );
+    expect(treeTopologyService.tryAutoPlaceForBoundUser).toHaveBeenCalledWith(
+      'user_existing',
+      expect.objectContaining({
+        auditAction: 'tree.bind-placement.auto-signin-recovered',
+      }),
+    );
+    expect(result.inviteCode).toBe('SHARE123');
   });
 });

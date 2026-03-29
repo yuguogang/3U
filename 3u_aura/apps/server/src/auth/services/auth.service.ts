@@ -16,7 +16,7 @@ import { DbService, type User } from '@/db';
 import { UserService } from '@/user';
 import { ConfigService } from '@nestjs/config';
 import { RefreshTokenService } from './refresh-token.service';
-import { ReferralService } from '@/modules/referral';
+import { ReferralOnboardingService, ReferralService } from '@/modules/referral';
 import { TreeTopologyService } from '@/modules/tree';
 
 type AuthSignatureMessagePayload = {
@@ -47,8 +47,9 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly refreshTokenService: RefreshTokenService,
     private readonly referralService: ReferralService,
+    private readonly referralOnboardingService: ReferralOnboardingService,
     private readonly treeTopologyService: TreeTopologyService,
-  ) { }
+  ) {}
 
   async verifySignature(
     address: string,
@@ -138,6 +139,9 @@ export class AuthService {
     });
 
     if (!user) {
+      let createdUserId: string | undefined;
+      let shouldAttemptAutoPlacement = false;
+
       user = await this.db.$transaction(async (tx) => {
         const userCount = await tx.user.count();
         const createdUser = await tx.user.create({
@@ -147,17 +151,20 @@ export class AuthService {
             inviteCode: null,
           },
         });
+        createdUserId = createdUser.id;
 
         if (payload.referralCode?.trim()) {
-          await this.referralService.bindInviterForUserTx(
+          await this.referralOnboardingService.bindInviterForUserTx(
             { id: createdUser.id },
             { inviteCode: payload.referralCode.trim().toUpperCase() },
             tx,
             {
-              auditAction: 'referral.bind-inviter.auto-onboarded',
-              idempotentAuditAction: 'referral.bind-inviter.auto-onboarded.idempotent',
+              bindAuditAction: 'referral.bind-inviter.auto-onboarded',
+              bindIdempotentAuditAction:
+                'referral.bind-inviter.auto-onboarded.idempotent',
             },
           );
+          shouldAttemptAutoPlacement = true;
         } else if (userCount === 0) {
           await this.referralService.issueInviteCodeIfMissingForUserTx(
             createdUser.id,
@@ -173,26 +180,39 @@ export class AuthService {
           where: { id: createdUser.id },
         });
       });
+
+      if (shouldAttemptAutoPlacement && createdUserId) {
+        await this.treeTopologyService.tryAutoPlaceForBoundUser(createdUserId, {
+          auditAction: 'tree.bind-placement.auto-onboarded',
+          deferredAuditAction: 'tree.bind-placement.auto-onboarded.deferred',
+        });
+        user = await this.userService.findOne({
+          where: { id: createdUserId },
+        });
+      }
     } else if (
       payload.referralCode?.trim() &&
       !user.inviterId &&
       !user.parentId
     ) {
-      user = await this.db.$transaction(async (tx) => {
-        await this.referralService.bindInviterForUserTx(
+      await this.db.$transaction(async (tx) => {
+        await this.referralOnboardingService.bindInviterForUserTx(
           { id: user!.id },
           { inviteCode: payload.referralCode!.trim().toUpperCase() },
           tx,
           {
-            auditAction: 'referral.bind-inviter.auto-signin-recovered',
-            idempotentAuditAction:
+            bindAuditAction: 'referral.bind-inviter.auto-signin-recovered',
+            bindIdempotentAuditAction:
               'referral.bind-inviter.auto-signin-recovered.idempotent',
           },
         );
-
-        return tx.user.findUniqueOrThrow({
-          where: { id: user!.id },
-        });
+      });
+      await this.treeTopologyService.tryAutoPlaceForBoundUser(user.id, {
+        auditAction: 'tree.bind-placement.auto-signin-recovered',
+        deferredAuditAction: 'tree.bind-placement.auto-signin-recovered.deferred',
+      });
+      user = await this.userService.findOne({
+        where: { id: user.id },
       });
     }
 

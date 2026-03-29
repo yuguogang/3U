@@ -19,8 +19,16 @@ async function bootstrap() {
   });
 
   const port = await configService.get<number>('port', 3010);
-  (app as any).logger.log(`Nest Application now listen port: ${port}`);
-  await app.listen(port);
+  const hostUrl = await configService.get<string>('host');
+  const listenHost = hostUrl ? new URL(hostUrl).hostname : undefined;
+  (app as any).logger.log(
+    `Nest Application now listen port: ${port}${listenHost ? ` host: ${listenHost}` : ''}`,
+  );
+  if (listenHost) {
+    await app.listen(port, listenHost);
+  } else {
+    await app.listen(port);
+  }
 }
 bootstrap().catch((error) => {
   new Logger('Server').error(error.message, error);

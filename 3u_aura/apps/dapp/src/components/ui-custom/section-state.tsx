@@ -21,11 +21,13 @@ export function SectionEmptyState({
 }: SectionStateCardProps) {
   return (
     <GlassCard className={cn("p-5 text-center", className)}>
-      <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/6 text-white/55">
+      <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--shell-inset)] text-[var(--shell-text-soft)]">
         {icon}
       </div>
-      <h3 className="text-sm font-medium text-white">{title}</h3>
-      <p className="mt-2 text-xs leading-5 text-white/45">{description}</p>
+      <h3 className="text-sm font-medium text-[var(--shell-title)]">{title}</h3>
+      <p className="mt-2 text-xs leading-5 text-[var(--shell-copy)]">
+        {description}
+      </p>
     </GlassCard>
   );
 }
@@ -74,14 +76,14 @@ export function SectionCardSkeleton({
           className="animate-pulse p-4 motion-reduce:animate-none"
         >
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-white/7" />
+            <div className="h-10 w-10 rounded-2xl bg-[var(--shell-inset)]" />
             <div className="min-w-0 flex-1 space-y-2">
-              <div className="h-3 w-28 rounded-full bg-white/7" />
-              <div className="h-2 w-20 rounded-full bg-white/7" />
+              <div className="h-3 w-28 rounded-full bg-[var(--shell-inset)]" />
+              <div className="h-2 w-20 rounded-full bg-[var(--shell-inset)]" />
             </div>
             <div className="space-y-2">
-              <div className="ml-auto h-3 w-12 rounded-full bg-white/7" />
-              <div className="ml-auto h-2 w-8 rounded-full bg-white/7" />
+              <div className="ml-auto h-3 w-12 rounded-full bg-[var(--shell-inset)]" />
+              <div className="ml-auto h-2 w-8 rounded-full bg-[var(--shell-inset)]" />
             </div>
           </div>
         </GlassCard>

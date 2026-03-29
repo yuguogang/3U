@@ -7,6 +7,24 @@
     "nft": "NFT",
     "claims": "领取"
   },
+  "moreMenu": {
+    "title": "更多",
+    "description": "快捷入口和显示偏好都集中在这里。",
+    "triggerAria": "打开更多菜单",
+    "back": "返回",
+    "quickActions": "常用操作",
+    "preferences": "偏好设置",
+    "preferencesHint": "主题与语言",
+    "theme": "主题风格",
+    "themeDescription": "在黑夜、白天和 Aura 风格之间切换。",
+    "language": "语言",
+    "languageDescription": "选择 dapp 内使用的显示语言。",
+    "themes": {
+      "night": "黑夜",
+      "day": "白天",
+      "aura": "Aura"
+    }
+  },
   "notifications": {
     "entryAria": "打开通知中心",
     "eyebrow": "站内信 / 动态",

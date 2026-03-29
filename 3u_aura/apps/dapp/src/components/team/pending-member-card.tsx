@@ -92,20 +92,20 @@ export function PendingMemberCard({
         "w-full rounded-xl border transition-all duration-200 active:scale-[0.98]",
         selected
           ? "border-aura-primary/40 bg-aura-primary/8 ring-1 ring-aura-primary/30"
-          : "border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]",
+          : "border-[var(--shell-border)] bg-[var(--glass-bg)] hover:bg-[var(--glass-bg-strong)]",
         dragging && "opacity-70 shadow-[0_0_0_1px_rgba(255,86,54,0.18),0_0_18px_rgba(255,86,54,0.2)]",
       )}
     >
       <div className="flex items-center gap-2.5 p-2.5">
-        <div className="flex items-center justify-center text-white/30">
+        <div className="flex items-center justify-center text-[var(--shell-text-soft)]">
           <GripVertical className="h-4 w-4" />
         </div>
         <PendingIdenticon seed={walletAddress} />
         <div className="min-w-0 flex-1 text-left">
-          <p className="truncate text-sm font-medium text-white">
+          <p className="truncate text-sm font-medium text-[var(--shell-title)]">
             {formatCompactWallet(walletAddress)}
           </p>
-          <p className="text-[10px] text-white/40">
+          <p className="text-[10px] text-[var(--shell-text-soft)]">
             {new Date(registeredAt).toLocaleDateString(locale)}
           </p>
           <p className="text-[10px] uppercase tracking-[0.18em] text-aura-primary/70">

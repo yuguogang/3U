@@ -1,5 +1,16 @@
-import { Prisma, UserStatus, type User } from '@/db';
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  Prisma,
+  TeamPosition as DbTeamPosition,
+  UserStatus,
+  type User,
+} from '@/db';
+import {
+  ConflictException,
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   ReferralBindPlacementInput,
   ReferralPlacementSlotView,
@@ -14,6 +25,11 @@ import { PlacementPolicyEngine } from '../engines/placement-policy.engine';
 import { TeamClosureRepository } from '../repositories/team-closure.repository';
 
 type TreeActor = Pick<User, 'id'>;
+type AutoPlacementAttemptResult = {
+  isPlacementPending: boolean;
+  placement?: ReferralPlacementView;
+  reason?: string;
+};
 
 @Injectable()
 export class TreeTopologyService {
@@ -22,6 +38,7 @@ export class TreeTopologyService {
     private readonly transactionOrchestrator: TransactionOrchestratorService,
     private readonly placementPolicyEngine: PlacementPolicyEngine,
     private readonly teamClosureRepository: TeamClosureRepository,
+    @Inject(forwardRef(() => ReferralService))
     private readonly referralService: ReferralService,
   ) {}
 
@@ -59,6 +76,59 @@ export class TreeTopologyService {
         userId: rootUser.id,
       },
     });
+  }
+
+  async tryAutoPlaceForBoundUser(
+    userId: string,
+    options?: {
+      auditAction?: string;
+      deferredAuditAction?: string;
+      maxAttempts?: number;
+    },
+  ): Promise<AutoPlacementAttemptResult> {
+    const maxAttempts = Math.max(1, options?.maxAttempts ?? 3);
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const result = await this.transactionOrchestrator.run((tx) =>
+          this.tryAutoPlaceForBoundUserTx(userId, tx, options),
+        );
+
+        if (result.reason === 'placement-conflict') {
+          if (attempt < maxAttempts) {
+            continue;
+          }
+
+          return this.finalizeAutoPlacementPending(
+            userId,
+            options?.deferredAuditAction,
+            'placement-conflict',
+          );
+        }
+
+        return result;
+      } catch (error) {
+        if (this.isPlacementRaceError(error)) {
+          if (attempt < maxAttempts) {
+            continue;
+          }
+
+          return this.finalizeAutoPlacementPending(
+            userId,
+            options?.deferredAuditAction,
+            'placement-conflict',
+          );
+        }
+
+        throw error;
+      }
+    }
+
+    return this.finalizeAutoPlacementPending(
+      userId,
+      options?.deferredAuditAction,
+      'placement-conflict',
+    );
   }
 
   async bindPlacementForInviter(
@@ -259,6 +329,105 @@ export class TreeTopologyService {
     };
   }
 
+  async tryAutoPlaceForBoundUserTx(
+    userId: string,
+    tx: Prisma.TransactionClient,
+    options?: {
+      auditAction?: string;
+      deferredAuditAction?: string;
+    },
+  ): Promise<AutoPlacementAttemptResult> {
+    const placementUser = await this.teamClosureRepository.findUserForPlacement(
+      userId,
+      tx,
+    );
+    this.placementPolicyEngine.assertUserExists(placementUser);
+
+    if (
+      placementUser.parentId &&
+      placementUser.placementKey &&
+      placementUser.teamPosition
+    ) {
+      return {
+        isPlacementPending: false,
+        placement: this.placementPolicyEngine.buildPlacementView({
+          inviterId: placementUser.inviterId,
+          parentId: placementUser.parentId,
+          placementKey: placementUser.placementKey,
+          teamPosition: placementUser.teamPosition as TeamPosition,
+          userId: placementUser.id,
+        }),
+      };
+    }
+
+    if (!placementUser.inviterId) {
+      return {
+        isPlacementPending: !placementUser.parentId,
+        reason: 'inviter-not-bound',
+      };
+    }
+
+    const inviter = await this.teamClosureRepository.findParentForPlacement(
+      placementUser.inviterId,
+      tx,
+    );
+    this.placementPolicyEngine.assertInviterActorExists(inviter);
+
+    if (inviter.status !== UserStatus.ACTIVE) {
+      await this.recordAutoPlacementDeferred(
+        {
+          action: options?.deferredAuditAction,
+          inviterId: inviter.id,
+          reason: 'inviter-inactive',
+          userId: placementUser.id,
+        },
+      );
+      return { isPlacementPending: true, reason: 'inviter-inactive' };
+    }
+
+    const target = await this.selectAutoPlacementTargetTx(inviter, tx);
+    if (!target) {
+      await this.recordAutoPlacementDeferred(
+        {
+          action: options?.deferredAuditAction,
+          inviterId: inviter.id,
+          reason: 'no-auto-slot',
+          userId: placementUser.id,
+        },
+      );
+      return { isPlacementPending: true, reason: 'no-auto-slot' };
+    }
+
+    try {
+      const placement = await this.bindPlacementWithinTree(
+        {
+          auditAction: options?.auditAction ?? 'tree.bind-placement.auto-confirmed',
+          expectedInviterId: inviter.id,
+          parentId: target.parentId,
+          placementRootId: inviter.id,
+          placementUser,
+          placementUserId: placementUser.id,
+          teamPosition: target.teamPosition,
+        },
+        tx,
+      );
+
+      return {
+        isPlacementPending: false,
+        placement,
+      };
+    } catch (error) {
+      if (
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
+        return { isPlacementPending: true, reason: 'placement-conflict' };
+      }
+
+      throw error;
+    }
+  }
+
   private async bindPlacementWithinTree(
     params: {
       auditAction?: string;
@@ -380,5 +549,158 @@ export class TreeTopologyService {
       teamPosition: params.teamPosition,
       userId: shareReadyUser.id,
     });
+  }
+
+  private async selectAutoPlacementTargetTx(
+    inviter: NonNullable<
+      Awaited<ReturnType<TeamClosureRepository['findParentForPlacement']>>
+    >,
+    tx: Prisma.TransactionClient,
+  ): Promise<
+    | {
+        parentId: string;
+        teamPosition: TeamPosition;
+      }
+    | undefined
+  > {
+    const [leftChild, rightChild] = await Promise.all([
+      this.teamClosureRepository.findDirectChild(
+        inviter.id,
+        DbTeamPosition.LEFT,
+        tx,
+      ),
+      this.teamClosureRepository.findDirectChild(
+        inviter.id,
+        DbTeamPosition.RIGHT,
+        tx,
+      ),
+    ]);
+    const [leftMemberCount, rightMemberCount] = await Promise.all([
+      leftChild
+        ? this.teamClosureRepository.countActiveSubtreeMembers(leftChild.id, tx)
+        : Promise.resolve(0),
+      rightChild
+        ? this.teamClosureRepository.countActiveSubtreeMembers(rightChild.id, tx)
+        : Promise.resolve(0),
+    ]);
+    const selectedLeg = this.placementPolicyEngine.selectWeakLeg({
+      leftMemberCount,
+      leftTeamVolume: inviter.profile?.leftTeamVolume?.toFixed(0) ?? '0',
+      rightMemberCount,
+      rightTeamVolume: inviter.profile?.rightTeamVolume?.toFixed(0) ?? '0',
+    });
+    const visited = new Set<string>();
+    let currentNode = inviter;
+
+    while (!visited.has(currentNode.id)) {
+      visited.add(currentNode.id);
+
+      const child = await this.teamClosureRepository.findDirectChild(
+        currentNode.id,
+        selectedLeg as unknown as DbTeamPosition,
+        tx,
+      );
+      if (!child) {
+        return {
+          parentId: currentNode.id,
+          teamPosition: selectedLeg,
+        };
+      }
+
+      if (child.status !== UserStatus.ACTIVE) {
+        return undefined;
+      }
+
+      currentNode = child;
+    }
+
+    return undefined;
+  }
+
+  private async recordAutoPlacementDeferred(
+    params: {
+      action?: string;
+      inviterId: string;
+      parentId?: string;
+      reason: string;
+      teamPosition?: TeamPosition;
+      userId: string;
+    },
+  ): Promise<void> {
+    await this.auditSeam.record({
+      action: params.action ?? 'tree.bind-placement.auto-deferred',
+      targetId: params.userId,
+      targetType: 'User',
+      payload: {
+        inviterId: params.inviterId,
+        parentId: params.parentId ?? null,
+        reason: params.reason,
+        teamPosition: params.teamPosition ?? null,
+        userId: params.userId,
+      },
+    });
+  }
+
+  private isPlacementRaceError(error: unknown): boolean {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+      return false;
+    }
+
+    if (error.code !== 'P2002') {
+      return false;
+    }
+
+    const targets = Array.isArray(error.meta?.target)
+      ? error.meta.target.map((target) => String(target))
+      : [];
+
+    return targets.length === 0 || targets.some((target) => target.includes('placementKey'));
+  }
+
+  private async finalizeAutoPlacementPending(
+    userId: string,
+    deferredAuditAction: string | undefined,
+    reason: 'placement-conflict',
+  ): Promise<AutoPlacementAttemptResult> {
+    const placementUser = await this.teamClosureRepository.findUserForPlacement(
+      userId,
+    );
+    this.placementPolicyEngine.assertUserExists(placementUser);
+
+    if (
+      placementUser.parentId &&
+      placementUser.placementKey &&
+      placementUser.teamPosition
+    ) {
+      return {
+        isPlacementPending: false,
+        placement: this.placementPolicyEngine.buildPlacementView({
+          inviterId: placementUser.inviterId,
+          parentId: placementUser.parentId,
+          placementKey: placementUser.placementKey,
+          teamPosition: placementUser.teamPosition as TeamPosition,
+          userId: placementUser.id,
+        }),
+      };
+    }
+
+    if (!placementUser.inviterId) {
+      return {
+        isPlacementPending: !placementUser.parentId,
+        reason: 'inviter-not-bound',
+      };
+    }
+
+    await this.recordAutoPlacementDeferred({
+      action: deferredAuditAction,
+      inviterId: placementUser.inviterId,
+      reason,
+      userId: placementUser.id,
+    });
+
+    return {
+      isPlacementPending: true,
+      reason,
+    };
   }
 }

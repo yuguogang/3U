@@ -77,12 +77,12 @@ function SlotPlaceholder({
         }
       }}
       className={cn(
-        "group flex min-h-[88px] min-w-[11rem] cursor-pointer flex-col items-center justify-center rounded-[24px] border border-dashed bg-white/[0.015] px-4 text-center transition-all duration-200",
+        "group flex min-h-[88px] min-w-[11rem] cursor-pointer flex-col items-center justify-center rounded-[24px] border border-dashed bg-[var(--glass-bg)] px-4 text-center transition-all duration-200",
         isSelected
           ? "border-amber-300/55 bg-amber-400/10 text-amber-200 shadow-[0_0_0_1px_rgba(251,191,36,0.18),0_0_18px_rgba(251,191,36,0.16)]"
           : position === TeamPosition.LEFT
-            ? "border-emerald-400/18 text-white/34 hover:border-emerald-300/28 hover:bg-emerald-400/[0.05]"
-            : "border-sky-400/18 text-white/34 hover:border-sky-300/28 hover:bg-sky-400/[0.05]",
+            ? "border-emerald-400/18 text-[var(--shell-text-soft)] hover:border-emerald-300/28 hover:bg-emerald-400/[0.05]"
+            : "border-sky-400/18 text-[var(--shell-text-soft)] hover:border-sky-300/28 hover:bg-sky-400/[0.05]",
         isPlacementActive && !isSelected && "animate-pulse shadow-[0_0_18px_rgba(255,86,54,0.12)]",
       )}
     >
@@ -181,7 +181,7 @@ function TreeBranch({
           <div className="relative mt-4 flex w-fit flex-col items-center pt-8">
             <svg
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 top-0 h-12 w-full overflow-visible text-white/12"
+              className="pointer-events-none absolute inset-x-0 top-0 h-12 w-full overflow-visible text-[color:var(--shell-border)]"
               viewBox="0 0 100 48"
               preserveAspectRatio="none"
             >
@@ -220,7 +220,7 @@ function TreeBranch({
                     onDropPendingOnSlot={onDropPendingOnSlot}
                   />
                 ) : (
-                  <div className="flex min-h-[72px] min-w-[11rem] items-center justify-center rounded-2xl border border-dashed border-white/8 bg-white/[0.015] text-[11px] text-white/28">
+                  <div className="flex min-h-[72px] min-w-[11rem] items-center justify-center rounded-2xl border border-dashed border-[var(--shell-border)] bg-[var(--glass-bg)] text-[11px] text-[var(--shell-text-soft)]">
                     {t("shared.promotion.tree.empty")}
                   </div>
                 )}
@@ -254,7 +254,7 @@ function TreeBranch({
                     onDropPendingOnSlot={onDropPendingOnSlot}
                   />
                 ) : (
-                  <div className="flex min-h-[72px] min-w-[11rem] items-center justify-center rounded-2xl border border-dashed border-white/8 bg-white/[0.015] text-[11px] text-white/28">
+                  <div className="flex min-h-[72px] min-w-[11rem] items-center justify-center rounded-2xl border border-dashed border-[var(--shell-border)] bg-[var(--glass-bg)] text-[11px] text-[var(--shell-text-soft)]">
                     {t("shared.promotion.tree.empty")}
                   </div>
                 )}
@@ -287,7 +287,7 @@ function TreeBranch({
           </div>
         ) : null
       ) : (
-        <div className="flex items-center justify-center gap-2 py-3 text-xs text-white/30">
+        <div className="flex items-center justify-center gap-2 py-3 text-xs text-[var(--shell-text-soft)]">
           <Workflow className="h-3.5 w-3.5" />
           {t("shared.promotion.tree.leafNode")}
         </div>
@@ -342,17 +342,17 @@ export function TeamTreeView({
         className={cn("space-y-4 overflow-x-auto pb-2", className)}
         {...props}
       >
-        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-white/45">
-          <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[var(--shell-text-soft)]">
+          <span className="rounded-full border border-[var(--shell-border)] bg-[var(--shell-inset)] px-3 py-1.5">
             {t("team.tree.hints.inspect")}
           </span>
-          <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
+          <span className="rounded-full border border-[var(--shell-border)] bg-[var(--shell-inset)] px-3 py-1.5">
             {t("team.tree.hints.focus")}
           </span>
-          <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
+          <span className="rounded-full border border-[var(--shell-border)] bg-[var(--shell-inset)] px-3 py-1.5">
             {t("team.tree.hints.expand")}
           </span>
-          <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
+          <span className="rounded-full border border-[var(--shell-border)] bg-[var(--shell-inset)] px-3 py-1.5">
             {t("team.tree.hints.drag")}
           </span>
         </div>
@@ -360,7 +360,7 @@ export function TeamTreeView({
         <div className="flex min-w-max flex-col gap-4">
           {roots.length > 0 ? (
             roots.map((node) => (
-              <div key={node.userId} className="rounded-[28px] border border-white/8 bg-white/[0.015] p-3 sm:p-4">
+              <div key={node.userId} className="rounded-[28px] border border-[var(--shell-border)] bg-[var(--glass-bg)] p-3 sm:p-4">
                 <TreeBranch
                   node={node}
                   anchorUserId={anchorUserId}
@@ -389,9 +389,9 @@ export function TeamTreeView({
               </div>
             ))
           ) : (
-            <div className="min-w-[320px] rounded-[28px] border border-white/8 bg-white/[0.015] p-5">
-              <p className="text-sm font-medium text-white">{t("team.tree.emptyTitle")}</p>
-              <p className="mt-2 text-xs text-white/45">
+            <div className="min-w-[320px] rounded-[28px] border border-[var(--shell-border)] bg-[var(--glass-bg)] p-5">
+              <p className="text-sm font-medium text-[var(--shell-title)]">{t("team.tree.emptyTitle")}</p>
+              <p className="mt-2 text-xs text-[var(--shell-text-soft)]">
                 {t("team.tree.emptyDescription")}
               </p>
             </div>

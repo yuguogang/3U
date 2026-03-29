@@ -128,29 +128,35 @@ export function DashboardPage() {
         <section className="animate-fade-in">
           <GlassCard variant="highlight" className="p-6">
             <div className="text-center">
-              <p className="text-sm text-white/50 mb-2">
+              <p className="mb-2 text-sm text-[var(--shell-text-soft)]">
                 {t("dashboard.hero.totalAura")}
               </p>
-              <h1 className="text-4xl font-bold font-mono mb-1 bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+              <h1
+                className="mb-1 bg-clip-text text-4xl font-bold font-mono text-transparent"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(135deg, var(--shell-heading-gradient-start), var(--shell-heading-gradient-end))",
+                }}
+              >
                 {formatAuraAtomic(totalAura.toString())}
               </h1>
-              <p className="text-sm text-white/40">{t("dashboard.hero.approxUsd")}</p>
+              <p className="text-sm text-[var(--shell-text-soft)]">{t("dashboard.hero.approxUsd")}</p>
               <div className="flex items-center justify-center gap-1 mt-3">
                 <TrendingUp className="w-4 h-4 text-aura-success" />
                 <span className="text-sm text-aura-success">{t("dashboard.hero.weeklyChange")}</span>
-                <span className="text-xs text-white/40 ml-1">{t("dashboard.hero.thisWeek")}</span>
+                <span className="ml-1 text-xs text-[var(--shell-text-soft)]">{t("dashboard.hero.thisWeek")}</span>
               </div>
             </div>
           </GlassCard>
         </section>
 
         {!isConnected || !isAuthenticated ? (
-          <GlassCard className="border border-amber-400/20 bg-amber-400/5 p-5">
-            <div className="mb-3 flex items-center gap-3 text-amber-200">
+          <GlassCard className="border border-amber-400/20 bg-amber-400/10 p-5">
+            <div className="mb-3 flex items-center gap-3 text-amber-500">
               <ShieldAlert className="h-5 w-5" />
               <h2 className="text-sm font-semibold">{t("dashboard.auth.title")}</h2>
             </div>
-            <p className="mb-4 text-xs leading-5 text-amber-100/60">
+            <p className="mb-4 text-xs leading-5 text-[var(--shell-text-muted)]">
               {t("dashboard.auth.description")}
             </p>
           </GlassCard>
@@ -182,7 +188,7 @@ export function DashboardPage() {
           className="animate-slide-up space-y-3"
           style={{ animationDelay: "0.2s" }}
         >
-          <h2 className="text-sm font-medium text-white/70">
+          <h2 className="text-sm font-medium text-[var(--shell-text-muted)]">
             {t("dashboard.milestones.title")}
           </h2>
           <div className="grid grid-cols-1 gap-3">
@@ -200,10 +206,10 @@ export function DashboardPage() {
                           <Users className="w-5 h-5 text-blue-400" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-white">
+                          <p className="text-sm font-medium text-[var(--shell-title)]">
                             {t("dashboard.milestones.pendingPlacements.title")}
                           </p>
-                          <p className="text-xs text-blue-100/50">
+                          <p className="text-xs text-[var(--shell-text-soft)]">
                             {t("dashboard.milestones.pendingPlacements.description", {
                               count: pendingPlacementQuery.data.length,
                             })}
@@ -226,10 +232,10 @@ export function DashboardPage() {
                       <Zap className="w-5 h-5 text-orange-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-sm font-medium text-[var(--shell-title)]">
                         {t("dashboard.milestones.nftEligibility.title")}
                       </p>
-                      <p className="text-xs text-white/50">
+                      <p className="text-xs text-[var(--shell-text-soft)]">
                         {eligibilityStatusLabel}
                       </p>
                     </div>
@@ -245,25 +251,25 @@ export function DashboardPage() {
 
         {/* Feature Cards Grid */}
         <section className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
-          <h2 className="text-sm font-medium text-white/70 mb-3">{t("dashboard.features.title")}</h2>
+          <h2 className="mb-3 text-sm font-medium text-[var(--shell-text-muted)]">{t("dashboard.features.title")}</h2>
           <div className="grid grid-cols-2 gap-3">
             {featureCards.map((card) => {
               const Icon = card.icon;
               return (
                 <Link key={card.href} href={card.href}>
-                  <GlassCard variant="interactive" className="p-4 h-full">
+                  <GlassCard variant="interactive" className="h-full p-4">
                     <div
                       className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center mb-3",
+                        "mb-3 flex h-10 w-10 items-center justify-center rounded-xl",
                         card.bgColor,
                       )}
                     >
                       <Icon className={cn("w-5 h-5", card.color)} />
                     </div>
-                    <h3 className="text-sm font-medium text-white mb-1">
+                    <h3 className="mb-1 text-sm font-medium text-[var(--shell-title)]">
                       {card.title}
                     </h3>
-                    <p className="text-xs text-white/50">{card.description}</p>
+                    <p className="text-xs text-[var(--shell-text-soft)]">{card.description}</p>
                   </GlassCard>
                 </Link>
               );
@@ -276,10 +282,10 @@ export function DashboardPage() {
           <GlassCard variant="highlight" className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-white mb-1">
+                <h3 className="mb-1 text-sm font-medium text-[var(--shell-title)]">
                   {t("dashboard.referral.title")}
                 </h3>
-                <p className="text-xs text-white/50">
+                <p className="text-xs text-[var(--shell-text-soft)]">
                   {t("dashboard.referral.description")}
                 </p>
               </div>

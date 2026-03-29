@@ -7,6 +7,24 @@
     "nft": "NFT",
     "claims": "Nhận thưởng"
   },
+  "moreMenu": {
+    "title": "Khác",
+    "description": "Lối tắt và tuỳ chọn hiển thị được gom vào một nơi.",
+    "triggerAria": "Mở menu khác",
+    "back": "Quay lại",
+    "quickActions": "Thao tác nhanh",
+    "preferences": "Tùy chọn",
+    "preferencesHint": "Giao diện & ngôn ngữ",
+    "theme": "Giao diện",
+    "themeDescription": "Chuyển giữa giao diện Night, Day và Aura.",
+    "language": "Ngôn ngữ",
+    "languageDescription": "Chọn ngôn ngữ hiển thị cho toàn bộ dapp.",
+    "themes": {
+      "night": "Đêm",
+      "day": "Ngày",
+      "aura": "Aura"
+    }
+  },
   "notifications": {
     "entryAria": "Mở trung tâm thông báo",
     "eyebrow": "Hộp thư / Cập nhật",

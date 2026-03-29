@@ -1,4 +1,10 @@
-import { DbService, Prisma, TeamPosition, User } from '@/db';
+import {
+  DbService,
+  Prisma,
+  TeamPosition as DbTeamPosition,
+  User,
+  UserStatus,
+} from '@/db';
 import { Injectable } from '@nestjs/common';
 
 type DbExecutor = DbService | Prisma.TransactionClient;
@@ -11,7 +17,12 @@ type TreePlacementUser = Pick<
 type TreePlacementParent = Pick<
   User,
   'id' | 'inviterId' | 'parentId' | 'status' | 'walletAddress'
->;
+> & {
+  profile: null | {
+    leftTeamVolume: Prisma.Decimal;
+    rightTeamVolume: Prisma.Decimal;
+  };
+};
 
 type TreeSelectableParent = Pick<
   User,
@@ -78,6 +89,52 @@ export class TeamClosureRepository {
         parentId: true,
         status: true,
         walletAddress: true,
+        profile: {
+          select: {
+            leftTeamVolume: true,
+            rightTeamVolume: true,
+          },
+        },
+      },
+    });
+  }
+
+  async findDirectChild(
+    parentId: string,
+    teamPosition: DbTeamPosition,
+    executor: DbExecutor = this.db,
+  ): Promise<TreePlacementParent | null> {
+    return executor.user.findFirst({
+      where: {
+        parentId,
+        teamPosition,
+      },
+      select: {
+        id: true,
+        inviterId: true,
+        parentId: true,
+        status: true,
+        walletAddress: true,
+        profile: {
+          select: {
+            leftTeamVolume: true,
+            rightTeamVolume: true,
+          },
+        },
+      },
+    });
+  }
+
+  async countActiveSubtreeMembers(
+    ancestorId: string,
+    executor: DbExecutor = this.db,
+  ): Promise<number> {
+    return executor.teamClosure.count({
+      where: {
+        ancestorId,
+        descendant: {
+          status: UserStatus.ACTIVE,
+        },
       },
     });
   }
@@ -219,7 +276,7 @@ export class TeamClosureRepository {
   async listOccupiedChildPositions(
     parentIds: string[],
     executor: DbExecutor = this.db,
-  ): Promise<Array<{ parentId: string; teamPosition: TeamPosition }>> {
+  ): Promise<Array<{ parentId: string; teamPosition: DbTeamPosition }>> {
     if (!parentIds.length) {
       return [];
     }
@@ -246,7 +303,7 @@ export class TeamClosureRepository {
     data: {
       parentId: string;
       placementKey: string;
-      teamPosition: TeamPosition;
+      teamPosition: DbTeamPosition;
       userId: string;
     },
     executor: DbExecutor = this.db,

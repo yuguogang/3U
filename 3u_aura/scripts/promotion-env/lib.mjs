@@ -466,8 +466,9 @@ export function buildTargetContext({
   // DATABASE_URL be synthesized last.
   const mergedEnv = {
     ...baseEnv,
-    ...localOverrideEnv,
     ...derivedEnv,
+    // Machine-local overrides should win over manifest defaults.
+    ...localOverrideEnv,
     ...process.env,
     ...runtimeEnv,
   };

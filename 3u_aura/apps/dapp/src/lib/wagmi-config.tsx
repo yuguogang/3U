@@ -1,8 +1,7 @@
 "use client";
 
-import { createConfig, http } from "wagmi";
+import { createConfig, http, injected } from "wagmi";
 import { bsc, bscTestnet } from "wagmi/chains";
-import { injected } from "wagmi/connectors";
 
 const promotionRpcUrl =
   process.env.NEXT_PUBLIC_PROMOTION_RPC_URL || bscTestnet.rpcUrls.default.http[0];

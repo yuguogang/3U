@@ -46,7 +46,7 @@ function InfoPill({
         ? "border-amber-400/20 bg-amber-400/10 text-amber-200"
         : tone === "accent"
           ? "border-aura-primary/20 bg-aura-primary/10 text-aura-primary"
-          : "border-white/10 bg-white/5 text-white/70";
+          : "border-[var(--shell-border)] bg-[var(--shell-inset)] text-[var(--shell-text-muted)]";
 
   return (
     <span
@@ -62,9 +62,9 @@ function InfoPill({
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-      <p className="text-[10px] uppercase tracking-[0.18em] text-white/35">{label}</p>
-      <p className="mt-2 text-lg font-semibold text-white">{value}</p>
+    <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg)] p-3">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--shell-text-soft)]">{label}</p>
+      <p className="mt-2 text-lg font-semibold text-[var(--shell-title)]">{value}</p>
     </div>
   );
 }
@@ -98,14 +98,14 @@ export function TeamTreeNodeDetailsSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="border-white/10 bg-[#0b0708]/95 text-white backdrop-blur-xl"
+        className="border-[var(--shell-border)] bg-[var(--shell-surface-strong)] text-foreground backdrop-blur-xl"
       >
         <SheetHeader className="pb-2">
           <div className="flex items-start gap-3">
             <DetailIdenticon seed={node.walletAddress} />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <SheetTitle className="truncate text-left text-lg font-semibold text-white">
+                <SheetTitle className="truncate text-left text-lg font-semibold text-[var(--shell-title)]">
                   {nodeLabel}
                 </SheetTitle>
                 {node.isRoot ? (
@@ -123,7 +123,7 @@ export function TeamTreeNodeDetailsSheet({
                   {getRelationLabel(relationTone)}
                 </InfoPill>
               </div>
-              <SheetDescription className="mt-1 text-left text-sm text-white/45">
+              <SheetDescription className="mt-1 text-left text-sm text-[var(--shell-text-soft)]">
                 {formatCompactWallet(node.walletAddress)}
               </SheetDescription>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -156,9 +156,9 @@ export function TeamTreeNodeDetailsSheet({
         </div>
 
         <div className="space-y-3 px-4 pb-6">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+          <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg)] px-4 py-3">
             <div className="flex items-center justify-between gap-3">
-              <div className="inline-flex items-center gap-2 text-sm text-white/70">
+              <div className="inline-flex items-center gap-2 text-sm text-[var(--shell-text-muted)]">
                 <Sparkles className="h-4 w-4 text-aura-primary" />
                 Small leg {formatUsdtAtomic(node.smallLegVolume)}
               </div>
@@ -171,21 +171,21 @@ export function TeamTreeNodeDetailsSheet({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-white/35">Parent</p>
-              <p className="mt-2 text-sm text-white/75">
+            <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg)] px-4 py-3">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--shell-text-soft)]">Parent</p>
+              <p className="mt-2 text-sm text-[var(--shell-copy)]">
                 {node.parentId ? formatCompactId(node.parentId) : "No parent"}
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-white/35">Rewards / NFT</p>
-              <p className="mt-2 text-sm text-white/75">
+            <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg)] px-4 py-3">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--shell-text-soft)]">Rewards / NFT</p>
+              <p className="mt-2 text-sm text-[var(--shell-copy)]">
                 {node.rewardLabel?.trim() || `NFT ${node.nftTierLabel ?? "unknown"}`}
               </p>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/55">
+          <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg)] px-4 py-3 text-sm text-[var(--shell-text-muted)]">
             <div className="flex items-center gap-2">
               <GitBranch className="h-4 w-4 text-aura-primary" />
               {relationTone === "direct"

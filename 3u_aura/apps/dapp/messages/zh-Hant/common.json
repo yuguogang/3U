@@ -7,6 +7,24 @@
     "nft": "NFT",
     "claims": "領取"
   },
+  "moreMenu": {
+    "title": "更多",
+    "description": "快捷入口與顯示偏好都集中在這裡。",
+    "triggerAria": "開啟更多選單",
+    "back": "返回",
+    "quickActions": "常用操作",
+    "preferences": "偏好設定",
+    "preferencesHint": "主題與語言",
+    "theme": "主題風格",
+    "themeDescription": "在黑夜、白天與 Aura 風格之間切換。",
+    "language": "語言",
+    "languageDescription": "選擇 dapp 內使用的顯示語言。",
+    "themes": {
+      "night": "黑夜",
+      "day": "白天",
+      "aura": "Aura"
+    }
+  },
   "notifications": {
     "entryAria": "開啟通知中心",
     "eyebrow": "站內信 / 動態",

@@ -347,45 +347,45 @@ export function TeamPage() {
               <GlassCard className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-green-400" />
-                  <span className="text-xs text-white/50">{t("team.overview.leftLeg")}</span>
+                  <span className="text-xs text-[var(--shell-text-soft)]">{t("team.overview.leftLeg")}</span>
                 </div>
-                <p className="text-lg font-semibold text-white font-mono">
+                <p className="text-lg font-semibold text-[var(--shell-title)] font-mono">
                   {profile ? formatUsdtAtomic(profile.leftTeamVolume) : "0"}
                 </p>
-                <p className="text-xs text-white/40">{t("team.overview.usdtVolume")}</p>
+                <p className="text-xs text-[var(--shell-text-soft)]">{t("team.overview.usdtVolume")}</p>
               </GlassCard>
               <GlassCard className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingDown className="w-4 h-4 text-blue-400" />
-                  <span className="text-xs text-white/50">{t("team.overview.rightLeg")}</span>
+                  <span className="text-xs text-[var(--shell-text-soft)]">{t("team.overview.rightLeg")}</span>
                 </div>
-                <p className="text-lg font-semibold text-white font-mono">
+                <p className="text-lg font-semibold text-[var(--shell-title)] font-mono">
                   {profile ? formatUsdtAtomic(profile.rightTeamVolume) : "0"}
                 </p>
-                <p className="text-xs text-white/40">{t("team.overview.usdtVolume")}</p>
+                <p className="text-xs text-[var(--shell-text-soft)]">{t("team.overview.usdtVolume")}</p>
               </GlassCard>
             </div>
 
             <GlassCard variant="highlight" className="p-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-sm text-white/50">{t("team.overview.smallLegVolume")}</p>
-                  <p className="text-2xl font-bold text-white font-mono">
-                    {profile ? formatUsdtAtomic(profile.smallLegVolume) : "0"} <span className="text-xs text-white/50 font-sans">{t("shared.units.usdt")}</span>
+                  <p className="text-sm text-[var(--shell-text-soft)]">{t("team.overview.smallLegVolume")}</p>
+                  <p className="text-2xl font-bold text-[var(--shell-title)] font-mono">
+                    {profile ? formatUsdtAtomic(profile.smallLegVolume) : "0"} <span className="text-xs text-[var(--shell-text-soft)] font-sans">{t("shared.units.usdt")}</span>
                   </p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-aura-primary/10 flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-aura-primary" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/[0.08]">
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--shell-border)]">
                 <div>
-                  <p className="text-xs text-white/50">{t("team.overview.leftLeg")}</p>
-                  <p className="text-lg font-semibold text-white">{profile ? formatUsdtAtomic(profile.leftTeamVolume) : "0"}</p>
+                  <p className="text-xs text-[var(--shell-text-soft)]">{t("team.overview.leftLeg")}</p>
+                  <p className="text-lg font-semibold text-[var(--shell-title)]">{profile ? formatUsdtAtomic(profile.leftTeamVolume) : "0"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-white/50">{t("team.overview.rightLeg")}</p>
-                  <p className="text-lg font-semibold text-white">{profile ? formatUsdtAtomic(profile.rightTeamVolume) : "0"}</p>
+                  <p className="text-xs text-[var(--shell-text-soft)]">{t("team.overview.rightLeg")}</p>
+                  <p className="text-lg font-semibold text-[var(--shell-title)]">{profile ? formatUsdtAtomic(profile.rightTeamVolume) : "0"}</p>
                 </div>
               </div>
             </GlassCard>
@@ -397,8 +397,8 @@ export function TeamPage() {
           <section className="animate-slide-up" style={{ animationDelay: "0.08s" }}>
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-sm font-medium text-white/70">{t("team.tree.title")}</h2>
-                <p className="mt-1 text-xs text-white/45">
+                <h2 className="text-sm font-medium text-[var(--shell-text-muted)]">{t("team.tree.title")}</h2>
+                <p className="mt-1 text-xs text-[var(--shell-text-soft)]">
                   {t("team.tree.description")}
                 </p>
               </div>
@@ -408,17 +408,17 @@ export function TeamPage() {
                   size="sm"
                   disabled={treeDepth <= 2}
                   onClick={() => setTreeDepth((current) => Math.max(2, current - 1))}
-                  className="h-8 border-white/10 px-3 text-xs hover:bg-white/5"
+                  className="h-8 border-[var(--shell-border)] px-3 text-xs hover:bg-[var(--shell-control-hover)]"
                 >
                   {t("team.tree.depthDown")}
                 </Button>
-                <span className="text-xs text-white/50">{t("team.tree.depthBadge", { depth: treeDepth })}</span>
+                <span className="text-xs text-[var(--shell-text-soft)]">{t("team.tree.depthBadge", { depth: treeDepth })}</span>
                 <Button
                   variant="outline"
                   size="sm"
                   disabled={treeDepth >= 8}
                   onClick={() => setTreeDepth((current) => Math.min(8, current + 1))}
-                  className="h-8 border-white/10 px-3 text-xs hover:bg-white/5"
+                  className="h-8 border-[var(--shell-border)] px-3 text-xs hover:bg-[var(--shell-control-hover)]"
                 >
                   {t("team.tree.depthUp")}
                 </Button>
@@ -429,28 +429,28 @@ export function TeamPage() {
               <TeamTreePlacementLegend />
 
               <GlassCard className="p-4">
-              <div className="grid grid-cols-3 gap-3 border-b border-white/[0.08] pb-4">
+              <div className="grid grid-cols-3 gap-3 border-b border-[var(--shell-border)] pb-4">
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--shell-text-soft)]">
                     {t("team.tree.visibleNodes")}
                   </p>
-                  <p className="mt-2 text-xl font-semibold text-white font-mono">
+                  <p className="mt-2 text-xl font-semibold text-[var(--shell-title)] font-mono">
                     {treeSnapshotQuery.data?.nodes.length ?? 0}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--shell-text-soft)]">
                     {t("team.tree.pending")}
                   </p>
-                  <p className="mt-2 text-xl font-semibold text-white font-mono">
+                  <p className="mt-2 text-xl font-semibold text-[var(--shell-title)] font-mono">
                     {pendingPlacements.length}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--shell-text-soft)]">
                     {t("team.tree.treeAura")}
                   </p>
-                  <p className="mt-2 text-xl font-semibold text-white">
+                  <p className="mt-2 text-xl font-semibold text-[var(--shell-title)]">
                     {formatAuraAtomic(totalTreeAura.toString())}
                   </p>
                 </div>
@@ -471,8 +471,8 @@ export function TeamPage() {
                   />
                 ) : (
                   <div className="space-y-4">
-                    <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-3">
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-white/55">
+                    <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg)] p-3">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--shell-text-muted)]">
                         <span className="inline-flex items-center gap-1 rounded-full border border-aura-primary/20 bg-aura-primary/10 px-3 py-1.5 text-aura-primary">
                           <Crosshair className="h-3.5 w-3.5" />
                           {focusTrail.length > 0
@@ -484,7 +484,7 @@ export function TeamPage() {
                             <button
                               type="button"
                               onClick={handleResetTreeFocus}
-                              className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-white/70 transition hover:bg-white/[0.08]"
+                              className="inline-flex items-center gap-1 rounded-full border border-[var(--shell-border)] bg-[var(--shell-inset)] px-3 py-1.5 text-[var(--shell-text-muted)] transition hover:bg-[var(--shell-control-hover)]"
                             >
                               <ArrowLeft className="h-3.5 w-3.5" />
                               {t("team.tree.backToRoot")}
@@ -495,16 +495,16 @@ export function TeamPage() {
                                   key={node.userId}
                                   type="button"
                                   onClick={() => handleFocusTrailSelect(node.userId)}
-                                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] text-white/70 transition hover:bg-white/[0.08]"
+                                  className="inline-flex items-center gap-1 rounded-full border border-[var(--shell-border)] bg-[var(--shell-inset)] px-2.5 py-1 text-[11px] text-[var(--shell-text-muted)] transition hover:bg-[var(--shell-control-hover)]"
                                 >
-                                  {index > 0 ? <span className="text-white/35">/</span> : null}
+                                  {index > 0 ? <span className="text-[var(--shell-text-soft)]">/</span> : null}
                                   <span className="max-w-[9rem] truncate">{getTreeNodeLabel(node)}</span>
                                 </button>
                               ))}
                             </div>
                           </>
                         ) : (
-                          <span className="text-white/45">
+                          <span className="text-[var(--shell-text-soft)]">
                             {t("team.tree.viewingRoot")}
                           </span>
                         )}
@@ -533,20 +533,20 @@ export function TeamPage() {
 
         {/* Share Center */}
         <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
-          <h2 className="text-sm font-medium text-white/70 mb-3">{t("team.share.title")}</h2>
+          <h2 className="text-sm font-medium text-[var(--shell-text-muted)] mb-3">{t("team.share.title")}</h2>
           {hasShareAccess ? (
             <div className="space-y-3">
               <GlassCard className="p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-[var(--shell-inset)] flex items-center justify-center">
                       <Share2 className="w-5 h-5 text-aura-primary" />
                     </div>
                     <div>
-                      <p className="text-lg font-mono font-semibold text-white">
+                      <p className="text-lg font-mono font-semibold text-[var(--shell-title)]">
                         {user?.inviteCode}
                       </p>
-                      <p className="text-xs text-white/50">
+                      <p className="text-xs text-[var(--shell-text-soft)]">
                         {t("team.share.codeDescription")}
                       </p>
                     </div>
@@ -555,7 +555,7 @@ export function TeamPage() {
                     variant="outline"
                     size="sm"
                     onClick={handleCopyInvite}
-                    className="h-9 border-white/10 hover:bg-white/5"
+                    className="h-9 border-[var(--shell-border)] hover:bg-[var(--shell-control-hover)]"
                   >
                     {copiedCode ? (
                       <Check className="w-4 h-4 text-aura-success" />
@@ -569,10 +569,10 @@ export function TeamPage() {
               <GlassCard className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-[0.24em] text-white/40">
+                    <p className="text-xs uppercase tracking-[0.24em] text-[var(--shell-text-soft)]">
                       {t("team.share.referralLink")}
                     </p>
-                    <p className="mt-2 break-all text-sm text-white/80">
+                    <p className="mt-2 break-all text-sm text-[var(--shell-copy)]">
                       {shareLink}
                     </p>
                   </div>
@@ -580,7 +580,7 @@ export function TeamPage() {
                     variant="outline"
                     size="sm"
                     onClick={handleCopyShareLink}
-                    className="h-9 shrink-0 border-white/10 hover:bg-white/5"
+                    className="h-9 shrink-0 border-[var(--shell-border)] hover:bg-[var(--shell-control-hover)]"
                   >
                     {copiedLink ? (
                       <Check className="w-4 h-4 text-aura-success" />
@@ -593,17 +593,17 @@ export function TeamPage() {
 
               <GlassCard className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-[var(--shell-inset)] flex items-center justify-center shrink-0">
                     <QrCode className="w-5 h-5 text-aura-primary" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-white">{t("team.share.qrTitle")}</p>
-                    <p className="text-xs text-white/50">
+                    <p className="text-sm font-medium text-[var(--shell-title)]">{t("team.share.qrTitle")}</p>
+                    <p className="text-xs text-[var(--shell-text-soft)]">
                       {t("team.share.qrDescription")}
                     </p>
                     {qrCodeUrl ? (
                       <>
-                        <div className="mt-4 inline-flex rounded-2xl border border-white/10 bg-white p-3">
+                        <div className="mt-4 inline-flex rounded-2xl border border-[var(--shell-border)] bg-white p-3">
                           <a
                             href={qrCodeUrl}
                             target="_blank"
@@ -622,7 +622,7 @@ export function TeamPage() {
                             variant="outline"
                             size="sm"
                             onClick={handleCopyShareLink}
-                            className="border-white/10 hover:bg-white/5"
+                            className="border-[var(--shell-border)] hover:bg-[var(--shell-control-hover)]"
                           >
                             {copiedLink ? (
                               <Check className="w-4 h-4 text-aura-success" />
@@ -635,7 +635,7 @@ export function TeamPage() {
                             variant="outline"
                             size="sm"
                             asChild
-                            className="border-white/10 hover:bg-white/5"
+                            className="border-[var(--shell-border)] hover:bg-[var(--shell-control-hover)]"
                           >
                             <a href={qrCodeUrl} target="_blank" rel="noreferrer">
                               <QrCode className="w-4 h-4" />
@@ -652,14 +652,14 @@ export function TeamPage() {
           ) : isAwaitingOwnPlacement ? (
             <GlassCard className="p-4">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-                  <Share2 className="w-5 h-5 text-white/40" />
+                <div className="w-10 h-10 rounded-xl bg-[var(--shell-inset)] flex items-center justify-center shrink-0">
+                  <Share2 className="w-5 h-5 text-[var(--shell-text-soft)]" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-sm font-medium text-[var(--shell-title)]">
                     {t("team.share.awaitingPlacementTitle")}
                   </p>
-                  <p className="mt-1 text-sm text-white/50">
+                  <p className="mt-1 text-sm text-[var(--shell-text-soft)]">
                     {t("team.share.awaitingPlacementDescription")}
                   </p>
                 </div>
@@ -668,14 +668,14 @@ export function TeamPage() {
           ) : (
             <GlassCard className="p-4">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-                  <Share2 className="w-5 h-5 text-white/40" />
+                <div className="w-10 h-10 rounded-xl bg-[var(--shell-inset)] flex items-center justify-center shrink-0">
+                  <Share2 className="w-5 h-5 text-[var(--shell-text-soft)]" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-sm font-medium text-[var(--shell-title)]">
                     {t("team.share.awaitingBindingTitle")}
                   </p>
-                  <p className="mt-1 text-sm text-white/50">
+                  <p className="mt-1 text-sm text-[var(--shell-text-soft)]">
                     {t("team.share.awaitingBindingDescription")}
                   </p>
                 </div>
@@ -687,11 +687,11 @@ export function TeamPage() {
         {/* Bind Inviter */}
         {!isRootUser && !user?.inviterId && (
           <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
-            <h2 className="text-sm font-medium text-white/70 mb-3">{t("team.bindInviter.title")}</h2>
+            <h2 className="text-sm font-medium text-[var(--shell-text-muted)] mb-3">{t("team.bindInviter.title")}</h2>
             <GlassCard className="p-4">
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                  <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--shell-text-soft)]" />
                   <Input
                     placeholder={t("team.bindInviter.placeholder")}
                     value={inviteCode}
@@ -701,7 +701,7 @@ export function TeamPage() {
                       }
                       setInviteCode(e.target.value);
                     }}
-                    className="h-10 pl-9 bg-white/5 border-white/10"
+                    className="h-10 pl-9 bg-[var(--shell-inset)] border-[var(--shell-border)]"
                   />
                 </div>
                 <Button
@@ -726,7 +726,7 @@ export function TeamPage() {
         {/* Pending Placements */}
         <section className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-medium text-white/70">{t("team.pending.title")}</h2>
+            <h2 className="text-sm font-medium text-[var(--shell-text-muted)]">{t("team.pending.title")}</h2>
             <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold">
               {t("team.pending.totalBadge", { count: pendingPlacements.length })}
             </span>
@@ -775,10 +775,10 @@ export function TeamPage() {
         {/* Placement Confirmation */}
         {selectedPlacementUserId && (
           <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
-            <h2 className="text-sm font-medium text-white/70 mb-3">{t("team.confirmation.title")}</h2>
+            <h2 className="text-sm font-medium text-[var(--shell-text-muted)] mb-3">{t("team.confirmation.title")}</h2>
             <GlassCard className="p-4">
               <div className="space-y-3">
-                <div className="rounded-2xl border border-aura-primary/15 bg-aura-primary/8 px-3 py-2 text-sm text-white/70">
+                <div className="rounded-2xl border border-aura-primary/15 bg-aura-primary/8 px-3 py-2 text-sm text-[var(--shell-copy)]">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-aura-primary" />
                     {draggingPendingUserId
@@ -789,41 +789,41 @@ export function TeamPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
+                <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg)] p-3">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--shell-text-soft)]">
                     {t("team.confirmation.pendingMember")}
                   </p>
-                  <p className="mt-2 text-sm font-semibold text-white">
+                  <p className="mt-2 text-sm font-semibold text-[var(--shell-title)]">
                     {selectedPlacementUser
                       ? formatWalletAddress(selectedPlacementUser.walletAddress)
                       : t("team.confirmation.selectPendingFirst")}
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/35">
+                <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg)] p-3">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--shell-text-soft)]">
                     {t("team.confirmation.selectedSlot")}
                   </p>
                   {selectedSlot ? (
                     <div className="mt-2 space-y-1">
-                      <p className="text-sm font-semibold text-white">
+                      <p className="text-sm font-semibold text-[var(--shell-title)]">
                         {t("team.confirmation.parent", {
                           wallet: formatWalletAddress(selectedSlot.parentNode.walletAddress),
                         })}
                       </p>
-                      <p className="text-xs text-white/50">
+                      <p className="text-xs text-[var(--shell-text-soft)]">
                         {t(
                           selectedSlot.teamPosition === "LEFT"
                             ? "team.confirmation.leftChildSlot"
                             : "team.confirmation.rightChildSlot",
                         )}
                       </p>
-                      <p className="text-xs text-white/40">
+                      <p className="text-xs text-[var(--shell-text-soft)]">
                         {t("team.confirmation.slotDescription")}
                       </p>
                     </div>
                   ) : (
-                    <p className="mt-2 text-sm text-white/50">
+                    <p className="mt-2 text-sm text-[var(--shell-text-soft)]">
                       {t("team.confirmation.selectSlotHint")}
                     </p>
                   )}

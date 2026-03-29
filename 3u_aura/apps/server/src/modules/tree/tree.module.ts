@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ReferralModule } from '../referral';
 import { SharedDomainModule } from '../shared';
 import { TreeController } from './tree.controller';
@@ -7,7 +7,7 @@ import { TeamClosureRepository } from './repositories/team-closure.repository';
 import { TreeTopologyService } from './services/tree-topology.service';
 
 @Module({
-  imports: [SharedDomainModule, ReferralModule],
+  imports: [SharedDomainModule, forwardRef(() => ReferralModule)],
   controllers: [TreeController],
   providers: [
     TreeTopologyService,

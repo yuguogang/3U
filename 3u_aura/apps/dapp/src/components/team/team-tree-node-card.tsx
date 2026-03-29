@@ -67,7 +67,7 @@ function TreeChip({
           ? "border-aura-primary/20 bg-aura-primary/10 text-aura-primary"
           : tone === "info"
             ? "border-sky-400/20 bg-sky-400/10 text-sky-200"
-            : "border-white/10 bg-white/5 text-white/70";
+            : "border-[var(--shell-border)] bg-[var(--shell-inset)] text-[var(--shell-text-muted)]";
 
   return (
     <span
@@ -126,10 +126,10 @@ function getNodeVisualTone({
   }
 
   return {
-    bg: "from-white/10 via-[#242021] to-[#121012]",
-    border: "border-white/10",
-    ring: "ring-white/15",
-    text: "text-white/80",
+    bg: "from-[var(--shell-inset)] via-[var(--glass-bg-strong)] to-[var(--glass-bg)]",
+    border: "border-[var(--shell-border)]",
+    ring: "ring-[var(--shell-border)]",
+    text: "text-[var(--shell-copy)]",
   };
 }
 
@@ -201,7 +201,7 @@ function CollapsedNode({
           <button
             type="button"
             onClick={onToggleBranch}
-            className="absolute -bottom-1 -right-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#171214] text-white/65 transition hover:bg-white/[0.08]"
+            className="absolute -bottom-1 -right-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[var(--shell-border)] bg-[var(--shell-surface-strong)] text-[var(--shell-text-muted)] transition hover:bg-[var(--shell-control-hover)]"
             aria-label={
               branchExpanded
                 ? t("shared.promotion.tree.collapseSubtree")
@@ -214,8 +214,8 @@ function CollapsedNode({
       </div>
 
       <div className="max-w-[9rem] text-center">
-        <p className="truncate text-xs font-semibold text-white">{getTreeNodeLabel(node)}</p>
-        <p className="mt-0.5 truncate text-[10px] text-white/45">{formatCompactWallet(node.walletAddress)}</p>
+        <p className="truncate text-xs font-semibold text-[var(--shell-title)]">{getTreeNodeLabel(node)}</p>
+        <p className="mt-0.5 truncate text-[10px] text-[var(--shell-text-soft)]">{formatCompactWallet(node.walletAddress)}</p>
       </div>
     </div>
   );
@@ -248,8 +248,8 @@ function ExpandedNode({
   return (
     <div
       className={cn(
-        "relative w-[18rem] min-w-[18rem] overflow-hidden rounded-[26px] border bg-[linear-gradient(180deg,rgba(38,18,18,0.92),rgba(20,10,10,0.92))] p-3.5 shadow-[0_22px_60px_rgba(0,0,0,0.28)]",
-        selected ? "border-aura-primary/35 ring-1 ring-inset ring-aura-primary/30" : "border-white/10",
+        "relative w-[18rem] min-w-[18rem] overflow-hidden rounded-[26px] border bg-[var(--shell-surface-strong)] p-3.5 shadow-[var(--elevated-shadow)]",
+        selected ? "border-aura-primary/35 ring-1 ring-inset ring-aura-primary/30" : "border-[var(--shell-border)]",
         active && "shadow-[0_0_0_1px_rgba(255,86,54,0.18),0_18px_50px_rgba(255,86,54,0.12)]",
         compact && "p-3",
       )}
@@ -272,7 +272,7 @@ function ExpandedNode({
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="truncate text-base font-semibold text-white">{nodeLabel}</p>
+                  <p className="truncate text-base font-semibold text-[var(--shell-title)]">{nodeLabel}</p>
                   {node.isRoot ? (
                     <TreeChip tone="accent">
                       <Crown className="h-3 w-3" />
@@ -290,13 +290,13 @@ function ExpandedNode({
                     {getRelationToneLabel(relationTone ?? "descendant", t)}
                   </TreeChip>
                 </div>
-                <p className="mt-1 text-xs text-white/45">{walletLabel}</p>
+                <p className="mt-1 text-xs text-[var(--shell-text-soft)]">{walletLabel}</p>
               </div>
 
               <button
                 type="button"
                 onClick={onToggleDetails}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/60 transition hover:bg-white/[0.08]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--shell-border)] bg-[var(--shell-inset)] text-[var(--shell-text-muted)] transition hover:bg-[var(--shell-control-hover)]"
                 aria-label={t("shared.promotion.tree.collapseNodeDetails")}
               >
                 <Minimize2 className="h-4 w-4" />
@@ -317,7 +317,7 @@ function ExpandedNode({
                 <button
                   type="button"
                   onClick={() => onFocusNode?.(node)}
-                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-2 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-white/70 transition hover:bg-white/[0.08]"
+                  className="inline-flex items-center gap-1 rounded-full border border-[var(--shell-border)] bg-[var(--shell-inset)] px-2 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--shell-text-muted)] transition hover:bg-[var(--shell-control-hover)]"
                 >
                   <Crosshair className="h-3 w-3" />
                   {t("shared.promotion.tree.focus")}
@@ -328,32 +328,32 @@ function ExpandedNode({
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">{t("shared.units.aura")}</p>
-            <p className="mt-1 text-sm font-semibold text-white">{auraLabel}</p>
+          <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg)] px-3 py-2">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--shell-text-soft)]">{t("shared.units.aura")}</p>
+            <p className="mt-1 text-sm font-semibold text-[var(--shell-title)]">{auraLabel}</p>
           </div>
-          <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">{t("shared.promotion.position.LEFT")}</p>
-            <p className="mt-1 text-sm font-semibold text-white">{leftVolume}</p>
+          <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg)] px-3 py-2">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--shell-text-soft)]">{t("shared.promotion.position.LEFT")}</p>
+            <p className="mt-1 text-sm font-semibold text-[var(--shell-title)]">{leftVolume}</p>
           </div>
-          <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">{t("shared.promotion.position.RIGHT")}</p>
-            <p className="mt-1 text-sm font-semibold text-white">{rightVolume}</p>
+          <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg)] px-3 py-2">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--shell-text-soft)]">{t("shared.promotion.position.RIGHT")}</p>
+            <p className="mt-1 text-sm font-semibold text-[var(--shell-title)]">{rightVolume}</p>
           </div>
-          <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">{t("shared.promotion.tree.children")}</p>
-            <p className="mt-1 text-sm font-semibold text-white">{node.childCount ?? 0}</p>
+          <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg)] px-3 py-2">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--shell-text-soft)]">{t("shared.promotion.tree.children")}</p>
+            <p className="mt-1 text-sm font-semibold text-[var(--shell-title)]">{node.childCount ?? 0}</p>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2">
-          <div className="inline-flex items-center gap-2 text-xs text-white/55">
+        <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg)] px-3 py-2">
+          <div className="inline-flex items-center gap-2 text-xs text-[var(--shell-text-muted)]">
             <Sparkles className="h-3.5 w-3.5 text-aura-primary" />
             <span>{t("shared.promotion.tree.smallLeg", { amount: smallLeg })}</span>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-white/40">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--shell-text-soft)]">
           <span>
             {node.parentId
               ? t("shared.promotion.tree.parent", { parentId: formatCompactId(node.parentId) })

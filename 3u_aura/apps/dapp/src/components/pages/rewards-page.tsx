@@ -118,25 +118,33 @@ export function RewardsPage() {
         {/* Total Rewards Card */}
         <section className="animate-fade-in">
           <GlassCard variant="highlight" className="p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4 flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/50 mb-1">{t("rewards.summary.totalAura")}</p>
-                <h2 className="text-3xl font-bold font-mono text-white">
+                <p className="mb-1 text-sm text-[var(--shell-text-soft)]">
+                  {t("rewards.summary.totalAura")}
+                </p>
+                <h2 className="text-3xl font-bold font-mono text-[var(--shell-title)]">
                   {formatAuraAtomic(totalAuraFromProfile.toString())}
                 </h2>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--shell-inset)]">
                 <Trophy className="w-6 h-6 text-aura-primary" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/[0.08]">
+            <div className="grid grid-cols-2 gap-4 border-t border-[var(--shell-border)] pt-4">
               <div>
-                <p className="text-xs text-white/50">{t("rewards.summary.fromCheckin")}</p>
-                <p className="text-lg font-semibold text-white">{profile ? formatAuraAtomic(profile.totalAuraFromCheckin) : "0"}</p>
+                <p className="text-xs text-[var(--shell-text-soft)]">
+                  {t("rewards.summary.fromCheckin")}
+                </p>
+                <p className="text-lg font-semibold text-[var(--shell-title)]">
+                  {profile ? formatAuraAtomic(profile.totalAuraFromCheckin) : "0"}
+                </p>
               </div>
               <div>
-                <p className="text-xs text-white/50">{t("rewards.summary.fromReferrals")}</p>
-                <p className="text-lg font-semibold text-white">
+                <p className="text-xs text-[var(--shell-text-soft)]">
+                  {t("rewards.summary.fromReferrals")}
+                </p>
+                <p className="text-lg font-semibold text-[var(--shell-title)]">
                   {profile
                     ? formatAuraAtomic(
                         (
@@ -172,18 +180,28 @@ export function RewardsPage() {
 
         {/* Epoch Details */}
         <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
-          <h2 className="text-sm font-medium text-white/70 mb-3">{t("rewards.schedule.title")}</h2>
+          <h2 className="mb-3 text-sm font-medium text-[var(--shell-text-muted)]">
+            {t("rewards.schedule.title")}
+          </h2>
           <GlassCard className="p-4">
             <div className="space-y-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-white/50">{t("rewards.schedule.startTime")}</span>
-                <span className="text-white font-mono">{formatDateTime(epochQuery.data?.startAt, locale)}</span>
+                <span className="text-[var(--shell-text-soft)]">
+                  {t("rewards.schedule.startTime")}
+                </span>
+                <span className="font-mono text-[var(--shell-title)]">
+                  {formatDateTime(epochQuery.data?.startAt, locale)}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-white/50">{t("rewards.schedule.endTime")}</span>
-                <span className="text-white font-mono">{formatDateTime(epochQuery.data?.endAt, locale)}</span>
+                <span className="text-[var(--shell-text-soft)]">
+                  {t("rewards.schedule.endTime")}
+                </span>
+                <span className="font-mono text-[var(--shell-title)]">
+                  {formatDateTime(epochQuery.data?.endAt, locale)}
+                </span>
               </div>
-              <div className="pt-4 border-t border-white/[0.08]">
+              <div className="border-t border-[var(--shell-border)] pt-4">
                 <div className="flex items-center gap-2 text-xs text-aura-primary">
                   <Zap className="w-3 h-3" />
                   <span>{t("rewards.schedule.settlementNote")}</span>
@@ -195,11 +213,11 @@ export function RewardsPage() {
 
         <section className="animate-slide-up" style={{ animationDelay: "0.25s" }}>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-medium text-white/70">
+            <h2 className="text-sm font-medium text-[var(--shell-text-muted)]">
               {t("rewards.weekly.title")}
             </h2>
             {latestWeeklyResults?.publishedAt ? (
-              <span className="text-[10px] text-white/40">
+              <span className="text-[10px] text-[var(--shell-text-soft)]">
                 {t("rewards.weekly.publishedAt", {
                   date: formatDateTime(latestWeeklyResults.publishedAt, locale),
                 })}
@@ -224,20 +242,20 @@ export function RewardsPage() {
               <GlassCard className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs text-white/50">
+                    <p className="text-xs text-[var(--shell-text-soft)]">
                       {t("rewards.weekly.lotteryTitle")}
                     </p>
-                    <p className="mt-1 text-lg font-semibold text-white">
+                    <p className="mt-1 text-lg font-semibold text-[var(--shell-title)]">
                       #{latestWeeklyResults.epochNo}
                     </p>
-                    <p className="mt-1 text-xs text-white/40">
+                    <p className="mt-1 text-xs text-[var(--shell-text-soft)]">
                       {t("rewards.weekly.participants", {
                         participants: latestWeeklyResults.participantCount,
                         qualified: latestWeeklyResults.qualifiedTicketCount,
                       })}
                     </p>
                   </div>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/8">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--shell-inset)]">
                     {isRevealingCurrentEpoch ? (
                       <Dice5 className="h-5 w-5 animate-spin text-aura-primary" />
                     ) : (
@@ -246,22 +264,22 @@ export function RewardsPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <div className="mt-4 rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg-strong)] p-4">
                   {isRevealingCurrentEpoch ? (
                     <>
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-sm font-medium text-[var(--shell-title)]">
                         {t("rewards.weekly.revealingTitle")}
                       </p>
-                      <p className="mt-1 text-xs leading-relaxed text-white/50">
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--shell-copy)]">
                         {t("rewards.weekly.revealingDescription")}
                       </p>
                     </>
                   ) : latestWeeklyResults.myLottery.resultStatus === "PENDING" ? (
                     <>
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-sm font-medium text-[var(--shell-title)]">
                         {t("rewards.weekly.pendingTitle")}
                       </p>
-                      <p className="mt-1 text-xs leading-relaxed text-white/50">
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--shell-copy)]">
                         {t("rewards.weekly.pendingDescription")}
                       </p>
                       {latestWeeklyResults.myLottery.canReveal ? (
@@ -277,10 +295,10 @@ export function RewardsPage() {
                     </>
                   ) : latestWeeklyResults.myLottery.resultStatus === "WON" ? (
                     <>
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-sm font-medium text-[var(--shell-title)]">
                         {t("rewards.weekly.wonTitle")}
                       </p>
-                      <p className="mt-1 text-xs leading-relaxed text-white/50">
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--shell-copy)]">
                         {t("rewards.weekly.wonDescription", {
                           amount: formatUsdtAtomic(
                             latestWeeklyResults.myLottery.amountUsdt ?? "0",
@@ -296,7 +314,7 @@ export function RewardsPage() {
                       {latestWeeklyResults.myLottery.claimStatus === "CLAIMABLE" ? (
                         <Button
                           asChild
-                          className="mt-4 h-10 rounded-xl bg-white text-black hover:bg-white/90"
+                          className="mt-4 h-10 rounded-xl bg-[var(--shell-badge-bg)] text-[var(--shell-badge-fg)] hover:opacity-90"
                         >
                           <Link href="/claims">
                             {t("rewards.weekly.viewClaims")}
@@ -307,10 +325,10 @@ export function RewardsPage() {
                     </>
                   ) : latestWeeklyResults.myLottery.resultStatus === "LOST" ? (
                     <>
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-sm font-medium text-[var(--shell-title)]">
                         {t("rewards.weekly.lostTitle")}
                       </p>
-                      <p className="mt-1 text-xs leading-relaxed text-white/50">
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--shell-copy)]">
                         {latestWeeklyResults.myLottery.amountAura
                           ? t("rewards.weekly.lostDescriptionConsolation", {
                               amount: formatAuraAtomic(
@@ -323,29 +341,29 @@ export function RewardsPage() {
                   ) : latestWeeklyResults.myLottery.resultStatus ===
                     "NOT_QUALIFIED" ? (
                     <>
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-sm font-medium text-[var(--shell-title)]">
                         {t("rewards.weekly.notQualifiedTitle")}
                       </p>
-                      <p className="mt-1 text-xs leading-relaxed text-white/50">
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--shell-copy)]">
                         {t("rewards.weekly.notQualifiedDescription")}
                       </p>
                     </>
                   ) : latestWeeklyResults.myLottery.resultStatus ===
                     "ROLLED_OVER" ? (
                     <>
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-sm font-medium text-[var(--shell-title)]">
                         {t("rewards.weekly.rolledOverTitle")}
                       </p>
-                      <p className="mt-1 text-xs leading-relaxed text-white/50">
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--shell-copy)]">
                         {t("rewards.weekly.rolledOverDescription")}
                       </p>
                     </>
                   ) : (
                     <>
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-sm font-medium text-[var(--shell-title)]">
                         {t("rewards.weekly.notParticipatingTitle")}
                       </p>
-                      <p className="mt-1 text-xs leading-relaxed text-white/50">
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--shell-copy)]">
                         {t("rewards.weekly.notParticipatingDescription")}
                       </p>
                     </>
@@ -357,7 +375,7 @@ export function RewardsPage() {
                 <GlassCard className="p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <Trophy className="h-4 w-4 text-aura-primary" />
-                    <h3 className="text-sm font-medium text-white">
+                    <h3 className="text-sm font-medium text-[var(--shell-title)]">
                       {t("rewards.weekly.winnersTitle")}
                     </h3>
                   </div>
@@ -366,23 +384,23 @@ export function RewardsPage() {
                       latestWeeklyResults.lotteryWinners.map((winner) => (
                         <div
                           key={`${winner.userId}:${winner.prizeLabel}`}
-                          className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2"
+                          className="flex items-center justify-between rounded-2xl border border-[var(--shell-border)] bg-[var(--glass-bg-strong)] px-3 py-2"
                         >
                           <div>
-                            <p className="text-xs font-medium text-white">
+                            <p className="text-xs font-medium text-[var(--shell-title)]">
                               {t(`rewards.weekly.prize.${winner.prizeLabel}`)}
                             </p>
-                            <p className="text-[10px] text-white/40">
+                            <p className="text-[10px] text-[var(--shell-text-soft)]">
                               {formatWalletAddress(winner.walletAddress)}
                             </p>
                           </div>
-                          <p className="text-xs font-semibold text-white">
+                          <p className="text-xs font-semibold text-[var(--shell-title)]">
                             {formatUsdtAtomic(winner.amountUsdt)} USDT
                           </p>
                         </div>
                       ))
                     ) : (
-                      <p className="text-xs text-white/50">
+                      <p className="text-xs text-[var(--shell-text-soft)]">
                         {t("rewards.weekly.winnersEmpty")}
                       </p>
                     )}
@@ -392,7 +410,7 @@ export function RewardsPage() {
                 <GlassCard className="p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <Gift className="h-4 w-4 text-aura-primary" />
-                    <h3 className="text-sm font-medium text-white">
+                    <h3 className="text-sm font-medium text-[var(--shell-title)]">
                       {t("rewards.weekly.rankingTitle")}
                     </h3>
                   </div>
@@ -405,19 +423,19 @@ export function RewardsPage() {
                             "flex items-center justify-between rounded-2xl border px-3 py-2",
                             entry.isCurrentUser
                               ? "border-aura-primary/30 bg-aura-primary/10"
-                              : "border-white/10 bg-white/[0.04]",
+                              : "border-[var(--shell-border)] bg-[var(--glass-bg-strong)]",
                           )}
                         >
                           <div>
-                            <p className="text-xs font-medium text-white">
+                            <p className="text-xs font-medium text-[var(--shell-title)]">
                               #{entry.rank}
                             </p>
-                            <p className="text-[10px] text-white/40">
+                            <p className="text-[10px] text-[var(--shell-text-soft)]">
                               {formatWalletAddress(entry.walletAddress)}
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-xs font-semibold text-white">
+                            <p className="text-xs font-semibold text-[var(--shell-title)]">
                               {formatUsdtAtomic(entry.amountUsdt)} USDT
                             </p>
                             {entry.isCurrentUser ? (
@@ -429,7 +447,7 @@ export function RewardsPage() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-xs text-white/50">
+                      <p className="text-xs text-[var(--shell-text-soft)]">
                         {t("rewards.weekly.rankingEmpty")}
                       </p>
                     )}
@@ -442,13 +460,15 @@ export function RewardsPage() {
 
         {/* Reward Feed */}
         <section className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-medium text-white/70">{t("rewards.feed.title")}</h2>
-            <span className="px-2 py-0.5 rounded-full bg-white/5 text-white/40 text-[10px] font-bold">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-medium text-[var(--shell-text-muted)]">
+              {t("rewards.feed.title")}
+            </h2>
+            <span className="rounded-full bg-[var(--shell-inset)] px-2 py-0.5 text-[10px] font-bold text-[var(--shell-text-soft)]">
               {t("rewards.feed.totalBadge", { count: rewardsQuery.data?.length ?? 0 })}
             </span>
           </div>
-          
+
           <div className="space-y-3">
             {rewardsQuery.isLoading ? (
               <SectionCardSkeleton rows={3} />
@@ -481,37 +501,41 @@ export function RewardsPage() {
                   : `+${formatUsdtAtomic(reward.amountUsdt)} ${t("shared.units.usdt")}`;
 
                 return (
-                <GlassCard key={reward.rewardId} className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center",
-                        isAuraReward ? "bg-aura-primary/10" : "bg-blue-500/10"
-                      )}>
-                        <Coins className={cn(
-                          "w-5 h-5",
-                          isAuraReward ? "text-aura-primary" : "text-blue-400"
-                        )} />
+                  <GlassCard key={reward.rewardId} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={cn(
+                            "flex h-10 w-10 items-center justify-center rounded-xl",
+                            isAuraReward ? "bg-aura-primary/10" : "bg-blue-500/10",
+                          )}
+                        >
+                          <Coins
+                            className={cn(
+                              "h-5 w-5",
+                              isAuraReward ? "text-aura-primary" : "text-blue-400",
+                            )}
+                          />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-[var(--shell-title)]">
+                            {t(`shared.promotion.rewardType.${reward.rewardType}`)}
+                          </p>
+                          <p className="text-[10px] text-[var(--shell-text-soft)]">
+                            {new Date(reward.createdAt).toLocaleString(locale)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">
-                          {t(`shared.promotion.rewardType.${reward.rewardType}`)}
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-[var(--shell-title)]">
+                          {rewardAmountLabel}
                         </p>
-                        <p className="text-[10px] text-white/40">
-                          {new Date(reward.createdAt).toLocaleString(locale)}
+                        <p className="text-[10px] text-[var(--shell-text-soft)]">
+                          {statusLabel}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-white">
-                        {rewardAmountLabel}
-                      </p>
-                      <p className="text-[10px] text-white/40">
-                        {statusLabel}
-                      </p>
-                    </div>
-                  </div>
-                </GlassCard>
+                  </GlassCard>
                 );
               })
             )}

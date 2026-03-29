@@ -7,6 +7,24 @@
     "nft": "NFT",
     "claims": "請求"
   },
+  "moreMenu": {
+    "title": "その他",
+    "description": "ショートカットと表示設定をここにまとめました。",
+    "triggerAria": "その他メニューを開く",
+    "back": "戻る",
+    "quickActions": "クイック操作",
+    "preferences": "設定",
+    "preferencesHint": "テーマと言語",
+    "theme": "テーマ",
+    "themeDescription": "ナイト、デイ、Aura の表示スタイルを切り替えます。",
+    "language": "言語",
+    "languageDescription": "dapp 全体で使う表示言語を選びます。",
+    "themes": {
+      "night": "ナイト",
+      "day": "デイ",
+      "aura": "Aura"
+    }
+  },
   "notifications": {
     "entryAria": "通知センターを開く",
     "eyebrow": "受信箱 / 更新情報",

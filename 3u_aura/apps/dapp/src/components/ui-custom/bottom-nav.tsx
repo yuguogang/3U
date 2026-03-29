@@ -3,28 +3,35 @@
 import React, { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/store/ui.store";
 import { useAuthStore } from "@/store/auth.store";
 import { useMyClaimsQuery } from "@/queries/claims.query";
+import { useSetLocale } from "@/i18n/locale-actions";
+import { type Locale, locales } from "@/i18n/constants";
 import { 
   LayoutDashboard, 
   Users, 
   Gem, 
   Trophy, 
   Gift, 
+  ArrowLeft,
+  ChevronRight,
   CalendarCheck,
+  Bell,
+  Languages,
+  Palette,
   Plus
 } from "lucide-react";
 
-export type NavPage = "/" | "/checkin" | "/team" | "/nft" | "/rewards" | "/claims";
+export type NavPage = "/" | "/team" | "/nft" | "/rewards";
 
 interface NavItem {
   id: NavPage;
-  labelKey: "nav.dashboard" | "nav.checkin" | "nav.team" | "nav.rewards" | "nav.nft" | "nav.claims";
+  labelKey: "nav.dashboard" | "nav.team" | "nav.rewards" | "nav.nft";
   icon: React.ElementType;
-  badge?: number;
 }
 
 const mainNavItems: NavItem[] = [
@@ -34,6 +41,68 @@ const mainNavItems: NavItem[] = [
   { id: "/rewards", labelKey: "nav.rewards", icon: Trophy },
 ];
 
+type ThemeOption = {
+  id: "night" | "day" | "aura";
+  labelKey: "moreMenu.themes.night" | "moreMenu.themes.day" | "moreMenu.themes.aura";
+  previewClassName: string;
+};
+
+type MoreActionItem = {
+  href: "/checkin" | "/claims" | "/notifications";
+  label: string;
+  icon: React.ElementType;
+  badge?: number;
+};
+
+type PreferenceEntry = {
+  id: "theme" | "language";
+  labelKey: "moreMenu.theme" | "moreMenu.language";
+  descriptionKey: "moreMenu.themeDescription" | "moreMenu.languageDescription";
+  icon: React.ElementType;
+};
+
+const themeOptions: ThemeOption[] = [
+  {
+    id: "night",
+    labelKey: "moreMenu.themes.night",
+    previewClassName: "from-[#050505] via-[#1a0e0b] to-[#fa2b15]",
+  },
+  {
+    id: "day",
+    labelKey: "moreMenu.themes.day",
+    previewClassName: "from-[#ffd29a] via-[#ff9452] to-[#5f3118]",
+  },
+  {
+    id: "aura",
+    labelKey: "moreMenu.themes.aura",
+    previewClassName: "from-[#08131a] via-[#1b6f93] to-[#876eff]",
+  },
+];
+
+const preferenceEntries: PreferenceEntry[] = [
+  {
+    id: "theme",
+    labelKey: "moreMenu.theme",
+    descriptionKey: "moreMenu.themeDescription",
+    icon: Palette,
+  },
+  {
+    id: "language",
+    labelKey: "moreMenu.language",
+    descriptionKey: "moreMenu.languageDescription",
+    icon: Languages,
+  },
+];
+
+const localeMeta: Record<Locale, { shortLabel: string; nativeLabel: string }> = {
+  en: { shortLabel: "EN", nativeLabel: "English" },
+  zh: { shortLabel: "中", nativeLabel: "简体中文" },
+  "zh-Hant": { shortLabel: "繁", nativeLabel: "繁體中文" },
+  vi: { shortLabel: "VI", nativeLabel: "Tiếng Việt" },
+  ko: { shortLabel: "한", nativeLabel: "한국어" },
+  ja: { shortLabel: "日", nativeLabel: "日本語" },
+};
+
 export interface BottomNavProps {
   className?: string;
 }
@@ -41,9 +110,16 @@ export interface BottomNavProps {
 export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
   const pathname = usePathname();
   const t = useTranslations("Common");
+  const locale = useLocale() as Locale;
+  const activeLocale = locales.includes(locale) ? locale : "zh";
+  const setLocale = useSetLocale();
+  const { theme, setTheme } = useTheme();
   const { showActionMenu, setShowActionMenu } = useUIStore();
   const { hasHydrated, isAuthenticated } = useAuthStore();
   const claimsQuery = useMyClaimsQuery(isAuthenticated && hasHydrated);
+  const [detailView, setDetailView] = React.useState<"theme" | "language" | null>(
+    null,
+  );
   
   const pendingClaims = useMemo(() => {
     const merkleClaims = claimsQuery.data?.merkleClaims ?? [];
@@ -55,22 +131,138 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
     return claimableMerkle + claimableSubsidy;
   }, [claimsQuery.data]);
 
-  const actionItems: NavItem[] = [
-    { id: "/checkin", labelKey: "nav.checkin", icon: CalendarCheck },
-    { id: "/claims", labelKey: "nav.claims", icon: Gift, badge: pendingClaims },
+  const activeTheme = (themeOptions.find((option) => option.id === theme) ?? themeOptions[0]).id;
+
+  const actionItems: MoreActionItem[] = [
+    { href: "/checkin", label: t("nav.checkin"), icon: CalendarCheck },
+    { href: "/claims", label: t("nav.claims"), icon: Gift, badge: pendingClaims },
+    { href: "/notifications", label: t("notifications.title"), icon: Bell },
   ];
 
   const handleMainNavClick = () => {
     setShowActionMenu(false);
+    setDetailView(null);
   };
 
   const handleActionButtonClick = () => {
-    setShowActionMenu(!showActionMenu);
+    if (showActionMenu) {
+      setShowActionMenu(false);
+      setDetailView(null);
+      return;
+    }
+
+    setShowActionMenu(true);
   };
 
   const handleActionItemClick = () => {
     setShowActionMenu(false);
+    setDetailView(null);
   };
+
+  const handleCloseMenu = () => {
+    setShowActionMenu(false);
+    setDetailView(null);
+  };
+
+  const activeThemeLabel = t(
+    themeOptions.find((option) => option.id === activeTheme)?.labelKey ??
+      "moreMenu.themes.night",
+  );
+
+  const renderThemeDetail = () => (
+    <section>
+      <div className="mb-3 flex items-center justify-between px-1">
+        <div>
+          <p className="text-sm font-semibold text-[var(--shell-title)]">{t("moreMenu.theme")}</p>
+          <p className="mt-1 text-xs text-[var(--shell-text-soft)]">
+            {t("moreMenu.themeDescription")}
+          </p>
+        </div>
+        <div className="rounded-full border border-[var(--shell-border)] bg-[var(--shell-control)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--shell-text-soft)]">
+          {activeThemeLabel}
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {themeOptions.map((option) => {
+          const isActive = activeTheme === option.id;
+
+          return (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setTheme(option.id)}
+              className={cn(
+                "rounded-2xl border p-2 text-left transition-all duration-200",
+                "border-[var(--shell-border)] bg-[var(--shell-control)] hover:bg-[var(--shell-control-hover)]",
+                isActive && "border-aura-primary/35 bg-aura-primary/10 shadow-glow-sm",
+              )}
+            >
+              <div
+                className={cn(
+                  "mb-2 h-14 rounded-xl bg-gradient-to-br",
+                  option.previewClassName,
+                )}
+              />
+              <span
+                className={cn(
+                  "block text-center text-[11px] font-medium",
+                  isActive ? "text-aura-primary" : "text-[var(--shell-copy)]",
+                )}
+              >
+                {t(option.labelKey)}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+
+  const renderLanguageDetail = () => (
+    <section>
+      <div className="mb-3 flex items-center justify-between px-1">
+        <div>
+          <p className="text-sm font-semibold text-[var(--shell-title)]">{t("moreMenu.language")}</p>
+          <p className="mt-1 text-xs text-[var(--shell-text-soft)]">
+            {t("moreMenu.languageDescription")}
+          </p>
+        </div>
+        <div className="rounded-full border border-[var(--shell-border)] bg-[var(--shell-control)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--shell-text-soft)]">
+          {localeMeta[activeLocale].shortLabel}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {locales.map((candidate) => {
+          const isActive = activeLocale === candidate;
+
+          return (
+            <button
+              key={candidate}
+              type="button"
+              onClick={() => setLocale(candidate)}
+              className={cn(
+                "flex items-center gap-2 rounded-2xl border px-3 py-3 text-left transition-all duration-200",
+                "border-[var(--shell-border)] bg-[var(--shell-control)] hover:bg-[var(--shell-control-hover)]",
+                isActive && "border-aura-primary/35 bg-aura-primary/10",
+              )}
+            >
+              <span className="inline-flex min-w-7 items-center justify-center rounded-md border border-[var(--shell-border)] bg-[var(--shell-soft-surface)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--shell-text-soft)]">
+                {localeMeta[candidate].shortLabel}
+              </span>
+              <span
+                className={cn(
+                  "truncate text-xs font-medium",
+                  isActive ? "text-aura-primary" : "text-[var(--shell-copy)]",
+                )}
+              >
+                {localeMeta[candidate].nativeLabel}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
 
   return (
     <>
@@ -78,54 +270,141 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
       {showActionMenu && (
         <div 
           className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-          onClick={() => setShowActionMenu(false)}
+          onClick={handleCloseMenu}
         />
       )}
 
-      {/* Action Menu Sheet */}
+      {/* More Menu Sheet */}
       {showActionMenu && (
-        <div className="fixed bottom-24 left-1/2 z-50 w-full max-w-xs -translate-x-1/2 animate-slide-up">
-          <div className="rounded-2xl border border-white/[0.08] bg-[#141414] p-4 shadow-2xl">
-            <p className="mb-3 px-2 text-xs text-white/50">Quick Actions</p>
-            <div className="grid grid-cols-2 gap-2">
-              {actionItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.id;
-                const badgeCount = item.badge;
-                
-                return (
-                  <Link
-                    key={item.id}
-                    href={item.id}
-                    onClick={handleActionItemClick}
-                    className={cn(
-                      "flex flex-col items-center gap-2 p-4 rounded-xl",
-                      "bg-white/5 hover:bg-white/10 transition-all duration-200",
-                      "border border-transparent hover:border-white/[0.08]",
-                      isActive && "bg-aura-primary/10 border-aura-primary/30"
-                    )}
-                  >
-                    <div className="relative">
-                      <Icon className={cn(
-                        "h-6 w-6",
-                        isActive ? "text-aura-primary" : "text-white/70"
-                      )} />
-                      {badgeCount && badgeCount > 0 ? (
-                        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-aura-primary text-[10px] font-bold text-white">
-                          {badgeCount > 9 ? "9+" : badgeCount}
-                        </span>
-                      ) : null}
+        <div className="fixed bottom-24 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 animate-slide-up px-4">
+          <div className="rounded-[28px] border border-[var(--shell-border)] bg-[var(--shell-surface-strong)] p-4 shadow-2xl backdrop-blur-xl transition-colors duration-300">
+            {detailView ? (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setDetailView(null)}
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--shell-border)] bg-[var(--shell-control)] px-3 py-1.5 text-xs font-medium text-[var(--shell-text-muted)] transition hover:bg-[var(--shell-control-hover)]"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  {t("moreMenu.back")}
+                </button>
+
+                {detailView === "theme" ? renderThemeDetail() : null}
+                {detailView === "language" ? renderLanguageDetail() : null}
+              </div>
+            ) : (
+              <>
+                <div className="mb-4 flex items-start justify-between gap-3 px-1">
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--shell-title)]">{t("moreMenu.title")}</p>
+                    <p className="mt-1 text-xs text-[var(--shell-text-soft)]">
+                      {t("moreMenu.description")}
+                    </p>
+                  </div>
+                  <div className="rounded-full border border-[var(--shell-border)] bg-[var(--shell-control)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--shell-text-soft)]">
+                    {localeMeta[activeLocale].shortLabel}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <section>
+                    <p className="mb-2 px-2 text-[11px] uppercase tracking-[0.2em] text-[var(--shell-text-soft)]">
+                      {t("moreMenu.quickActions")}
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {actionItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = pathname === item.href;
+                        const badgeCount = item.badge;
+
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={handleActionItemClick}
+                            className={cn(
+                              "flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border p-3 text-center transition-all duration-200",
+                              "border-[var(--shell-border)] bg-[var(--shell-surface)] hover:bg-[var(--shell-control-hover)]",
+                              isActive && "border-aura-primary/35 bg-aura-primary/10",
+                            )}
+                          >
+                            <div className="relative">
+                              <Icon
+                                className={cn(
+                                  "h-5 w-5",
+                                  isActive ? "text-aura-primary" : "text-[var(--shell-text-muted)]",
+                                )}
+                              />
+                              {badgeCount && badgeCount > 0 ? (
+                                <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-aura-primary text-[10px] font-bold text-white">
+                                  {badgeCount > 9 ? "9+" : badgeCount}
+                                </span>
+                              ) : null}
+                            </div>
+                            <span
+                              className={cn(
+                                "text-[11px] font-medium leading-tight",
+                                isActive ? "text-aura-primary" : "text-[var(--shell-copy)]",
+                              )}
+                            >
+                              {item.label}
+                            </span>
+                          </Link>
+                        );
+                      })}
                     </div>
-                    <span className={cn(
-                      "text-xs font-medium",
-                      isActive ? "text-aura-primary" : "text-white/70"
-                    )}>
-                      {t(item.labelKey)}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
+                  </section>
+
+                  <section>
+                    <div className="mb-2 flex items-center justify-between px-2">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--shell-text-soft)]">
+                        {t("moreMenu.preferences")}
+                      </p>
+                      <p className="text-[10px] text-[var(--shell-text-soft)]">
+                        {t("moreMenu.preferencesHint")}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {preferenceEntries.map((entry) => {
+                        const Icon = entry.icon;
+                        const summary =
+                          entry.id === "theme"
+                            ? activeThemeLabel
+                            : localeMeta[activeLocale].nativeLabel;
+
+                        return (
+                          <button
+                            key={entry.id}
+                            type="button"
+                            onClick={() => setDetailView(entry.id)}
+                            className="flex min-h-[96px] items-center justify-between gap-3 rounded-2xl border border-[var(--shell-border)] bg-[var(--shell-surface)] px-3 py-3 text-left transition-all duration-200 hover:bg-[var(--shell-control-hover)]"
+                          >
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--shell-control)] text-aura-primary">
+                                <Icon className="h-5 w-5" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-[var(--shell-title)]">
+                                  {t(entry.labelKey)}
+                                </p>
+                                <p className="mt-1 line-clamp-2 text-xs text-[var(--shell-text-soft)]">
+                                  {t(entry.descriptionKey)}
+                                </p>
+                                <p className="mt-1 truncate text-[11px] font-medium text-aura-primary">
+                                  {summary}
+                                </p>
+                              </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 shrink-0 text-[var(--shell-text-soft)]" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -134,7 +413,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
       <nav 
         className={cn(
           "fixed bottom-0 left-0 right-0 z-50",
-          "bg-[#0a0a0a]/90 backdrop-blur-xl border-t border-white/[0.08]",
+          "border-t border-[var(--shell-border)] bg-[var(--shell-chrome)] backdrop-blur-xl transition-colors duration-300",
           "pb-[env(safe-area-inset-bottom,16px)]",
           className
         )}
@@ -150,12 +429,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
                   key={item.id}
                   href={item.id}
                   onClick={handleMainNavClick}
-                  className={cn(
-                    "relative flex flex-col items-center gap-1 py-2 px-3 rounded-xl",
-                    "transition-all duration-200",
-                    isActive 
+                className={cn(
+                  "relative flex flex-col items-center gap-1 py-2 px-3 rounded-xl",
+                  "transition-all duration-200",
+                  isActive 
                       ? "text-aura-primary" 
-                      : "text-white/50 hover:text-white/70"
+                      : "text-[var(--shell-text-soft)] hover:text-[var(--shell-text-muted)]"
                   )}
                 >
                   <Icon className={cn(
@@ -178,19 +457,21 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
             {/* Main Action Button (FAB) */}
             <div className="px-2">
               <button
+                type="button"
                 onClick={handleActionButtonClick}
+                aria-label={t("moreMenu.triggerAria")}
                 className={cn(
                   "relative -mt-10 h-14 w-14 rounded-full",
                   "bg-gradient-to-r from-aura-primary to-aura-primary-dark",
                   "flex items-center justify-center",
                   "shadow-glow transition-all duration-300",
                   "hover:scale-105 active:scale-95",
-                  showActionMenu && "rotate-45"
+                  showActionMenu && "scale-105"
                 )}
               >
                 <Plus className="h-6 w-6 text-white" />
                 {pendingClaims > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-bold text-aura-primary">
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--shell-badge-bg)] text-[10px] font-bold text-[var(--shell-badge-fg)]">
                     {pendingClaims > 9 ? "9+" : pendingClaims}
                   </span>
                 )}

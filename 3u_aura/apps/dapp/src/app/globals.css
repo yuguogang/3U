@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark *, .night *, .aura *));
 
 @theme inline {
   --color-background: var(--background);
@@ -47,30 +47,25 @@
   --radius-4xl: calc(var(--radius) + 16px);
 
   /* 3U AURA Design System Colors */
-  --color-aura-primary: #FA2B15;
-  --color-aura-primary-light: #FF6B5B;
-  --color-aura-primary-dark: #C41E0B;
-  --color-aura-bg: #050505;
-  --color-aura-bg-secondary: #0A0A0A;
-  --color-aura-bg-elevated: #141414;
+  --color-aura-primary: var(--aura-primary);
+  --color-aura-primary-light: var(--aura-primary-light);
+  --color-aura-primary-dark: var(--aura-primary-dark);
+  --color-aura-bg: var(--aura-bg);
+  --color-aura-bg-secondary: var(--aura-bg-secondary);
+  --color-aura-bg-elevated: var(--aura-bg-elevated);
   --color-aura-success: #22C55E;
   --color-aura-warning: #F59E0B;
   --color-aura-error: #EF4444;
   --color-aura-info: #3B82F6;
 
-  --color-text-secondary: rgba(255, 255, 255, 0.7);
-  --color-text-tertiary: rgba(255, 255, 255, 0.5);
-  --color-text-muted: rgba(255, 255, 255, 0.35);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-muted: var(--text-muted);
 
-  --shadow-glow: 0 0 30px rgba(250, 43, 21, 0.3);
-  --shadow-glow-sm: 0 0 15px rgba(250, 43, 21, 0.2);
+  --shadow-glow: var(--theme-shadow-glow);
+  --shadow-glow-sm: var(--theme-shadow-glow-sm);
 
-  --gradient-primary: linear-gradient(
-    180deg,
-    rgba(250, 43, 21, 1) 0%,
-    rgba(244, 64, 7, 1) 40%,
-    rgba(250, 164, 75, 1) 100%
-  );
+  --gradient-primary: var(--theme-gradient-primary);
   --gradient-glass-border: linear-gradient(
     134deg,
     rgba(255, 255, 255, 1) 0%,
@@ -92,14 +87,64 @@
   }
 }
 
-:root {
+:root,
+.night {
+  --aura-primary: #fa2b15;
+  --aura-primary-light: #ff6b5b;
+  --aura-primary-dark: #c41e0b;
+  --aura-bg: #050505;
+  --aura-bg-secondary: #0a0a0a;
+  --aura-bg-elevated: #141414;
+
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-tertiary: rgba(255, 255, 255, 0.5);
+  --text-muted: rgba(255, 255, 255, 0.35);
+
+  --theme-shadow-glow: 0 0 30px rgba(250, 43, 21, 0.3);
+  --theme-shadow-glow-sm: 0 0 15px rgba(250, 43, 21, 0.2);
+  --theme-gradient-primary: linear-gradient(
+    180deg,
+    rgba(250, 43, 21, 1) 0%,
+    rgba(244, 64, 7, 1) 40%,
+    rgba(250, 164, 75, 1) 100%
+  );
+
+  --page-background:
+    radial-gradient(circle at top, rgba(250, 43, 21, 0.14), transparent 42%),
+    linear-gradient(180deg, #050505 0%, #080808 100%);
+  --shell-bg: #050505;
+  --shell-chrome: rgba(5, 5, 5, 0.82);
+  --shell-border: rgba(255, 255, 255, 0.08);
+  --shell-control: rgba(255, 255, 255, 0.05);
+  --shell-control-hover: rgba(255, 255, 255, 0.1);
+  --shell-surface: rgba(255, 255, 255, 0.03);
+  --shell-surface-strong: rgba(20, 20, 20, 0.94);
+  --shell-soft-surface: rgba(255, 255, 255, 0.04);
+  --shell-text-muted: rgba(255, 255, 255, 0.72);
+  --shell-text-soft: rgba(255, 255, 255, 0.46);
+  --shell-top-glow: radial-gradient(circle at top, rgba(250, 43, 21, 0.18), transparent 70%);
+
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-bg-strong: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-highlight-bg: rgba(250, 43, 21, 0.1);
+  --glass-highlight-border: rgba(250, 43, 21, 0.2);
+  --elevated-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  --shell-title: #ffffff;
+  --shell-copy: rgba(255, 255, 255, 0.84);
+  --shell-heading-gradient-start: #ffffff;
+  --shell-heading-gradient-end: rgba(255, 255, 255, 0.68);
+  --shell-inset: rgba(255, 255, 255, 0.05);
+  --shell-badge-bg: #ffffff;
+  --shell-badge-fg: var(--aura-primary);
+
   --background: #050505;
   --foreground: #ffffff;
-  --card: #0A0A0A;
+  --card: #0a0a0a;
   --card-foreground: #ffffff;
-  --popover: #0A0A0A;
+  --popover: #0a0a0a;
   --popover-foreground: #ffffff;
-  --primary: #FA2B15;
+  --primary: var(--aura-primary);
   --primary-foreground: #ffffff;
   --secondary: #141414;
   --secondary-foreground: #ffffff;
@@ -110,39 +155,10 @@
   --destructive: #ef4444;
   --border: rgba(255, 255, 255, 0.1);
   --input: rgba(255, 255, 255, 0.1);
-  --ring: #FA2B15;
+  --ring: var(--aura-primary);
   --radius: 1rem;
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-geist-mono: "JetBrains Mono", "Fira Code", monospace;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.87 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.371 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.809 0.105 251.813);
   --chart-2: oklch(0.623 0.214 259.815);
   --chart-3: oklch(0.546 0.245 262.881);
@@ -158,12 +174,155 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+.day {
+  --aura-primary: #ff8f3f;
+  --aura-primary-light: #ffcf8e;
+  --aura-primary-dark: #d95a19;
+  --aura-bg: #fbf3e8;
+  --aura-bg-secondary: #fff8ef;
+  --aura-bg-elevated: #fffdf8;
+
+  --text-secondary: rgba(84, 56, 31, 0.82);
+  --text-tertiary: rgba(104, 71, 40, 0.62);
+  --text-muted: rgba(126, 94, 62, 0.48);
+
+  --theme-shadow-glow: 0 0 30px rgba(255, 166, 88, 0.18);
+  --theme-shadow-glow-sm: 0 0 16px rgba(255, 166, 88, 0.12);
+  --theme-gradient-primary: linear-gradient(
+    180deg,
+    rgba(255, 177, 108, 1) 0%,
+    rgba(255, 138, 67, 1) 55%,
+    rgba(255, 213, 149, 1) 100%
+  );
+
+  --page-background:
+    radial-gradient(circle at top, rgba(255, 190, 126, 0.34), transparent 34%),
+    linear-gradient(180deg, #fff8ef 0%, #f7efe4 48%, #f2e7da 100%);
+  --shell-bg: #fbf3e8;
+  --shell-chrome: rgba(251, 243, 232, 0.84);
+  --shell-border: rgba(117, 84, 50, 0.16);
+  --shell-control: rgba(255, 255, 255, 0.72);
+  --shell-control-hover: rgba(255, 255, 255, 0.9);
+  --shell-surface: rgba(255, 255, 255, 0.68);
+  --shell-surface-strong: rgba(255, 252, 246, 0.92);
+  --shell-soft-surface: rgba(255, 250, 243, 0.92);
+  --shell-text-muted: rgba(74, 50, 27, 0.8);
+  --shell-text-soft: rgba(109, 77, 46, 0.6);
+  --shell-top-glow: radial-gradient(circle at top, rgba(255, 173, 90, 0.24), transparent 68%);
+
+  --glass-bg: rgba(255, 255, 255, 0.68);
+  --glass-bg-strong: rgba(255, 255, 255, 0.86);
+  --glass-border: rgba(123, 88, 53, 0.14);
+  --glass-highlight-bg: linear-gradient(135deg, rgba(255, 174, 102, 0.24), rgba(255, 255, 255, 0.7));
+  --glass-highlight-border: rgba(255, 170, 96, 0.26);
+  --elevated-shadow: 0 24px 60px rgba(124, 88, 56, 0.14);
+  --shell-title: #3f2b18;
+  --shell-copy: rgba(63, 43, 24, 0.84);
+  --shell-heading-gradient-start: #51351a;
+  --shell-heading-gradient-end: #c36a22;
+  --shell-inset: rgba(255, 255, 255, 0.84);
+  --shell-badge-bg: #fff7ec;
+  --shell-badge-fg: #d36d1f;
+
+  --background: #fbf3e8;
+  --foreground: #3f2b18;
+  --card: #fff8ef;
+  --card-foreground: #3f2b18;
+  --popover: #fff8ef;
+  --popover-foreground: #3f2b18;
+  --primary: var(--aura-primary);
+  --primary-foreground: #ffffff;
+  --secondary: #fff8ef;
+  --secondary-foreground: #4b321b;
+  --muted: #f1e4d3;
+  --muted-foreground: rgba(95, 68, 40, 0.68);
+  --accent: #f7e8d7;
+  --accent-foreground: #4b321b;
+  --destructive: #ef4444;
+  --border: rgba(117, 84, 50, 0.14);
+  --input: rgba(117, 84, 50, 0.1);
+  --ring: var(--aura-primary);
+}
+
+.aura {
+  --aura-primary: #45d4ff;
+  --aura-primary-light: #9cf1ff;
+  --aura-primary-dark: #1a88d3;
+  --aura-bg: #08131a;
+  --aura-bg-secondary: #0d1821;
+  --aura-bg-elevated: #11222b;
+
+  --text-secondary: rgba(228, 248, 255, 0.74);
+  --text-tertiary: rgba(228, 248, 255, 0.54);
+  --text-muted: rgba(228, 248, 255, 0.38);
+
+  --theme-shadow-glow: 0 0 34px rgba(69, 212, 255, 0.24);
+  --theme-shadow-glow-sm: 0 0 18px rgba(69, 212, 255, 0.14);
+  --theme-gradient-primary: linear-gradient(
+    180deg,
+    rgba(112, 231, 255, 1) 0%,
+    rgba(69, 212, 255, 1) 45%,
+    rgba(111, 131, 255, 1) 100%
+  );
+
+  --page-background:
+    radial-gradient(circle at top, rgba(69, 212, 255, 0.18), transparent 34%),
+    radial-gradient(circle at 85% 12%, rgba(104, 98, 255, 0.12), transparent 22%),
+    linear-gradient(180deg, #071018 0%, #0c1824 52%, #060e15 100%);
+  --shell-bg: #071018;
+  --shell-chrome: rgba(7, 16, 24, 0.84);
+  --shell-border: rgba(156, 241, 255, 0.12);
+  --shell-control: rgba(228, 248, 255, 0.06);
+  --shell-control-hover: rgba(228, 248, 255, 0.12);
+  --shell-surface: rgba(228, 248, 255, 0.04);
+  --shell-surface-strong: rgba(17, 34, 43, 0.95);
+  --shell-soft-surface: rgba(228, 248, 255, 0.045);
+  --shell-text-muted: rgba(228, 248, 255, 0.74);
+  --shell-text-soft: rgba(228, 248, 255, 0.5);
+  --shell-top-glow: radial-gradient(circle at top, rgba(69, 212, 255, 0.2), transparent 70%);
+
+  --glass-bg: rgba(228, 248, 255, 0.04);
+  --glass-bg-strong: rgba(228, 248, 255, 0.075);
+  --glass-border: rgba(156, 241, 255, 0.13);
+  --glass-highlight-bg: linear-gradient(135deg, rgba(69, 212, 255, 0.14), rgba(96, 106, 255, 0.1));
+  --glass-highlight-border: rgba(69, 212, 255, 0.24);
+  --elevated-shadow: 0 24px 60px rgba(1, 12, 18, 0.34);
+  --shell-title: #f4fdff;
+  --shell-copy: rgba(236, 250, 255, 0.86);
+  --shell-heading-gradient-start: #d8fbff;
+  --shell-heading-gradient-end: #70e7ff;
+  --shell-inset: rgba(228, 248, 255, 0.08);
+  --shell-badge-bg: #f1fdff;
+  --shell-badge-fg: #0a7aa9;
+
+  --background: #071018;
+  --foreground: #f5fdff;
+  --card: #0d1821;
+  --card-foreground: #f5fdff;
+  --popover: #0d1821;
+  --popover-foreground: #f5fdff;
+  --primary: var(--aura-primary);
+  --primary-foreground: #031018;
+  --secondary: #11222b;
+  --secondary-foreground: #f5fdff;
+  --muted: #15303b;
+  --muted-foreground: rgba(228, 248, 255, 0.68);
+  --accent: #11252f;
+  --accent-foreground: #f5fdff;
+  --destructive: #ef4444;
+  --border: rgba(156, 241, 255, 0.12);
+  --input: rgba(156, 241, 255, 0.12);
+  --ring: var(--aura-primary);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+    background: var(--page-background);
+    color: var(--foreground);
   }
 
   :where(a, button, [role="button"], input, select, textarea):focus-visible {

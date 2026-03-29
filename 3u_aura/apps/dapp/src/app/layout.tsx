@@ -33,8 +33,9 @@ export default async function RootLayout({
           <QueryProvider>
             <ThemeProvider
               attribute="class"
-              defaultTheme="dark"
-              enableSystem
+              defaultTheme="night"
+              enableSystem={false}
+              themes={["night", "day", "aura"]}
               disableTransitionOnChange
             >
               <Web3Provider>{children}</Web3Provider>

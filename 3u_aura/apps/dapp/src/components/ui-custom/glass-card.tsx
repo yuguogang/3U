@@ -9,13 +9,14 @@ const glassCardVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-white/[0.03] border border-white/[0.08]",
-        elevated: "bg-white/[0.05] border border-white/[0.12] shadow-2xl",
+        default: "border border-[var(--glass-border)] bg-[var(--glass-bg)]",
+        elevated:
+          "border border-[var(--glass-border)] bg-[var(--glass-bg-strong)] shadow-[var(--elevated-shadow)]",
         interactive:
-          "bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.15] cursor-pointer",
+          "cursor-pointer border border-[var(--glass-border)] bg-[var(--glass-bg)] hover:border-[var(--glass-highlight-border)] hover:bg-[var(--glass-bg-strong)]",
         highlight:
-          "bg-gradient-to-br from-aura-primary/10 to-transparent border border-aura-primary/20",
-        glow: "bg-white/[0.03] border border-white/[0.08] hover:shadow-glow transition-shadow duration-300",
+          "border border-[var(--glass-highlight-border)] bg-[var(--glass-highlight-bg)]",
+        glow: "border border-[var(--glass-border)] bg-[var(--glass-bg)] transition-shadow duration-300 hover:shadow-glow",
       },
       intensity: {
         low: "backdrop-blur-sm",

@@ -18,7 +18,7 @@ function LegendPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-white/70",
+        "inline-flex items-center gap-1.5 rounded-full border border-[var(--shell-border)] bg-[var(--shell-inset)] px-2.5 py-1 text-[11px] text-[var(--shell-text-muted)]",
         className,
       )}
     >
@@ -41,8 +41,8 @@ export function TeamTreePlacementLegend({
           <GitBranch className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-white">{t("team.legend.title")}</p>
-          <p className="mt-1 text-xs leading-5 text-white/45">
+          <p className="text-sm font-semibold text-[var(--shell-title)]">{t("team.legend.title")}</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--shell-text-soft)]">
             {t("team.legend.description")}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">

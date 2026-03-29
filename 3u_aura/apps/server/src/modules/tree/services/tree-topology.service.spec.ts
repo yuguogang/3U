@@ -1,3 +1,4 @@
+import { Prisma } from '@/db';
 import { ConflictException } from '@nestjs/common';
 import { TeamPosition, UserStatus } from '3u-aura-common';
 import { PlacementPolicyEngine } from '../engines/placement-policy.engine';
@@ -14,6 +15,14 @@ describe('TreeTopologyService', () => {
     parentId: 'parent_1',
     teamPosition: TeamPosition.LEFT,
   };
+  const createPlacementRaceError = () =>
+    Object.setPrototypeOf(
+      {
+        code: 'P2002',
+        meta: { target: ['placementKey'] },
+      },
+      Prisma.PrismaClientKnownRequestError.prototype,
+    );
 
   const createService = () => {
     const auditSeam = {
@@ -26,7 +35,9 @@ describe('TreeTopologyService', () => {
     };
     const teamClosureRepository = {
       bindPlacement: jest.fn(),
+      countActiveSubtreeMembers: jest.fn(),
       ensureSelfClosure: jest.fn().mockResolvedValue(undefined),
+      findDirectChild: jest.fn(),
       findByPlacementKey: jest.fn(),
       findParentForPlacement: jest.fn(),
       findUserForPlacement: jest.fn(),
@@ -185,6 +196,72 @@ describe('TreeTopologyService', () => {
     expect(auditSeam.record).not.toHaveBeenCalledWith(
       expect.objectContaining({ action: 'tree.root.initialized' }),
     );
+  });
+
+  it('retries auto-placement when a transient placement conflict occurs', async () => {
+    const { service, teamClosureRepository } = createService();
+    (service as any).transactionOrchestrator.run = jest
+      .fn()
+      .mockResolvedValueOnce({
+        isPlacementPending: true,
+        reason: 'placement-conflict',
+      })
+      .mockResolvedValueOnce({
+        isPlacementPending: false,
+        placement: {
+          inviterId: actor.id,
+          parentId: 'retry_parent',
+          placementKey: 'retry_parent:LEFT',
+          teamPosition: TeamPosition.LEFT,
+          userId: 'user_retry',
+        },
+      });
+
+    const result = await service.tryAutoPlaceForBoundUser('user_retry');
+
+    expect((service as any).transactionOrchestrator.run).toHaveBeenCalledTimes(2);
+    expect(teamClosureRepository.findUserForPlacement).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      isPlacementPending: false,
+      placement: {
+        inviterId: actor.id,
+        parentId: 'retry_parent',
+        placementKey: 'retry_parent:LEFT',
+        teamPosition: TeamPosition.LEFT,
+        userId: 'user_retry',
+      },
+    });
+  });
+
+  it('keeps inviter binding and falls back to pending after repeated placement races', async () => {
+    const { auditSeam, service, teamClosureRepository } = createService();
+    (service as any).transactionOrchestrator.run = jest
+      .fn()
+      .mockRejectedValue(createPlacementRaceError());
+    teamClosureRepository.findUserForPlacement.mockResolvedValue({
+      id: 'user_race',
+      inviterId: actor.id,
+      parentId: null,
+      placementKey: null,
+      status: UserStatus.ACTIVE,
+      teamPosition: null,
+    });
+
+    const result = await service.tryAutoPlaceForBoundUser('user_race', {
+      deferredAuditAction: 'tree.bind-placement.auto-race.deferred',
+      maxAttempts: 2,
+    });
+
+    expect((service as any).transactionOrchestrator.run).toHaveBeenCalledTimes(2);
+    expect(auditSeam.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'tree.bind-placement.auto-race.deferred',
+      }),
+    );
+    expect(result).toEqual({
+      isPlacementPending: true,
+      reason: 'placement-conflict',
+    });
   });
 
   it('returns idempotently for the same frozen placement', async () => {
@@ -543,5 +620,419 @@ describe('TreeTopologyService', () => {
     ).rejects.toThrow('Focus node is outside the inviter subtree');
 
     expect(teamClosureRepository.listSubtreeNodes).not.toHaveBeenCalled();
+  });
+
+  it('auto-places into the weak left leg using single-line depth', async () => {
+    const { referralService, service, teamClosureRepository } = createService();
+    teamClosureRepository.findUserForPlacement.mockResolvedValue({
+      id: 'user_auto',
+      inviterId: actor.id,
+      parentId: null,
+      placementKey: null,
+      status: UserStatus.ACTIVE,
+      teamPosition: null,
+    });
+    teamClosureRepository.findParentForPlacement
+      .mockResolvedValueOnce({
+        id: actor.id,
+        inviterId: null,
+        parentId: null,
+        profile: {
+          leftTeamVolume: { toFixed: () => '10' },
+          rightTeamVolume: { toFixed: () => '80' },
+        },
+        status: UserStatus.ACTIVE,
+        walletAddress: '0x1111111111111111111111111111111111111111',
+      })
+      .mockResolvedValueOnce({
+        id: 'left_spine_1',
+        inviterId: actor.id,
+        parentId: actor.id,
+        profile: {
+          leftTeamVolume: { toFixed: () => '0' },
+          rightTeamVolume: { toFixed: () => '0' },
+        },
+        status: UserStatus.ACTIVE,
+        walletAddress: '0x2222222222222222222222222222222222222222',
+    });
+    teamClosureRepository.findDirectChild
+      .mockResolvedValueOnce({
+        id: 'left_spine_1',
+        inviterId: actor.id,
+        parentId: actor.id,
+        profile: {
+          leftTeamVolume: { toFixed: () => '0' },
+          rightTeamVolume: { toFixed: () => '0' },
+        },
+        status: UserStatus.ACTIVE,
+        walletAddress: '0x2222222222222222222222222222222222222222',
+      })
+      .mockResolvedValueOnce({
+        id: 'right_spine_1',
+        inviterId: actor.id,
+        parentId: actor.id,
+        profile: {
+          leftTeamVolume: { toFixed: () => '0' },
+          rightTeamVolume: { toFixed: () => '0' },
+        },
+        status: UserStatus.ACTIVE,
+        walletAddress: '0x4444444444444444444444444444444444444444',
+      })
+      .mockResolvedValueOnce({
+        id: 'left_spine_1',
+        inviterId: actor.id,
+        parentId: actor.id,
+        profile: {
+          leftTeamVolume: { toFixed: () => '0' },
+          rightTeamVolume: { toFixed: () => '0' },
+        },
+        status: UserStatus.ACTIVE,
+        walletAddress: '0x2222222222222222222222222222222222222222',
+      })
+      .mockResolvedValueOnce(null);
+    teamClosureRepository.countActiveSubtreeMembers
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(3);
+    teamClosureRepository.findByPlacementKey.mockResolvedValue(null);
+    teamClosureRepository.hasAncestorLink.mockResolvedValue(true);
+    teamClosureRepository.hasSelfClosure.mockResolvedValue(true);
+    teamClosureRepository.listAncestorRows.mockResolvedValue([
+      { ancestorId: 'left_spine_1', depth: 0 },
+      { ancestorId: actor.id, depth: 1 },
+    ]);
+    teamClosureRepository.bindPlacement.mockResolvedValue({
+      id: 'user_auto',
+      inviterId: actor.id,
+      parentId: 'left_spine_1',
+      placementKey: 'left_spine_1:LEFT',
+      status: UserStatus.ACTIVE,
+      teamPosition: TeamPosition.LEFT,
+    });
+    referralService.issueInviteCodeIfMissingForUserTx.mockResolvedValue({
+      id: 'user_auto',
+      inviterId: actor.id,
+      inviteCode: 'SHARE123',
+      parentId: 'left_spine_1',
+      placementKey: 'left_spine_1:LEFT',
+      status: UserStatus.ACTIVE,
+      teamPosition: TeamPosition.LEFT,
+    });
+
+    const result = await service.tryAutoPlaceForBoundUserTx(
+      'user_auto',
+      {} as any,
+    );
+
+    expect(teamClosureRepository.findDirectChild).toHaveBeenNthCalledWith(
+      1,
+      actor.id,
+      TeamPosition.LEFT,
+      expect.any(Object),
+    );
+    expect(teamClosureRepository.findDirectChild).toHaveBeenNthCalledWith(
+      2,
+      actor.id,
+      TeamPosition.RIGHT,
+      expect.any(Object),
+    );
+    expect(teamClosureRepository.findDirectChild).toHaveBeenNthCalledWith(
+      3,
+      actor.id,
+      TeamPosition.LEFT,
+      expect.any(Object),
+    );
+    expect(teamClosureRepository.findDirectChild).toHaveBeenNthCalledWith(
+      4,
+      'left_spine_1',
+      TeamPosition.LEFT,
+      expect.any(Object),
+    );
+    expect(teamClosureRepository.bindPlacement).toHaveBeenCalledWith(
+      expect.objectContaining({
+        parentId: 'left_spine_1',
+        teamPosition: TeamPosition.LEFT,
+        userId: 'user_auto',
+      }),
+      expect.any(Object),
+    );
+    expect(result).toEqual({
+      isPlacementPending: false,
+      placement: {
+        inviterId: actor.id,
+        parentId: 'left_spine_1',
+        placementKey: 'left_spine_1:LEFT',
+        teamPosition: TeamPosition.LEFT,
+        userId: 'user_auto',
+      },
+    });
+  });
+
+  it('auto-places into the weak right leg when right volume is smaller', async () => {
+    const { referralService, service, teamClosureRepository } = createService();
+    teamClosureRepository.findUserForPlacement.mockResolvedValue({
+      id: 'user_right',
+      inviterId: actor.id,
+      parentId: null,
+      placementKey: null,
+      status: UserStatus.ACTIVE,
+      teamPosition: null,
+    });
+    teamClosureRepository.findParentForPlacement
+      .mockResolvedValueOnce({
+        id: actor.id,
+        inviterId: null,
+        parentId: null,
+        profile: {
+          leftTeamVolume: { toFixed: () => '90' },
+          rightTeamVolume: { toFixed: () => '20' },
+        },
+        status: UserStatus.ACTIVE,
+        walletAddress: '0x1111111111111111111111111111111111111111',
+      })
+      .mockResolvedValueOnce({
+        id: actor.id,
+        inviterId: null,
+        parentId: null,
+        profile: {
+          leftTeamVolume: { toFixed: () => '90' },
+          rightTeamVolume: { toFixed: () => '20' },
+        },
+        status: UserStatus.ACTIVE,
+        walletAddress: '0x1111111111111111111111111111111111111111',
+      });
+    teamClosureRepository.findDirectChild
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    teamClosureRepository.countActiveSubtreeMembers
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(0);
+    teamClosureRepository.findByPlacementKey.mockResolvedValue(null);
+    teamClosureRepository.hasSelfClosure.mockResolvedValue(true);
+    teamClosureRepository.listAncestorRows.mockResolvedValue([
+      { ancestorId: actor.id, depth: 0 },
+    ]);
+    teamClosureRepository.bindPlacement.mockResolvedValue({
+      id: 'user_right',
+      inviterId: actor.id,
+      parentId: actor.id,
+      placementKey: `${actor.id}:RIGHT`,
+      status: UserStatus.ACTIVE,
+      teamPosition: TeamPosition.RIGHT,
+    });
+    referralService.issueInviteCodeIfMissingForUserTx.mockResolvedValue({
+      id: 'user_right',
+      inviterId: actor.id,
+      inviteCode: 'SHARE123',
+      parentId: actor.id,
+      placementKey: `${actor.id}:RIGHT`,
+      status: UserStatus.ACTIVE,
+      teamPosition: TeamPosition.RIGHT,
+    });
+
+    const result = await service.tryAutoPlaceForBoundUserTx(
+      'user_right',
+      {} as any,
+    );
+
+    expect(teamClosureRepository.findDirectChild).toHaveBeenCalledWith(
+      actor.id,
+      TeamPosition.RIGHT,
+      expect.any(Object),
+    );
+    expect(result).toEqual({
+      isPlacementPending: false,
+      placement: {
+        inviterId: actor.id,
+        parentId: actor.id,
+        placementKey: `${actor.id}:RIGHT`,
+        teamPosition: TeamPosition.RIGHT,
+        userId: 'user_right',
+      },
+    });
+  });
+
+  it('keeps the user pending when the selected spine hits an inactive child', async () => {
+    const { auditSeam, service, teamClosureRepository } = createService();
+    teamClosureRepository.findUserForPlacement.mockResolvedValue({
+      id: 'user_pending',
+      inviterId: actor.id,
+      parentId: null,
+      placementKey: null,
+      status: UserStatus.ACTIVE,
+      teamPosition: null,
+    });
+    teamClosureRepository.findParentForPlacement.mockResolvedValue({
+      id: actor.id,
+      inviterId: null,
+      parentId: null,
+      profile: {
+        leftTeamVolume: { toFixed: () => '0' },
+        rightTeamVolume: { toFixed: () => '50' },
+      },
+      status: UserStatus.ACTIVE,
+      walletAddress: '0x1111111111111111111111111111111111111111',
+    });
+    teamClosureRepository.findDirectChild
+      .mockResolvedValueOnce({
+        id: 'inactive_left',
+        inviterId: actor.id,
+        parentId: actor.id,
+        profile: {
+          leftTeamVolume: { toFixed: () => '0' },
+          rightTeamVolume: { toFixed: () => '0' },
+        },
+        status: UserStatus.BLOCKED,
+        walletAddress: '0x3333333333333333333333333333333333333333',
+      })
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 'inactive_left',
+        inviterId: actor.id,
+        parentId: actor.id,
+        profile: {
+          leftTeamVolume: { toFixed: () => '0' },
+          rightTeamVolume: { toFixed: () => '0' },
+        },
+        status: UserStatus.BLOCKED,
+        walletAddress: '0x3333333333333333333333333333333333333333',
+      });
+    teamClosureRepository.countActiveSubtreeMembers
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(0);
+
+    const result = await service.tryAutoPlaceForBoundUserTx(
+      'user_pending',
+      {} as any,
+    );
+
+    expect(teamClosureRepository.bindPlacement).not.toHaveBeenCalled();
+    expect(auditSeam.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'tree.bind-placement.auto-deferred',
+      }),
+    );
+    expect(result).toEqual({
+      isPlacementPending: true,
+      reason: 'no-auto-slot',
+    });
+  });
+
+  it('uses branch member count when volume is tied', async () => {
+    const { referralService, service, teamClosureRepository } = createService();
+    teamClosureRepository.findUserForPlacement.mockResolvedValue({
+      id: 'user_tie',
+      inviterId: actor.id,
+      parentId: null,
+      placementKey: null,
+      status: UserStatus.ACTIVE,
+      teamPosition: null,
+    });
+    teamClosureRepository.findParentForPlacement
+      .mockResolvedValueOnce({
+        id: actor.id,
+        inviterId: null,
+        parentId: null,
+        profile: {
+          leftTeamVolume: { toFixed: () => '0' },
+          rightTeamVolume: { toFixed: () => '0' },
+        },
+        status: UserStatus.ACTIVE,
+        walletAddress: '0x1111111111111111111111111111111111111111',
+      })
+      .mockResolvedValueOnce({
+        id: actor.id,
+        inviterId: null,
+        parentId: null,
+        profile: {
+          leftTeamVolume: { toFixed: () => '0' },
+          rightTeamVolume: { toFixed: () => '0' },
+        },
+        status: UserStatus.ACTIVE,
+        walletAddress: '0x1111111111111111111111111111111111111111',
+      });
+    teamClosureRepository.findDirectChild
+      .mockResolvedValueOnce({
+        id: 'left_branch',
+        inviterId: actor.id,
+        parentId: actor.id,
+        profile: {
+          leftTeamVolume: { toFixed: () => '0' },
+          rightTeamVolume: { toFixed: () => '0' },
+        },
+        status: UserStatus.ACTIVE,
+        walletAddress: '0x2222222222222222222222222222222222222222',
+      })
+      .mockResolvedValueOnce({
+        id: 'right_branch',
+        inviterId: actor.id,
+        parentId: actor.id,
+        profile: {
+          leftTeamVolume: { toFixed: () => '0' },
+          rightTeamVolume: { toFixed: () => '0' },
+        },
+        status: UserStatus.ACTIVE,
+        walletAddress: '0x3333333333333333333333333333333333333333',
+      })
+      .mockResolvedValueOnce(null);
+    teamClosureRepository.countActiveSubtreeMembers
+      .mockResolvedValueOnce(5)
+      .mockResolvedValueOnce(1);
+    teamClosureRepository.findByPlacementKey.mockResolvedValue(null);
+    teamClosureRepository.hasSelfClosure.mockResolvedValue(true);
+    teamClosureRepository.listAncestorRows.mockResolvedValue([
+      { ancestorId: actor.id, depth: 0 },
+    ]);
+    teamClosureRepository.bindPlacement.mockResolvedValue({
+      id: 'user_tie',
+      inviterId: actor.id,
+      parentId: actor.id,
+      placementKey: `${actor.id}:RIGHT`,
+      status: UserStatus.ACTIVE,
+      teamPosition: TeamPosition.RIGHT,
+    });
+    referralService.issueInviteCodeIfMissingForUserTx.mockResolvedValue({
+      id: 'user_tie',
+      inviterId: actor.id,
+      inviteCode: 'SHARE123',
+      parentId: actor.id,
+      placementKey: `${actor.id}:RIGHT`,
+      status: UserStatus.ACTIVE,
+      teamPosition: TeamPosition.RIGHT,
+    });
+
+    const result = await service.tryAutoPlaceForBoundUserTx(
+      'user_tie',
+      {} as any,
+    );
+
+    expect(teamClosureRepository.countActiveSubtreeMembers).toHaveBeenNthCalledWith(
+      1,
+      'left_branch',
+      expect.any(Object),
+    );
+    expect(teamClosureRepository.countActiveSubtreeMembers).toHaveBeenNthCalledWith(
+      2,
+      'right_branch',
+      expect.any(Object),
+    );
+    expect(teamClosureRepository.bindPlacement).toHaveBeenCalledWith(
+      expect.objectContaining({
+        parentId: actor.id,
+        teamPosition: TeamPosition.RIGHT,
+        userId: 'user_tie',
+      }),
+      expect.any(Object),
+    );
+    expect(result).toEqual({
+      isPlacementPending: false,
+      placement: {
+        inviterId: actor.id,
+        parentId: actor.id,
+        placementKey: `${actor.id}:RIGHT`,
+        teamPosition: TeamPosition.RIGHT,
+        userId: 'user_tie',
+      },
+    });
   });
 });
