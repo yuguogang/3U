@@ -198,3 +198,121 @@ Implementation in progress. UI / branding phase is in second-pass refinement; pu
 ## Next Required Action
 - 向用户展示本轮前端结果，并确认是否继续细修 `Goldmint` 金属风格细节。
 - 若用户确认继续做“一次确认购买”，再进入合约方案审批与实现。
+
+## Incremental Update — 2026-03-30 12:50:47 +0800
+- 新增隔离预演页 `apps/dapp/src/app/gm-preview/page.tsx`，在不改正式 dashboard / NFT 页面结构的前提下，先生成 5 类核心视觉元素供用户过目：
+  - 金属铭牌徽章
+  - 暖白大理石底纹
+  - 光泽放射金属卡
+  - 哑光主卡 + 发光 3D 数字
+  - 透明金属框状态卡
+- 已使用本地 DApp dev server 直接打开 `http://127.0.0.1:3100/gm-preview` 并截图，供后续视觉确认。
+- 截图产物：
+  - `/Users/ygg/.agent-browser/tmp/screenshots/screenshot-2026-03-30T04-49-38-654Z-6oa2xt.png`
+  - `/Users/ygg/.agent-browser/tmp/screenshots/screenshot-2026-03-30T04-50-06-091Z-5xosiq.png`
+
+### Commands Run (Incremental)
+- `date '+%Y-%m-%d %H:%M:%S %z'`
+- `pnpm --dir apps/dapp typecheck`
+- `pnpm --dir apps/dapp exec eslint src/app/gm-preview/page.tsx`
+- `agent-browser open http://127.0.0.1:3100/gm-preview`
+- `agent-browser snapshot -i`
+- `agent-browser screenshot --full`
+- `agent-browser screenshot`
+- `git status --short`
+
+### Verification Results (Incremental)
+- `pnpm --dir apps/dapp typecheck` 通过。
+- `pnpm --dir apps/dapp exec eslint src/app/gm-preview/page.tsx` 通过。
+- 预演页可正常打开，适合在正式改 dashboard 前先审阅金属/大理石/卡片语言。
+- 当前更适合作为“视觉方向确认板”，不是最终像素级成品；用户确认后再把元素拆入正式页面组件。
+
+## Incremental Update — 2026-03-30 Asset Sourcing Checklist
+- 新增素材筹备清单文档：`docs/plan-excution/goldmint-gm-rebrand-and-single-step-nft-purchase/artifacts-checklist.md`
+- 文档明确了首页高还原所需的 6 类关键素材：
+  - 大理石背景
+  - Hero 拉丝金属底板
+  - 放射拉丝统计卡底板
+  - 金属徽章图标
+  - 3D 发光数字
+  - 透明金属框卡边缘资源
+- 文档同步记录了可用的免费/低风险来源与建议协作模式，便于后续按素材驱动重构首页。
+
+## Incremental Update — 2026-03-30 Asset Shortlist Batch 01
+- 新增第一批候选素材文档：`docs/plan-excution/goldmint-gm-rebrand-and-single-step-nft-purchase/artifacts-shortlist-batch-01.md`
+- 已为首页第一阶段重构挑出 4 类候选来源：
+  - 大理石背景
+  - Hero 拉丝金属底板
+  - 放射拉丝统计卡底图
+  - 金属徽章参考
+- 文档内已标注每类 `Recommended Pick` 与备选链接，便于用户先做小批量确认，再进入素材接入与页面重构阶段。
+
+## Incremental Update — 2026-03-30 Asset Selection Checkpoint
+- 用户已初步确认：
+  - `Marble: A` → `Unsplash Augustine Wong white marble photo`
+  - `Hero: A` → `cgbookcase Brushed Gold 01`
+- `Stat` 仍待定。
+- 用户提供的“多圆盘金属球”素材已分析：
+  - 不适合直接作为 `Stat` 圆角矩形卡片底图
+  - 更适合作为 `Badge / coin / plus button` 的材质与形体参考
+- 已在 shortlist 文档中补充当前选择状态与这一判断，便于后续继续补充 `Stat` 候选。
+
+## Incremental Update — 2026-03-30 Marble Source Adjustment
+- 按用户补充资料，已将首页大理石背景首选切换为：
+  - `Unsplash Augustine Wong white marble photo`
+  - `https://unsplash.com/photos/a-close-up-of-a-white-marble-surface-li0iC0rjvvg`
+- 同步在 shortlist 文档中注明：
+  - 该素材更适合做整页背景 `cover`
+  - 不应按“无缝平铺贴图”使用
+- `ambientCG Marble005 / Marble019` 现保留为工程化备选。
+
+## Incremental Update — 2026-03-30 Stat Candidate Clarification
+- 已进一步澄清 `Stat` 候选的使用方式：
+  - `TextureCan 423` 可继续保留为第一候选，但只使用其 `Plane` 平面材质逻辑，不使用球体渲染图本身。
+  - 新增更平面的备选：
+    - `ambientCG Metal051A`
+    - `ambientCG Metal051B`
+    - 高对比备选 `ambientCG Metal051C`
+- shortlist 文档现已明确区分：
+  - `球体预览图` 只作为材质展示
+  - `真正落到页面的素材` 应是平面 radial brushed metal
+
+## Incremental Update — 2026-03-30 Dashboard-Style Preview Refresh
+- 已将 `apps/dapp/src/app/gm-preview/page.tsx` 从“元素陈列板”改为更接近正式首页结构的独立样本页。
+- 当前样本页方向：
+  - 整页使用暖白大理石背景（按用户确认改为 `Unsplash` 方向）
+  - hero 采用 `Hero A` 的拉丝金属语言
+  - `Stat` 卡采用更平面化的 radial brushed metal 表现
+  - `Badge / plus button` 吸收金属球面素材的徽章质感
+- 该路由仍是独立预览页，不影响正式业务页面。
+
+### Commands Run (Preview Refresh)
+- `pnpm --dir apps/dapp typecheck`
+- `pnpm --dir apps/dapp exec eslint src/app/gm-preview/page.tsx`
+- `lsof -i :3100`
+- `kill -9 50389`
+- `pnpm dev`
+- `lsof -i :3000`
+- `kill -9 29366`
+- `PORT=3100 pnpm dev`
+
+### Verification Results (Preview Refresh)
+- `pnpm --dir apps/dapp typecheck` 通过。
+- `pnpm --dir apps/dapp exec eslint src/app/gm-preview/page.tsx` 通过。
+- DApp 预览服务已按 `3100` 端口重新拉起，可直接访问 `/gm-preview` 查看样本。
+
+## Incremental Update — 2026-03-30 3D Metal Rim Preview Pass
+- 继续在独立预览页 `apps/dapp/src/app/gm-preview/page.tsx` 上细化三类卡片与徽章的 3D 金属感：
+  - 为 `hero`、`stat`、`transparent` 三类卡片增加独立金属边框层
+  - 新增 `MetalFrame` 包装器，统一实现外金属圈、内凹圈、顶部高光线、底部暗边线
+  - 强化 `CoinBadge`，加入图标阴影层、反射高光层与主图层，模拟压铸徽章感
+- 本轮仍只作用于 `/gm-preview`，不影响正式首页。
+
+### Commands Run (3D Rim Pass)
+- `pnpm --dir apps/dapp typecheck`
+- `pnpm --dir apps/dapp exec eslint src/app/gm-preview/page.tsx`
+
+### Verification Results (3D Rim Pass)
+- `pnpm --dir apps/dapp typecheck` 通过。
+- `pnpm --dir apps/dapp exec eslint src/app/gm-preview/page.tsx` 通过。
+- 预览页现在具备更明确的“3D 外框”与“立体徽章”层级，适合继续对比参考图做下一轮微调。
