@@ -33,7 +33,7 @@ export function MobileLayout({
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col pb-32">
         {/* Header */}
-        <header className="sticky top-0 z-30 overflow-hidden border-b border-[var(--toolbar-border)] bg-[var(--toolbar-bg)] shadow-[0_14px_34px_rgba(20,10,4,0.3)] backdrop-blur-xl transition-colors duration-300">
+        <header className="sticky top-0 z-30 border-b border-[var(--toolbar-border)] bg-[var(--toolbar-bg)] shadow-[0_14px_34px_rgba(20,10,4,0.3)] backdrop-blur-xl transition-colors duration-300">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[rgba(255,239,196,0.65)]" />
           <div className="pointer-events-none absolute inset-x-8 bottom-0 h-px bg-[linear-gradient(90deg,rgba(0,0,0,0),rgba(255,220,155,0.62),rgba(0,0,0,0))]" />
           <div className="px-4 pb-3 pt-3 flex items-center justify-between">

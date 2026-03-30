@@ -130,24 +130,24 @@ export function DashboardPage() {
       <div className="space-y-6">
         {/* Hero Stats */}
         <section className="animate-fade-in">
-          <GlassCard variant="highlight" className="goldmint-brushed-panel goldmint-brushed-panel-radial goldmint-outline-card p-5 sm:p-6">
+          <GlassCard variant="highlight" className="goldmint-hero-panel goldmint-outline-card p-5 sm:p-6">
             <div className="flex items-start gap-4">
               <div className="goldmint-plaque flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.35rem] p-2">
                 <GoldmintEmblem compact className="h-full w-full" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm text-[var(--shell-text-soft)]">
+                  <p className="text-sm text-[#72491f]">
                     {t("dashboard.hero.totalAura")}
                   </p>
-                  <div className="goldmint-pill rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-[var(--shell-badge-fg)]">
+                  <div className="goldmint-bronze-chip rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em]">
                     $GM
                   </div>
                 </div>
                 <h1 className="font-brand goldmint-heading mt-2 text-4xl font-semibold leading-none">
                   {formatAuraAtomic(totalAura.toString())}
                 </h1>
-                <p className="mt-2 text-sm text-[var(--shell-text-soft)]">
+                <p className="mt-2 text-sm text-[#845723]">
                   {t("dashboard.hero.approxUsd")}
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-sm">
@@ -162,7 +162,7 @@ export function DashboardPage() {
               </div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="goldmint-outline-card rounded-2xl border px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]">
+              <div className="goldmint-premium-tile rounded-2xl px-4 py-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--shell-text-soft)]">
                   {t("dashboard.stats.currentEpoch.label")}
                 </p>
@@ -171,7 +171,7 @@ export function DashboardPage() {
                 </p>
                 <p className="mt-1 text-xs text-[var(--shell-text-soft)]">{epochStatusLabel}</p>
               </div>
-              <div className="goldmint-outline-card rounded-2xl border px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]">
+              <div className="goldmint-premium-tile rounded-2xl px-4 py-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--shell-text-soft)]">
                   {t("dashboard.stats.smallLeg.label")}
                 </p>
@@ -224,7 +224,7 @@ export function DashboardPage() {
               pendingPlacementQuery.data.length > 0 && (
                 <GlassCard
                   variant="elevated"
-                  className="goldmint-outline-card bg-[linear-gradient(180deg,rgba(255,248,232,0.96)_0%,rgba(244,230,198,0.92)_100%)] p-4"
+                  className="goldmint-premium-tile goldmint-outline-card p-4"
                   hoverEffect
                 >
                   <Link href="/team">
@@ -252,7 +252,7 @@ export function DashboardPage() {
                 </GlassCard>
               )}
 
-            <GlassCard variant="elevated" className="goldmint-outline-card goldmint-brushed-panel p-4" hoverEffect>
+            <GlassCard variant="elevated" className="goldmint-bronze-panel goldmint-outline-card p-4" hoverEffect>
               <Link href="/nft">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -260,15 +260,15 @@ export function DashboardPage() {
                       <Zap className="w-5 h-5 text-aura-primary" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-[var(--shell-title)]">
+                      <p className="text-sm font-medium text-[#fff0c9]">
                         {t("dashboard.milestones.nftEligibility.title")}
                       </p>
-                      <p className="text-xs text-[var(--shell-text-soft)]">
+                      <p className="text-xs text-[#d7be87]">
                         {eligibilityStatusLabel}
                       </p>
                     </div>
                   </div>
-                  <span className="text-xs font-medium text-aura-primary">
+                  <span className="text-xs font-medium text-[#f1d68a]">
                     {t("shared.buttons.details")}
                   </span>
                 </div>
@@ -287,7 +287,7 @@ export function DashboardPage() {
                 <Link key={card.href} href={card.href}>
                   <GlassCard
                     variant="interactive"
-                    className="goldmint-outline-card h-full bg-[linear-gradient(180deg,rgba(255,252,244,0.98)_0%,rgba(244,231,202,0.94)_100%)] p-4"
+                    className="goldmint-premium-tile goldmint-outline-card h-full p-4"
                   >
                     <div
                       className={cn(
@@ -310,7 +310,7 @@ export function DashboardPage() {
 
         {/* Referral Banner */}
         <section className="animate-slide-up" style={{ animationDelay: "0.4s" }}>
-          <GlassCard variant="highlight" className="goldmint-brushed-panel goldmint-outline-card p-4">
+          <GlassCard variant="highlight" className="goldmint-hero-panel goldmint-outline-card p-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="mb-1 text-sm font-medium text-[var(--shell-title)]">

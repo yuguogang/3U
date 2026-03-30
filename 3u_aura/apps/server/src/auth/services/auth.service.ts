@@ -154,9 +154,9 @@ export class AuthService {
         createdUserId = createdUser.id;
 
         if (payload.referralCode?.trim()) {
-          await this.referralOnboardingService.bindInviterForUserTx(
+          shouldAttemptAutoPlacement = await this.tryBindInviterForSigninTx(
             { id: createdUser.id },
-            { inviteCode: payload.referralCode.trim().toUpperCase() },
+            payload.referralCode.trim().toUpperCase(),
             tx,
             {
               bindAuditAction: 'referral.bind-inviter.auto-onboarded',
@@ -164,7 +164,6 @@ export class AuthService {
                 'referral.bind-inviter.auto-onboarded.idempotent',
             },
           );
-          shouldAttemptAutoPlacement = true;
         } else if (userCount === 0) {
           await this.referralService.issueInviteCodeIfMissingForUserTx(
             createdUser.id,
@@ -195,10 +194,11 @@ export class AuthService {
       !user.inviterId &&
       !user.parentId
     ) {
+      let shouldAttemptAutoPlacement = false;
       await this.db.$transaction(async (tx) => {
-        await this.referralOnboardingService.bindInviterForUserTx(
+        shouldAttemptAutoPlacement = await this.tryBindInviterForSigninTx(
           { id: user!.id },
-          { inviteCode: payload.referralCode!.trim().toUpperCase() },
+          payload.referralCode!.trim().toUpperCase(),
           tx,
           {
             bindAuditAction: 'referral.bind-inviter.auto-signin-recovered',
@@ -207,13 +207,15 @@ export class AuthService {
           },
         );
       });
-      await this.treeTopologyService.tryAutoPlaceForBoundUser(user.id, {
-        auditAction: 'tree.bind-placement.auto-signin-recovered',
-        deferredAuditAction: 'tree.bind-placement.auto-signin-recovered.deferred',
-      });
-      user = await this.userService.findOne({
-        where: { id: user.id },
-      });
+      if (shouldAttemptAutoPlacement) {
+        await this.treeTopologyService.tryAutoPlaceForBoundUser(user.id, {
+          auditAction: 'tree.bind-placement.auto-signin-recovered',
+          deferredAuditAction: 'tree.bind-placement.auto-signin-recovered.deferred',
+        });
+        user = await this.userService.findOne({
+          where: { id: user.id },
+        });
+      }
     }
 
     if (user.status !== UserStatus.ACTIVE) {
@@ -221,6 +223,35 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  private async tryBindInviterForSigninTx(
+    user: Pick<User, 'id'>,
+    inviteCode: string,
+    tx: Parameters<ReferralOnboardingService['bindInviterForUserTx']>[2],
+    options?: Parameters<ReferralOnboardingService['bindInviterForUserTx']>[3],
+  ): Promise<boolean> {
+    try {
+      await this.referralOnboardingService.bindInviterForUserTx(
+        user,
+        { inviteCode },
+        tx,
+        options,
+      );
+      return true;
+    } catch (error) {
+      if (this.isSelfInviterBindError(error)) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  private isSelfInviterBindError(error: unknown): boolean {
+    return (
+      error instanceof BadRequestException &&
+      error.message === 'Users cannot bind themselves as inviter'
+    );
   }
 
   private buildChallengeMessage(

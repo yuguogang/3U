@@ -1,4 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignatureScenarios, UserStatus } from '3u-aura-common';
 
@@ -318,5 +318,34 @@ describe('AuthService', () => {
       }),
     );
     expect(result.inviteCode).toBe('SHARE123');
+  });
+
+  it('keeps sign-in successful when referral recovery hits self-binding validation', async () => {
+    const { db, referralOnboardingService, service, treeTopologyService, userService } =
+      createService();
+    const existingUser = {
+      id: 'user_existing',
+      inviterId: null,
+      parentId: null,
+      inviteCode: 'SELF1234',
+      walletAddress: basePayload.address,
+      status: UserStatus.ACTIVE,
+    };
+
+    userService.findOne.mockResolvedValue(existingUser);
+    db.$transaction.mockImplementation((operation: (tx: object) => Promise<unknown>) =>
+      operation({ user: {} } as any),
+    );
+    referralOnboardingService.bindInviterForUserTx.mockRejectedValue(
+      new BadRequestException('Users cannot bind themselves as inviter'),
+    );
+
+    const result = await service.signinBySignature({
+      ...basePayload,
+      referralCode: 'self1234',
+    });
+
+    expect(result).toEqual(existingUser);
+    expect(treeTopologyService.tryAutoPlaceForBoundUser).not.toHaveBeenCalled();
   });
 });

@@ -10,6 +10,9 @@ type GoldmintShieldCardCopy = {
   backTierLabel?: string;
   backTierValue?: string;
   backRightsLabel?: string;
+  backLedgerLabel?: string;
+  backRegistryLabel?: string;
+  backRegistryValue?: string;
   detailBadge?: string;
   detailSubtitle?: string;
   detailLabelSurface?: string;
@@ -20,6 +23,9 @@ type GoldmintShieldCardCopy = {
   detailValueSupply?: string;
   detailLabelClaim?: string;
   detailValueClaim?: string;
+  detailCertificateLabel?: string;
+  detailCertificateBody?: string;
+  detailArchiveLabel?: string;
   footerFront?: string;
   footerBack?: string;
   footerDetail?: string;
@@ -161,6 +167,9 @@ export function GoldmintShieldCard({
     backTierLabel: copy?.backTierLabel ?? "Tier",
     backTierValue: copy?.backTierValue ?? "Founder",
     backRightsLabel: copy?.backRightsLabel ?? "Holder rights",
+    backLedgerLabel: copy?.backLedgerLabel ?? "Founder rights ledger",
+    backRegistryLabel: copy?.backRegistryLabel ?? "Goldmint registry",
+    backRegistryValue: copy?.backRegistryValue ?? "$GM / Founder Access",
     detailBadge: copy?.detailBadge ?? "Material spec",
     detailSubtitle:
       copy?.detailSubtitle ?? "Stamped metal, enamel core, and rights summary.",
@@ -172,6 +181,12 @@ export function GoldmintShieldCard({
     detailValueSupply: copy?.detailValueSupply ?? "30 buy / 70 referral",
     detailLabelClaim: copy?.detailLabelClaim ?? "Claim",
     detailValueClaim: copy?.detailValueClaim ?? "Weekly subsidy",
+    detailCertificateLabel:
+      copy?.detailCertificateLabel ?? "Material certificate",
+    detailCertificateBody:
+      copy?.detailCertificateBody ??
+      "Bullion-plated frame, blue enamel crest core, and weekly founder rights.",
+    detailArchiveLabel: copy?.detailArchiveLabel ?? "Spec archive",
     footerFront:
       copy?.footerFront ?? "Bullion shield, crest core, and founder seal.",
     footerBack:
@@ -307,17 +322,26 @@ export function GoldmintShieldCard({
 
             {mode === "front" ? (
               <div className="relative flex min-h-[252px] flex-col items-center justify-between">
-                <div className="goldmint-etched-plaque inline-flex rounded-full px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.26em] text-[#7d4d1d]">
-                  {copyText.frontRibbon}
+                <div className="flex w-full items-center justify-between gap-3">
+                  <div className="goldmint-etched-plaque inline-flex rounded-full px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.26em] text-[#7d4d1d]">
+                    {copyText.frontRibbon}
+                  </div>
+                  <div className="goldmint-bronze-chip rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]">
+                    {serialLabel}
+                  </div>
                 </div>
                 <div className="relative flex flex-1 items-center justify-center py-4">
                   <ShieldBackdrop
                     idPrefix={`${id}-front`}
                     className="absolute inset-0 m-auto h-full max-h-[220px] w-auto"
                   />
+                  <div className="absolute left-2 top-1/2 h-28 w-7 -translate-y-1/2 rounded-full border border-[rgba(247,224,174,0.2)] bg-[linear-gradient(180deg,rgba(255,241,204,0.1),rgba(84,54,28,0.24),rgba(255,241,204,0.08))] shadow-[inset_0_1px_0_rgba(255,244,213,0.18)]" />
+                  <div className="absolute right-2 top-1/2 h-28 w-7 -translate-y-1/2 rounded-full border border-[rgba(247,224,174,0.2)] bg-[linear-gradient(180deg,rgba(255,241,204,0.1),rgba(84,54,28,0.24),rgba(255,241,204,0.08))] shadow-[inset_0_1px_0_rgba(255,244,213,0.18)]" />
                   <div className="absolute top-5 h-20 w-44 rounded-full bg-[radial-gradient(circle,rgba(255,240,205,0.28),rgba(0,0,0,0))] blur-2xl" />
-                  <div className="absolute inset-0 m-auto flex h-36 w-36 items-center justify-center rounded-full border border-[rgba(247,224,174,0.3)] bg-[radial-gradient(circle,rgba(255,247,221,0.24),rgba(6,14,21,0.08))] shadow-[0_18px_32px_rgba(6,12,18,0.26),inset_0_1px_0_rgba(255,249,231,0.18)]">
-                    <GoldmintEmblem className="h-24 w-24 drop-shadow-[0_14px_18px_rgba(12,8,4,0.52)]" />
+                  <div className="absolute inset-0 m-auto flex h-40 w-40 items-center justify-center rounded-full border border-[rgba(247,224,174,0.3)] bg-[radial-gradient(circle,rgba(255,247,221,0.32),rgba(6,14,21,0.12))] shadow-[0_18px_32px_rgba(6,12,18,0.26),inset_0_1px_0_rgba(255,249,231,0.18)]">
+                    <div className="absolute inset-3 rounded-full border border-[rgba(247,224,174,0.24)]" />
+                    <div className="absolute top-3 h-10 w-24 rounded-full bg-[radial-gradient(circle,rgba(255,246,218,0.56),rgba(255,246,218,0))] blur-lg" />
+                    <GoldmintEmblem className="relative h-[6.5rem] w-[6.5rem] drop-shadow-[0_14px_18px_rgba(12,8,4,0.52)]" />
                   </div>
                   <div className="goldmint-plaque absolute bottom-3 left-1/2 flex -translate-x-1/2 rounded-full px-5 py-2">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#fff3cf]">
@@ -348,9 +372,23 @@ export function GoldmintShieldCard({
                     <div className="goldmint-etched-plaque rounded-full px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7d4d1d]">
                       {copyText.backBadge}
                     </div>
-                    <div className="rounded-full border border-[rgba(247,224,174,0.18)] bg-[rgba(8,18,29,0.48)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#f0d79b]">
+                    <div className="goldmint-bronze-chip rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]">
                       {serialLabel}
                     </div>
+                  </div>
+
+                  <div className="goldmint-metal-stage mt-4 rounded-[1.15rem] px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-brand text-[1.02rem] font-semibold text-[#fff0c9]">
+                        {footer}
+                      </p>
+                      <div className="goldmint-coin flex h-8 w-8 items-center justify-center rounded-full">
+                        <GoldmintEmblem compact className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-2 text-[10px] uppercase tracking-[0.22em] text-[#d6bf8a]">
+                      {copyText.backLedgerLabel}
+                    </p>
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-3">
@@ -376,6 +414,13 @@ export function GoldmintShieldCard({
                           </p>
                         </div>
                       ))}
+                    </div>
+                  </div>
+
+                  <div className="goldmint-metal-stage mt-4 rounded-[1.15rem] px-3 py-2">
+                    <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.18em] text-[#d7be88]">
+                      <span>{copyText.backRegistryLabel}</span>
+                      <span>{copyText.backRegistryValue}</span>
                     </div>
                   </div>
                 </div>
@@ -409,6 +454,20 @@ export function GoldmintShieldCard({
                     </div>
                   </div>
 
+                  <div className="goldmint-metal-stage mt-4 rounded-[1.2rem] px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[10px] uppercase tracking-[0.22em] text-[#d8bf88]">
+                        {copyText.detailCertificateLabel}
+                      </p>
+                      <div className="goldmint-bronze-chip rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]">
+                        {serialLabel}
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs leading-relaxed text-[#f1deae]">
+                      {copyText.detailCertificateBody}
+                    </p>
+                  </div>
+
                   <div className="mt-5 grid grid-cols-2 gap-3">
                     <SpecTile
                       label={copyText.detailLabelSurface}
@@ -420,6 +479,13 @@ export function GoldmintShieldCard({
                       label={copyText.detailLabelClaim}
                       value={copyText.detailValueClaim}
                     />
+                  </div>
+
+                  <div className="goldmint-metal-stage mt-4 rounded-[1.15rem] px-3 py-2">
+                    <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.18em] text-[#d7be88]">
+                      <span>{copyText.detailArchiveLabel}</span>
+                      <span>{copyText.detailValueSupply}</span>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -146,6 +146,9 @@ export function NftPage() {
     backTierLabel: t("nft.purchased.backTierLabel"),
     backTierValue: t("nft.purchased.backTierValue"),
     backRightsLabel: t("nft.purchased.backRightsLabel"),
+    backLedgerLabel: t("nft.purchased.backLedgerLabel"),
+    backRegistryLabel: t("nft.purchased.backRegistryLabel"),
+    backRegistryValue: t("nft.purchased.backRegistryValue"),
     detailBadge: t("nft.purchased.detailBadge"),
     detailSubtitle: t("nft.purchased.detailSubtitle"),
     detailLabelSurface: t("nft.purchased.detailLabelSurface"),
@@ -156,6 +159,9 @@ export function NftPage() {
     detailValueSupply: t("nft.purchased.detailValueSupply"),
     detailLabelClaim: t("nft.purchased.detailLabelClaim"),
     detailValueClaim: t("nft.purchased.detailValueClaim"),
+    detailCertificateLabel: t("nft.purchased.detailCertificateLabel"),
+    detailCertificateBody: t("nft.purchased.detailCertificateBody"),
+    detailArchiveLabel: t("nft.purchased.detailArchiveLabel"),
     footerFront: t("nft.purchased.footerFront"),
     footerBack: t("nft.purchased.footerBack"),
     footerDetail: t("nft.purchased.footerDetail"),
@@ -338,28 +344,28 @@ export function NftPage() {
                 </div>
               </div>
 
-              <div className="goldmint-dark-inset rounded-[1.45rem] p-2">
+              <div className="goldmint-metal-stage rounded-[1.45rem] p-2">
                 <div className="grid grid-cols-3 gap-2">
-                {([
-                  ["front", t("nft.purchased.previewFront")],
-                  ["back", t("nft.purchased.previewBack")],
-                  ["detail", t("nft.purchased.previewDetail")],
-                ] as const).map(([face, label]) => (
-                  <button
-                    key={face}
-                    type="button"
-                    onClick={() => setCardFace(face)}
-                    className={cn(
-                      "rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] transition-all",
-                      cardFace === face
-                        ? "goldmint-metal-button"
-                        : "goldmint-toolbar-pill hover:brightness-[1.05]",
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+                  {([
+                    ["front", t("nft.purchased.previewFront")],
+                    ["back", t("nft.purchased.previewBack")],
+                    ["detail", t("nft.purchased.previewDetail")],
+                  ] as const).map(([face, label]) => (
+                    <button
+                      key={face}
+                      type="button"
+                      onClick={() => setCardFace(face)}
+                      className={cn(
+                        "rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] transition-all",
+                        cardFace === face
+                          ? "goldmint-metal-button"
+                          : "goldmint-toolbar-pill hover:brightness-[1.05]",
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <GoldmintShieldCard

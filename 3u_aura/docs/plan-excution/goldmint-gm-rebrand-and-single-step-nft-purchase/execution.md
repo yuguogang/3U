@@ -1,10 +1,10 @@
 # Execution
 
 ## Status
-Implementation in progress. UI / branding phase completed; purchase-flow contract changes not started.
+Implementation in progress. UI / branding phase is in second-pass refinement; purchase-flow contract changes not started.
 
 ## Last Updated
-2026-03-29 17:31:04 +0800
+2026-03-30 12:07:43 +0800
 
 ## Summary
 - 已完成品牌/UI 与 NFT 购买链路的代码调研。
@@ -18,6 +18,19 @@ Implementation in progress. UI / branding phase completed; purchase-flow contrac
   - 新增 `Goldmint` 徽章与蓝金盾牌卡视觉组件
   - 改造移动端头部、底部导航、钱包按钮、首页与 NFT 页面
   - 同步多语言可见品牌词到 `Goldmint / $GM`
+- 已完成第二轮 NFT 购买区与卡牌细化：
+  - 购买区从浅金玻璃感改为深铜底座 + 亮金铭牌组合
+  - `GoldmintShieldCard` 补齐 front / back / detail 三态结构
+  - 卡牌新增更厚的外金属框、暗色内凹槽、卡背权益板、详情规格板
+  - 顶部 toolbar 进一步压深为铜棕金属风格
+  - 修复 header `overflow-hidden` 导致顶部弹层被裁切的问题
+- 已完成第三轮首页 / NFT 视觉细修：
+  - 首页 hero 改为更强的金属主面板，功能入口卡改为更厚的铭牌卡片
+  - NFT 正面卡新增编号铭牌、侧边压条与更明显的中心金章
+  - 顶部 toolbar 与 wallet pills 再压深一层铜棕色
+- 已修复登录期 referral 自绑定导致整次登录失败的问题：
+  - 当 referral code 指向用户自己时，自动绑定会跳过，不再阻断登录
+  - 保留普通 inviter 绑定校验，不放开手动绑定规则
 - 本轮未改动合约、ABI、部署或单次确认购买逻辑；购买链路仍保持现有 `approve + buyNFT` 模型。
 
 ## Research Completed
@@ -58,6 +71,12 @@ Implementation in progress. UI / branding phase completed; purchase-flow contrac
   - `apps/dapp/src/components/pages/dashboard-page.tsx`
   - `apps/dapp/src/components/pages/nft-page.tsx`
   - `apps/dapp/messages/*/common.json`
+- 已完成第二轮视觉细化：
+  - `apps/dapp/src/app/globals.css`
+  - `apps/dapp/src/components/layout/mobile-layout.tsx`
+  - `apps/dapp/src/components/branding/goldmint-shield-card.tsx`
+  - `apps/dapp/src/components/pages/nft-page.tsx`
+  - `apps/dapp/messages/*/common.json`
 
 ## Commands Run
 - `rg -n "AURA HUB|AURA|3U|Founder NFT|NFT|card|mint|purchase|approve|allowance|permit|paymentToken|nftSale|buy" apps/dapp apps/contracts apps/server packages/common -g '!**/dist/**'`
@@ -95,6 +114,50 @@ Implementation in progress. UI / branding phase completed; purchase-flow contrac
 - `node --input-type=module -e '<locale common.json patch script>'`
 - `pnpm --dir apps/dapp lint`
 - `pnpm --dir apps/dapp typecheck`
+- `git status --short`
+- `python3 /Users/ygg/.codex/skills/ui-ux-pro-max/scripts/search.py "luxury metallic brushed bronze gold plaque" --domain style`
+- `python3 /Users/ygg/.codex/skills/ui-ux-pro-max/scripts/search.py "fintech luxury gold bronze" --domain color`
+- `python3 /Users/ygg/.codex/skills/ui-ux-pro-max/scripts/search.py "luxury certificate plaque card premium fintech" --domain product`
+- `python3 /Users/ygg/.codex/skills/ui-ux-pro-max/scripts/search.py "luxury serif premium fintech" --domain typography`
+- `python3 /Users/ygg/.codex/skills/ui-ux-pro-max/scripts/search.py "animation accessibility" --domain ux`
+- `sed -n '1,260p' apps/dapp/src/components/branding/goldmint-shield-card.tsx`
+- `sed -n '1,360p' apps/dapp/src/components/pages/nft-page.tsx`
+- `sed -n '260,520p' apps/dapp/src/components/pages/nft-page.tsx`
+- `sed -n '1,260p' apps/dapp/src/components/pages/dashboard-page.tsx`
+- `sed -n '1,220p' apps/dapp/src/components/ui-custom/glass-card.tsx`
+- `sed -n '1,220p' apps/dapp/src/components/ui-custom/stat-card.tsx`
+- `sed -n '1,260p' apps/dapp/src/components/layout/mobile-layout.tsx`
+- `sed -n '520,640p' apps/dapp/src/app/globals.css`
+- `sed -n '500,560p' apps/dapp/messages/en/common.json`
+- `sed -n '500,560p' apps/dapp/messages/zh/common.json`
+- `sed -n '500,560p' apps/dapp/messages/zh-Hant/common.json`
+- `sed -n '500,560p' apps/dapp/messages/ja/common.json`
+- `sed -n '500,560p' apps/dapp/messages/ko/common.json`
+- `sed -n '500,560p' apps/dapp/messages/vi/common.json`
+- `curl -I http://127.0.0.1:3100`
+- `agent-browser open http://127.0.0.1:3100/nft`
+- `agent-browser snapshot -i`
+- `agent-browser screenshot`
+- `agent-browser screenshot --full`
+- `agent-browser click @e3`
+- `agent-browser click @e4`
+- `agent-browser click @e11`
+- `agent-browser click @e16`
+- `date '+%Y-%m-%d %H:%M:%S %z'`
+- `python3 /Users/ygg/.codex/skills/ui-ux-pro-max/scripts/search.py "premium metal plaque dark bronze brushed gold app" --domain style`
+- `python3 /Users/ygg/.codex/skills/ui-ux-pro-max/scripts/search.py "black gold bronze premium app" --domain color`
+- `sed -n '240,520p' apps/dapp/src/components/pages/dashboard-page.tsx`
+- `sed -n '1,220p' apps/dapp/src/components/ui-custom/bottom-nav.tsx`
+- `sed -n '1,220p' apps/dapp/src/components/notifications/notification-inbox-entry.tsx`
+- `sed -n '320,520p' apps/dapp/src/components/branding/goldmint-shield-card.tsx`
+- `pnpm --dir apps/server test -- auth.service.spec.ts`
+- `pnpm --dir apps/server exec tsc --noEmit`
+- `sed -n '1,280p' apps/server/src/auth/services/auth.service.ts`
+- `sed -n '1,240p' apps/server/src/auth/services/auth.service.spec.ts`
+- `sed -n '1,220p' apps/server/src/modules/referral/engines/referral-policy.engine.ts`
+- `sed -n '1,220p' apps/server/src/modules/referral/services/referral-onboarding.service.ts`
+- `sed -n '1,220p' apps/dapp/src/api/auth.ts`
+- `sed -n '1,220p' apps/dapp/src/queries/auth.query.ts`
 
 ## Verification Results
 - 当前 NFT 购买前端确实分为 `approve` 与 `buyNFT` 两个独立钱包写操作。
@@ -113,6 +176,20 @@ Implementation in progress. UI / branding phase completed; purchase-flow contrac
   - 首页财富面板风格
   - NFT 页的金属铭牌购买区与蓝金盾牌卡面
   - 多语言可见品牌文案
+- 第二轮细化后再次确认：
+  - `pnpm --dir apps/dapp typecheck` 通过。
+  - `pnpm --dir apps/dapp lint` 通过，仍只有仓库既有 2 个 warning，无新增 error。
+  - 本地页面可正常打开：`http://127.0.0.1:3100/nft`
+  - 新版 NFT 购买区已切换为深铜底座视觉，front / back / detail 三态均已落地。
+  - 顶部更多菜单弹层已验证可完整显示，不再被 header 裁切。
+- 第三轮细化后再次确认：
+  - `pnpm --dir apps/dapp typecheck` 通过。
+  - `pnpm --dir apps/dapp lint` 通过，仍只有仓库既有 2 个 warning，无新增 error。
+  - 最新首页 hero、功能入口与 NFT 卡正面已切换到更强的铜金金属层次。
+  - `agent-browser screenshot --full` 已复核首页与 NFT 页面视觉结果。
+- 登录兜底修复已确认：
+  - `pnpm --dir apps/server test -- auth.service.spec.ts` 通过，新增“self-binding 不阻断登录”的单测。
+  - `pnpm --dir apps/server exec tsc --noEmit` 通过。
 
 ## Deviations From Original Plan
 - 基于用户当前明确批准的是“金属铭牌风格可以开始做”，本轮先执行了 `Milestone 2` 与 `Milestone 3` 的前端部分。

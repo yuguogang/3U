@@ -173,12 +173,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
     <section>
       <div className="mb-3 flex items-center justify-between px-1">
         <div>
-          <p className="text-sm font-semibold text-[var(--shell-title)]">{t("moreMenu.theme")}</p>
-          <p className="mt-1 text-xs text-[var(--shell-text-soft)]">
+          <p className="text-sm font-semibold text-[#fff0c9]">{t("moreMenu.theme")}</p>
+          <p className="mt-1 text-xs text-[#d6bf89]">
             {t("moreMenu.themeDescription")}
           </p>
         </div>
-        <div className="rounded-full border border-[var(--shell-border)] bg-[var(--shell-control)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--shell-text-soft)]">
+        <div className="goldmint-bronze-chip rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em]">
           {activeThemeLabel}
         </div>
       </div>
@@ -192,9 +192,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
               type="button"
               onClick={() => setTheme(option.id)}
               className={cn(
-                "rounded-2xl border p-2 text-left transition-all duration-200",
-                "border-[var(--shell-border)] bg-[var(--shell-control)] hover:bg-[var(--shell-control-hover)]",
-                isActive && "border-aura-primary/35 bg-aura-primary/10 shadow-glow-sm",
+                "goldmint-premium-tile goldmint-outline-card rounded-2xl p-2 text-left transition-all duration-200",
+                isActive && "border-aura-primary/35 ring-1 ring-aura-primary/20 shadow-glow-sm",
               )}
             >
               <div
@@ -222,12 +221,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
     <section>
       <div className="mb-3 flex items-center justify-between px-1">
         <div>
-          <p className="text-sm font-semibold text-[var(--shell-title)]">{t("moreMenu.language")}</p>
-          <p className="mt-1 text-xs text-[var(--shell-text-soft)]">
+          <p className="text-sm font-semibold text-[#fff0c9]">{t("moreMenu.language")}</p>
+          <p className="mt-1 text-xs text-[#d6bf89]">
             {t("moreMenu.languageDescription")}
           </p>
         </div>
-        <div className="rounded-full border border-[var(--shell-border)] bg-[var(--shell-control)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--shell-text-soft)]">
+        <div className="goldmint-bronze-chip rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em]">
           {localeMeta[activeLocale].shortLabel}
         </div>
       </div>
@@ -241,9 +240,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
               type="button"
               onClick={() => setLocale(candidate)}
               className={cn(
-                "flex items-center gap-2 rounded-2xl border px-3 py-3 text-left transition-all duration-200",
-                "border-[var(--shell-border)] bg-[var(--shell-control)] hover:bg-[var(--shell-control-hover)]",
-                isActive && "border-aura-primary/35 bg-aura-primary/10",
+                "goldmint-premium-tile goldmint-outline-card flex items-center gap-2 rounded-2xl px-3 py-3 text-left transition-all duration-200",
+                isActive && "border-aura-primary/35 ring-1 ring-aura-primary/20",
               )}
             >
               <span className="inline-flex min-w-7 items-center justify-center rounded-md border border-[var(--shell-border)] bg-[var(--shell-soft-surface)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--shell-text-soft)]">
@@ -269,7 +267,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
       {/* Action Menu Overlay */}
       {showActionMenu && (
         <div 
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-[rgba(10,6,4,0.72)] backdrop-blur-sm"
           onClick={handleCloseMenu}
         />
       )}
@@ -277,13 +275,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
       {/* More Menu Sheet */}
       {showActionMenu && (
         <div className="fixed bottom-24 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 animate-slide-up px-4">
-          <div className="rounded-[28px] border border-[var(--shell-border)] bg-[var(--shell-surface-strong)] p-4 shadow-2xl backdrop-blur-xl transition-colors duration-300">
+          <div className="goldmint-sheet-panel goldmint-outline-card rounded-[28px] p-4 backdrop-blur-xl transition-colors duration-300">
             {detailView ? (
               <div className="space-y-4">
                 <button
                   type="button"
                   onClick={() => setDetailView(null)}
-                  className="inline-flex items-center gap-2 rounded-full border border-[var(--shell-border)] bg-[var(--shell-control)] px-3 py-1.5 text-xs font-medium text-[var(--shell-text-muted)] transition hover:bg-[var(--shell-control-hover)]"
+                  className="goldmint-toolbar-pill inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition hover:brightness-[1.04]"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
                   {t("moreMenu.back")}
@@ -296,19 +294,19 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
               <>
                 <div className="mb-4 flex items-start justify-between gap-3 px-1">
                   <div>
-                    <p className="text-sm font-semibold text-[var(--shell-title)]">{t("moreMenu.title")}</p>
-                    <p className="mt-1 text-xs text-[var(--shell-text-soft)]">
+                    <p className="text-sm font-semibold text-[#fff0c9]">{t("moreMenu.title")}</p>
+                    <p className="mt-1 text-xs text-[#d6bf89]">
                       {t("moreMenu.description")}
                     </p>
                   </div>
-                  <div className="rounded-full border border-[var(--shell-border)] bg-[var(--shell-control)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--shell-text-soft)]">
+                  <div className="goldmint-bronze-chip rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em]">
                     {localeMeta[activeLocale].shortLabel}
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <section>
-                    <p className="mb-2 px-2 text-[11px] uppercase tracking-[0.2em] text-[var(--shell-text-soft)]">
+                    <p className="mb-2 px-2 text-[11px] uppercase tracking-[0.2em] text-[#d6bf89]">
                       {t("moreMenu.quickActions")}
                     </p>
                     <div className="grid grid-cols-3 gap-2">
@@ -324,9 +322,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
                             onClick={handleActionItemClick}
                             className={cn(
                               "flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border p-3 text-center transition-all duration-200",
-                  "border-[var(--shell-border)] bg-[var(--shell-surface)] hover:bg-[var(--shell-control-hover)]",
-                  isActive && "border-aura-primary/35 bg-aura-primary/10",
-                )}
+                              "goldmint-premium-tile goldmint-outline-card hover:-translate-y-0.5",
+                              isActive && "border-aura-primary/35 ring-1 ring-aura-primary/20",
+                            )}
                           >
                             <div className="relative">
                               <Icon
@@ -342,12 +340,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
                               ) : null}
                             </div>
                             <span
-                              className={cn(
-                                "text-[11px] font-medium leading-tight",
-                                isActive ? "text-aura-primary" : "text-[var(--shell-copy)]",
-                              )}
-                            >
-                              {item.label}
+                                className={cn(
+                                  "text-[11px] font-medium leading-tight",
+                                  isActive ? "text-aura-primary" : "text-[var(--shell-copy)]",
+                                )}
+                              >
+                                {item.label}
                             </span>
                           </Link>
                         );
@@ -357,10 +355,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
 
                   <section>
                     <div className="mb-2 flex items-center justify-between px-2">
-                      <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--shell-text-soft)]">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[#d6bf89]">
                         {t("moreMenu.preferences")}
                       </p>
-                      <p className="text-[10px] text-[var(--shell-text-soft)]">
+                      <p className="text-[10px] text-[#b99a67]">
                         {t("moreMenu.preferencesHint")}
                       </p>
                     </div>
@@ -378,7 +376,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
                             key={entry.id}
                             type="button"
                             onClick={() => setDetailView(entry.id)}
-                            className="flex min-h-[96px] items-center justify-between gap-3 rounded-2xl border border-[var(--shell-border)] bg-[var(--shell-surface)] px-3 py-3 text-left transition-all duration-200 hover:bg-[var(--shell-control-hover)]"
+                            className="goldmint-premium-tile goldmint-outline-card flex min-h-[96px] items-center justify-between gap-3 rounded-2xl px-3 py-3 text-left transition-all duration-200 hover:-translate-y-0.5"
                           >
                             <div className="flex min-w-0 items-center gap-3">
                               <div className="goldmint-pill flex h-10 w-10 items-center justify-center rounded-2xl text-aura-primary">
@@ -419,62 +417,65 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
         )}
       >
         <div className="mx-auto max-w-md px-4 py-2">
-          <div className="flex items-center justify-between">
-            {mainNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = item.id === "/" ? pathname === "/" : pathname.startsWith(item.id);
-              
-              return (
-                <Link
-                  key={item.id}
-                  href={item.id}
-                  onClick={handleMainNavClick}
-                className={cn(
-                  "relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl",
-                  "transition-all duration-200",
-                  isActive 
-                      ? "text-aura-primary" 
-                      : "text-[#e9d3a7] hover:text-[#fff0c9]"
+          <div className="goldmint-nav-shell relative rounded-[2rem] px-2 pb-2 pt-3">
+            <div className="flex items-center justify-between">
+              {mainNavItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = item.id === "/" ? pathname === "/" : pathname.startsWith(item.id);
+                
+                return (
+                  <Link
+                    key={item.id}
+                    href={item.id}
+                    onClick={handleMainNavClick}
+                    className={cn(
+                      "relative flex flex-col items-center gap-1 rounded-[1rem] px-3 py-2 transition-all duration-200",
+                      isActive
+                        ? "text-aura-primary"
+                        : "text-[#e9d3a7] hover:text-[#fff0c9]",
+                    )}
+                  >
+                    {isActive ? (
+                      <div className="absolute inset-0 rounded-[1rem] bg-[linear-gradient(180deg,rgba(255,244,212,0.16),rgba(255,244,212,0.04))] shadow-[inset_0_1px_0_rgba(255,247,220,0.14)]" />
+                    ) : null}
+                    <Icon className={cn(
+                      "relative h-5 w-5 transition-transform duration-200",
+                      isActive && "scale-110"
+                    )} />
+                    <span className={cn(
+                      "relative text-[10px] font-medium",
+                      isActive && "text-aura-primary"
+                    )}>
+                      {t(item.labelKey)}
+                    </span>
+                    {isActive && (
+                      <div className="absolute bottom-1 h-1 w-6 rounded-full bg-[linear-gradient(90deg,rgba(0,0,0,0),#d7ad64,rgba(0,0,0,0))]" />
+                    )}
+                  </Link>
+                );
+              })}
+
+              <div className="px-2">
+                <button
+                  type="button"
+                  onClick={handleActionButtonClick}
+                  aria-label={t("moreMenu.triggerAria")}
+                  className={cn(
+                    "goldmint-metal-button relative -mt-10 h-14 w-14 rounded-full",
+                    "flex items-center justify-center",
+                    "shadow-glow transition-all duration-300",
+                    "hover:scale-105 active:scale-95",
+                    showActionMenu && "scale-105"
                   )}
                 >
-                  <Icon className={cn(
-                    "h-5 w-5 transition-transform duration-200",
-                    isActive && "scale-110"
-                  )} />
-                  <span className={cn(
-                    "text-[10px] font-medium",
-                    isActive && "text-aura-primary"
-                  )}>
-                    {t(item.labelKey)}
-                  </span>
-                  {isActive && (
-                    <div className="absolute bottom-1 h-1 w-1 rounded-full bg-aura-primary" />
+                  <Plus className="h-6 w-6 text-white" />
+                  {pendingClaims > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--shell-badge-bg)] text-[10px] font-bold text-[var(--shell-badge-fg)]">
+                      {pendingClaims > 9 ? "9+" : pendingClaims}
+                    </span>
                   )}
-                </Link>
-              );
-            })}
-
-            {/* Main Action Button (FAB) */}
-            <div className="px-2">
-              <button
-                type="button"
-                onClick={handleActionButtonClick}
-                aria-label={t("moreMenu.triggerAria")}
-                className={cn(
-                  "goldmint-metal-button relative -mt-10 h-14 w-14 rounded-full",
-                  "flex items-center justify-center",
-                  "shadow-glow transition-all duration-300",
-                  "hover:scale-105 active:scale-95",
-                  showActionMenu && "scale-105"
-                )}
-              >
-                <Plus className="h-6 w-6 text-white" />
-                {pendingClaims > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--shell-badge-bg)] text-[10px] font-bold text-[var(--shell-badge-fg)]">
-                    {pendingClaims > 9 ? "9+" : pendingClaims}
-                  </span>
-                )}
-              </button>
+                </button>
+              </div>
             </div>
           </div>
         </div>
