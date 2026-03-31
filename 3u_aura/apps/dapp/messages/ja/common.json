@@ -16,7 +16,7 @@
     "preferences": "設定",
     "preferencesHint": "テーマと言語",
     "theme": "テーマ",
-    "themeDescription": "ナイト、デイ、Aura の表示スタイルを切り替えます。",
+    "themeDescription": "ナイトとデイの表示スタイルを切り替えます。",
     "language": "言語",
     "languageDescription": "dapp 全体で使う表示言語を選びます。",
     "themes": {

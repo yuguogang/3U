@@ -16,7 +16,7 @@
     "preferences": "Preferences",
     "preferencesHint": "Theme & language",
     "theme": "Theme",
-    "themeDescription": "Switch the app between Night, Day, and Aura styles.",
+    "themeDescription": "Switch the app between Night and Day styles.",
     "language": "Language",
     "languageDescription": "Choose the language used across the dapp.",
     "themes": {

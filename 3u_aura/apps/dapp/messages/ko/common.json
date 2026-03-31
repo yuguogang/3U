@@ -16,7 +16,7 @@
     "preferences": "환경설정",
     "preferencesHint": "테마 및 언어",
     "theme": "테마",
-    "themeDescription": "나이트, 데이, Aura 스타일 사이를 전환합니다.",
+    "themeDescription": "나이트와 데이 스타일 사이를 전환합니다.",
     "language": "언어",
     "languageDescription": "dapp 전체에서 사용할 언어를 선택합니다.",
     "themes": {

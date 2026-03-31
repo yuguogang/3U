@@ -51,7 +51,7 @@ export default async function RootLayout({
               attribute="class"
               defaultTheme="day"
               enableSystem={false}
-              themes={["night", "day", "aura"]}
+              themes={["night", "day"]}
               disableTransitionOnChange
             >
               <Web3Provider>{children}</Web3Provider>

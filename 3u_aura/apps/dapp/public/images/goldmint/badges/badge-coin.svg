@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" preserveAspectRatio="xMidYMid meet" fill="none">
+  <defs>
+    <linearGradient id="coin-edge" x1="20" y1="18" x2="140" y2="146" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6e4317"/>
+      <stop offset="0.18" stop-color="#f7dc93"/>
+      <stop offset="0.38" stop-color="#bb8130"/>
+      <stop offset="0.66" stop-color="#fff1bf"/>
+      <stop offset="0.86" stop-color="#9b6526"/>
+      <stop offset="1" stop-color="#5a3714"/>
+    </linearGradient>
+    <radialGradient id="coin-face" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(80 76) rotate(90) scale(58)">
+      <stop offset="0" stop-color="#fff0bd"/>
+      <stop offset="0.52" stop-color="#ddb05a"/>
+      <stop offset="1" stop-color="#b27a2b"/>
+    </radialGradient>
+    <radialGradient id="coin-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(62 48) rotate(45) scale(68 40)">
+      <stop offset="0" stop-color="rgba(255,255,255,0.95)"/>
+      <stop offset="0.24" stop-color="rgba(255,255,255,0.45)"/>
+      <stop offset="1" stop-color="rgba(255,255,255,0)"/>
+    </radialGradient>
+  </defs>
+  <circle cx="80" cy="80" r="72" fill="#43280f"/>
+  <circle cx="80" cy="80" r="69" fill="url(#coin-edge)"/>
+  <circle cx="80" cy="80" r="52" fill="url(#coin-face)"/>
+  <circle cx="80" cy="80" r="52" fill="url(#coin-glow)" opacity="0.82"/>
+  <circle cx="80" cy="80" r="55" stroke="rgba(255,245,212,0.56)" stroke-width="2"/>
+  <circle cx="80" cy="80" r="41" stroke="rgba(122,77,26,0.34)" stroke-width="2"/>
+  <path d="M44 70C54 58 72 50 94 50C107 50 118 53 126 58" stroke="rgba(255,255,255,0.36)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M42 96C54 108 72 114 90 114C103 114 115 111 123 106" stroke="rgba(110,71,24,0.18)" stroke-width="4" stroke-linecap="round"/>
+</svg>

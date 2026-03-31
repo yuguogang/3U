@@ -282,18 +282,18 @@ export function CheckinPage() {
           >
             <GlassCard variant="elevated" className="p-6">
               <div className="space-y-4">
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <div className="rounded-xl border border-[var(--shell-border)] bg-[var(--shell-soft-surface)] p-4">
                   <div className="flex items-start gap-3">
                     <ArrowRight className="mt-0.5 h-4 w-4 text-aura-primary" />
                     <div className="space-y-1">
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-sm font-medium text-[var(--shell-title)]">
                         {t("checkin.direct.title")}
                       </p>
-                      <p className="text-xs leading-relaxed text-white/60">
+                      <p className="text-xs leading-relaxed text-[var(--shell-copy)]">
                         {t("checkin.direct.description")}
                       </p>
                       {checkedInToday && (
-                        <p className="text-[11px] leading-relaxed text-white/45">
+                        <p className="text-[11px] leading-relaxed text-[var(--shell-text-soft)]">
                           {t("checkin.direct.checkedTodayNotice")}
                         </p>
                       )}
@@ -326,18 +326,18 @@ export function CheckinPage() {
                 )}
 
                 {(showManualRecovery || transferReceipt.isError || checkinMutation.isError) && (
-                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                  <div className="rounded-xl border border-[var(--shell-border)] bg-[var(--shell-soft-surface)] p-4">
                     <div className="mb-3 space-y-1">
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-sm font-medium text-[var(--shell-title)]">
                         {t("checkin.manual.title")}
                       </p>
-                      <p className="text-xs leading-relaxed text-white/50">
+                      <p className="text-xs leading-relaxed text-[var(--shell-copy)]">
                         {t("checkin.manual.description")}
                       </p>
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-4">
                       <div className="relative group">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 group-focus-within:text-aura-primary transition-colors">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--shell-text-soft)] group-focus-within:text-aura-primary transition-colors">
                           <Hash className="h-4 w-4" />
                         </div>
                         <Input
@@ -345,14 +345,14 @@ export function CheckinPage() {
                           placeholder={t("checkin.manual.placeholder")}
                           value={txHash}
                           onChange={(e) => setTxHash(e.target.value)}
-                          className="h-12 pl-11 bg-white/5 border-white/10 rounded-xl focus:border-aura-primary/50 transition-all"
+                          className="h-12 rounded-xl border-[var(--shell-border)] bg-[var(--shell-surface-strong)] pl-11 focus:border-aura-primary/50 transition-all"
                           disabled={isProcessing || !isWalletReady}
                         />
                       </div>
 
                       <Button
                         type="submit"
-                        className="w-full h-12 rounded-xl bg-white/8 border border-white/10 text-white hover:bg-white/12 font-bold"
+                        className="h-12 w-full rounded-xl border border-[var(--shell-border)] bg-[var(--shell-surface-strong)] font-bold text-[var(--shell-title)] hover:bg-[var(--shell-soft-surface)]"
                         disabled={!isWalletReady || !txHash.trim() || isProcessing}
                       >
                         {isSubmittingCheckin
@@ -414,7 +414,7 @@ export function CheckinPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Coins className="w-4 h-4 text-aura-primary" />
-                <span className="text-sm text-white">{t("checkin.lottery.title")}</span>
+                <span className="text-sm text-[var(--shell-title)]">{t("checkin.lottery.title")}</span>
               </div>
               <span className="text-xs text-aura-primary">
                 {t("checkin.lottery.progress", {
@@ -422,7 +422,7 @@ export function CheckinPage() {
                 })}
               </span>
             </div>
-            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-2 overflow-hidden rounded-full bg-[var(--shell-inset)]">
               <div
                 className="h-full bg-gradient-to-r from-aura-primary to-aura-primary-light rounded-full transition-all duration-500"
                 style={{
@@ -430,22 +430,22 @@ export function CheckinPage() {
                 }}
               />
             </div>
-            <p className="text-xs text-white/40 mt-2">
+            <p className="mt-2 text-xs text-[var(--shell-text-soft)]">
               {t("checkin.lottery.remaining", {
                 count: remainingLotteryDays,
               })}
             </p>
-            <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+            <div className="mt-4 rounded-2xl border border-[var(--shell-border)] bg-[var(--shell-soft-surface)] p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-white/8">
+                  <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--shell-inset)]">
                     <Ticket className="h-5 w-5 text-aura-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white">
+                    <p className="text-sm font-medium text-[var(--shell-title)]">
                       {t("checkin.lottery.optInTitle")}
                     </p>
-                    <p className="mt-1 text-xs leading-relaxed text-white/50">
+                    <p className="mt-1 text-xs leading-relaxed text-[var(--shell-copy)]">
                       {currentLottery?.isParticipating
                         ? currentLottery.isCurrentlyQualified
                           ? t("checkin.lottery.joinedQualified")
@@ -480,7 +480,7 @@ export function CheckinPage() {
                       : t("checkin.lottery.joinButton")}
                   </Button>
                 ) : (
-                  <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/50">
+                  <div className="rounded-xl border border-[var(--shell-border)] bg-[var(--shell-soft-surface)] px-3 py-2 text-xs text-[var(--shell-copy)]">
                     {currentLottery?.isParticipating
                       ? currentLottery.isCurrentlyQualified
                         ? t("checkin.lottery.qualifiedBadge")
@@ -497,13 +497,13 @@ export function CheckinPage() {
 
         {/* Calendar */}
         <section>
-          <h2 className="text-sm font-medium text-white/70 mb-3">{t("checkin.calendar.title")}</h2>
+          <h2 className="mb-3 text-sm font-medium text-[var(--shell-text-muted)]">{t("checkin.calendar.title")}</h2>
           <GlassCard className="p-4">
             <div className="grid grid-cols-7 gap-2">
               {weekdayLabels.map((day, i) => (
                 <div
                   key={i}
-                  className="text-center text-xs text-white/40 py-1"
+                  className="py-1 text-center text-xs text-[var(--shell-text-soft)]"
                 >
                   {day}
                 </div>
@@ -515,7 +515,7 @@ export function CheckinPage() {
                     "aspect-square rounded-lg flex items-center justify-center text-sm",
                     day.checked && "bg-aura-primary/20 text-aura-primary",
                     day.isToday && "ring-2 ring-aura-primary text-white",
-                    !day.checked && !day.isToday && "text-white/50",
+                    !day.checked && !day.isToday && "text-[var(--shell-copy)]",
                   )}
                 >
                   {day.checked ? <Check className="w-4 h-4" /> : day.day}

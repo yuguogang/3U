@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Aura Dashboard - The Gilded Mint</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              tertiary: "#77574d",
+              "on-surface-variant": "#4e4639",
+              "surface-variant": "#e4e2de",
+              secondary: "#685d48",
+              "on-tertiary": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "surface-dim": "#dbdad6",
+              outline: "#7f7667",
+              "primary-fixed-dim": "#e9c176",
+              "on-tertiary-fixed-variant": "#5d4037",
+              "on-primary-fixed-variant": "#5d4201",
+              "inverse-surface": "#30312e",
+              "surface-container-highest": "#e4e2de",
+              "on-tertiary-container": "#50342c",
+              "secondary-fixed-dim": "#d3c5ab",
+              error: "#ba1a1a",
+              surface: "#fbf9f5",
+              primary: "#775a19",
+              "inverse-on-surface": "#f2f0ed",
+              "secondary-fixed": "#f0e1c5",
+              "on-error-container": "#93000a",
+              "on-surface": "#1b1c1a",
+              "on-error": "#ffffff",
+              "secondary-container": "#f0e1c5",
+              "on-primary": "#ffffff",
+              "surface-container": "#efeeea",
+              "on-secondary-container": "#6e634d",
+              "inverse-primary": "#e9c176",
+              "surface-container-low": "#f5f3ef",
+              "on-secondary-fixed": "#221b0a",
+              "surface-tint": "#775a19",
+              "tertiary-fixed": "#ffdbd0",
+              "surface-container-high": "#eae8e4",
+              "outline-variant": "#d1c5b4",
+              "primary-container": "#c5a059",
+              "surface-bright": "#fbf9f5",
+              "tertiary-container": "#c39d91",
+              "on-primary-fixed": "#261900",
+              "on-secondary-fixed-variant": "#4f4632",
+              "tertiary-fixed-dim": "#e7bdb1",
+              "primary-fixed": "#ffdea5",
+              "on-background": "#1b1c1a",
+              "on-secondary": "#ffffff",
+              "on-tertiary-fixed": "#2c160e",
+              background: "#fbf9f5",
+              "error-container": "#ffdad6",
+              "on-primary-container": "#4e3700",
+            },
+            fontFamily: {
+              headline: ["Noto Serif"],
+              body: ["Manrope"],
+              label: ["Manrope"],
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+      }
+
+      .metal-plate {
+        background:
+          radial-gradient(circle at 70% 30%, rgba(255, 243, 212, 0.4) 0%, transparent 50%),
+          linear-gradient(135deg, #c5a059 0%, #ffdea5 25%, #9e7a2e 50%, #c5a059 75%, #f0e1c5 100%);
+        background-size: 200% 200%;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .metal-plate::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: url("https://www.transparenttextures.com/patterns/brushed-alum.png");
+        opacity: 0.25;
+        mix-blend-mode: overlay;
+        pointer-events: none;
+      }
+
+      .embossed-metallic-frame {
+        position: relative;
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow:
+          0 10px 30px -10px rgba(119, 90, 25, 0.15),
+          -2px -2px 5px rgba(255, 255, 255, 0.8),
+          2px 2px 5px rgba(119, 90, 25, 0.2);
+      }
+
+      .embossed-metallic-frame::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        padding: 1.5px;
+        border-radius: inherit;
+        background: linear-gradient(135deg, #ffdea5 0%, #775a19 50%, #ffdea5 100%);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+      }
+
+      .gold-text-3d {
+        color: #775a19;
+        text-shadow: 1px 1px 0 #ffdea5, 2px 2px 0 rgba(93, 66, 1, 0.5);
+      }
+
+      .metallic-icon-container {
+        background: radial-gradient(circle at 30% 30%, #ffdea5 0%, #c5a059 50%, #775a19 100%);
+        box-shadow:
+          inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.6),
+          inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.4),
+          0 4px 10px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 222, 165, 0.4);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .metallic-icon-text {
+        background: linear-gradient(135deg, #ffdea5 0%, #775a19 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.4));
+      }
+
+      .beveled-card {
+        border: 1.5px solid transparent;
+        box-shadow:
+          inset 1px 1px 0 rgba(255, 255, 255, 0.4),
+          inset -1px -1px 0 rgba(0, 0, 0, 0.2),
+          0 10px 25px -5px rgba(0, 0, 0, 0.1),
+          0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        background-clip: padding-box;
+        border-image: linear-gradient(135deg, #ffdea5, #775a19) 1;
+      }
+    </style>
+  </head>
+  <body class="bg-surface font-body min-h-screen pb-24 text-on-surface">
+    <header class="fixed left-0 top-0 z-50 flex w-full items-center justify-between border-b border-[#d1c5b4]/20 bg-[#fbf9f5]/80 px-6 py-4 shadow-sm backdrop-blur-2xl">
+      <div class="flex items-center gap-3">
+        <div class="metallic-icon-container flex h-10 w-10 items-center justify-center rounded-full shadow-md">
+          <span class="metallic-icon-text text-lg font-bold italic">3U</span>
+        </div>
+        <h1 class="font-headline text-2xl font-bold tracking-tight text-[#775a19]">AURA</h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <button class="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-primary-container/10">
+          <span class="material-symbols-outlined text-primary">notifications</span>
+        </button>
+        <div class="flex items-center gap-2 rounded-full border border-primary/20 bg-primary-container/20 px-4 py-2">
+          <span class="font-mono text-[11px] font-bold text-primary">0x3C44****93BC</span>
+          <span class="material-symbols-outlined text-sm text-primary">account_balance_wallet</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-lg space-y-8 px-6 pt-24">
+      <section class="relative">
+        <div class="metal-plate rounded-3xl border-[1.5px] border-[#ffdea5]/30 p-8 text-center shadow-2xl">
+          <h3 class="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-on-primary-container/70">
+            累计获得 AURA
+          </h3>
+          <div class="flex flex-col items-center">
+            <span class="gold-text-3d font-headline text-8xl font-extrabold leading-none">0</span>
+            <div class="mt-4 flex flex-col items-center">
+              <span class="text-xl font-bold tracking-wide text-on-primary-container/80">≈ $0.00 USD</span>
+              <div class="mt-2 inline-flex items-center gap-1 rounded-full border border-white/40 bg-white/30 px-3 py-1 backdrop-blur-sm">
+                <span class="material-symbols-outlined text-sm text-primary">trending_up</span>
+                <span class="text-[10px] font-black text-primary">+0.0% 本周</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-2 gap-4">
+        <div class="metal-plate beveled-card flex flex-col gap-3 rounded-2xl p-5">
+          <div class="metallic-icon-container flex h-10 w-10 items-center justify-center rounded-xl">
+            <span class="material-symbols-outlined metallic-icon-text" style='font-variation-settings: "FILL" 1;'>schedule</span>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-on-primary-container/60">当前周期</p>
+            <p class="gold-text-3d font-headline text-xl font-bold text-on-primary-container">#3 进行中</p>
+          </div>
+        </div>
+
+        <div class="metal-plate beveled-card flex flex-col gap-3 rounded-2xl p-5">
+          <div class="metallic-icon-container flex h-10 w-10 items-center justify-center rounded-xl">
+            <span class="material-symbols-outlined metallic-icon-text" style='font-variation-settings: "FILL" 1;'>groups</span>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-on-primary-container/60">小区业绩 0 USDT</p>
+            <div class="flex items-end justify-between">
+              <p class="gold-text-3d font-headline text-xl font-bold text-on-primary-container">进度 0%</p>
+            </div>
+          </div>
+          <div class="mt-1 h-1 w-full overflow-hidden rounded-full bg-black/10">
+            <div class="h-full w-0 bg-white/50"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="space-y-4">
+        <div class="flex items-end justify-between">
+          <h2 class="font-headline text-xl font-bold text-on-surface">里程碑与提醒</h2>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-primary">查看全部</span>
+        </div>
+        <div class="embossed-metallic-frame group flex cursor-pointer items-center justify-between rounded-2xl p-5 transition-all hover:bg-white/30">
+          <div class="flex items-center gap-4">
+            <div class="metallic-icon-container flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg transition-transform group-hover:scale-110">
+              <span class="material-symbols-outlined metallic-icon-text" style='font-variation-settings: "FILL" 1;'>bolt</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-on-surface">NFT 达标状态</h4>
+              <p class="text-xs text-outline">完成里程碑以解锁更多权益</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 text-primary">
+            <span class="text-xs font-bold">详情</span>
+            <span class="material-symbols-outlined text-sm">chevron_right</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="space-y-4">
+        <h2 class="font-headline text-xl font-bold text-on-surface">功能入口</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="embossed-metallic-frame group flex cursor-pointer flex-col items-center gap-4 rounded-2xl p-6 transition-all hover:bg-white/30">
+            <div class="metallic-icon-container flex h-16 w-16 items-center justify-center rounded-full shadow-md">
+              <span class="material-symbols-outlined metallic-icon-text text-3xl" style='font-variation-settings: "FILL" 1;'>calendar_today</span>
+            </div>
+            <div class="text-center">
+              <span class="block text-sm font-bold tracking-wide text-on-surface">每日签到</span>
+              <span class="block text-[10px] text-outline">每天获取 1000 AURA</span>
+            </div>
+          </div>
+
+          <div class="embossed-metallic-frame group flex cursor-pointer flex-col items-center gap-4 rounded-2xl p-6 transition-all hover:bg-white/30">
+            <div class="metallic-icon-container flex h-16 w-16 items-center justify-center rounded-full shadow-md">
+              <span class="material-symbols-outlined metallic-icon-text text-3xl" style='font-variation-settings: "FILL" 1;'>group</span>
+            </div>
+            <div class="text-center">
+              <span class="block text-sm font-bold tracking-wide text-on-surface">我的团队</span>
+              <span class="block text-[10px] text-outline">查看网络结构</span>
+            </div>
+          </div>
+
+          <div class="embossed-metallic-frame group flex cursor-pointer flex-col items-center gap-4 rounded-2xl p-6 transition-all hover:bg-white/30">
+            <div class="metallic-icon-container flex h-16 w-16 items-center justify-center rounded-full shadow-md">
+              <span class="material-symbols-outlined metallic-icon-text text-3xl" style='font-variation-settings: "FILL" 1;'>emoji_events</span>
+            </div>
+            <div class="text-center">
+              <span class="block text-sm font-bold tracking-wide text-on-surface">奖励明细</span>
+              <span class="block text-[10px] text-outline">查看收益数据</span>
+            </div>
+          </div>
+
+          <div class="embossed-metallic-frame group flex cursor-pointer flex-col items-center gap-4 rounded-2xl p-6 transition-all hover:bg-white/30">
+            <div class="metallic-icon-container flex h-16 w-16 items-center justify-center rounded-full shadow-md">
+              <span class="material-symbols-outlined metallic-icon-text text-3xl" style='font-variation-settings: "FILL" 1;'>diamond</span>
+            </div>
+            <div class="text-center">
+              <span class="block text-sm font-bold tracking-wide text-on-surface">NFT 市场</span>
+              <span class="block text-[10px] text-outline">购买并领取 NFT</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 z-50 flex h-20 w-full items-end justify-around border-t border-[#d1c5b4]/10 bg-[#fbf9f5]/60 px-4 pb-safe shadow-[0_-8px_32px_rgba(27,28,26,0.06)] backdrop-blur-3xl">
+      <a class="-translate-y-2 flex scale-105 flex-col items-center justify-center rounded-xl bg-gradient-to-br from-[#775a19] to-[#c5a059] p-3 text-white shadow-lg transition-all" href="#">
+        <span class="material-symbols-outlined" style='font-variation-settings: "FILL" 1;'>account_balance_wallet</span>
+        <span class="mt-1 text-[10px] font-bold uppercase tracking-tighter">Portfolio</span>
+      </a>
+      <a class="flex flex-col items-center justify-center p-2 text-[#8a8a8a] transition-transform hover:text-[#775a19]" href="#">
+        <span class="material-symbols-outlined">trending_up</span>
+        <span class="mt-1 text-[10px] font-semibold uppercase tracking-tighter">Market</span>
+      </a>
+      <a class="flex flex-col items-center justify-center p-2 text-[#8a8a8a] transition-transform hover:text-[#775a19]" href="#">
+        <span class="material-symbols-outlined">swap_calls</span>
+        <span class="mt-1 text-[10px] font-semibold uppercase tracking-tighter">Swap</span>
+      </a>
+      <a class="flex flex-col items-center justify-center p-2 text-[#8a8a8a] transition-transform hover:text-[#775a19]" href="#">
+        <span class="material-symbols-outlined">lock_person</span>
+        <span class="mt-1 text-[10px] font-semibold uppercase tracking-tighter">Vaults</span>
+      </a>
+      <a class="flex flex-col items-center justify-center p-2 text-[#8a8a8a] transition-transform hover:text-[#775a19]" href="#">
+        <span class="material-symbols-outlined">settings</span>
+        <span class="mt-1 text-[10px] font-semibold uppercase tracking-tighter">Settings</span>
+      </a>
+    </nav>
+
+    <div class="pointer-events-none fixed inset-0 -z-10 opacity-[0.08]">
+      <img
+        class="h-full w-full object-cover"
+        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUnF006JK4kZamgmoFCg3H469xoYJdxn-2Nha1QT7LirwUEAQY-p__ijKhZO3N-lYl2hWj5I5M4IfZhGTm54ajpYlQCb53ys5rgxcL0nXW1vOL0pR_yL_r9m6FpZHFQzHY8Ws_dGIyKqTwa-FDrYe2rXGrayWQ8mfqAFiw6n_Xy6gQlzCgRkbk2y8fEehHQthiu7DtcDXIzyp-7Sm_nAVmFrfKtGGyYAN9k5XMg5nfJl2fqWT207PsFZZID4KC4_VG2DoCQyiVhl8"
+      />
+    </div>
+  </body>
+</html>

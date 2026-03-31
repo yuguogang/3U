@@ -382,7 +382,7 @@ export function NftPage() {
                 copy={shieldCardCopy}
               />
 
-              <div className="goldmint-etched-plaque rounded-[1.7rem] p-5">
+              <div className="goldmint-light-card goldmint-etched-plaque rounded-[1.7rem] p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-1 text-[#d2ae64]">
@@ -404,7 +404,7 @@ export function NftPage() {
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="goldmint-outline-card rounded-2xl border bg-[rgba(255,250,239,0.84)] px-4 py-3">
+                  <div className="goldmint-light-card goldmint-outline-card rounded-2xl border bg-[rgba(255,250,239,0.84)] px-4 py-3">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--shell-text-soft)]">
                       {t("nft.purchased.price")}
                     </p>
@@ -412,7 +412,7 @@ export function NftPage() {
                       {formatUsdtAtomic(purchasePrice)} USDT
                     </p>
                   </div>
-                  <div className="goldmint-outline-card rounded-2xl border bg-[rgba(255,249,236,0.7)] px-4 py-3">
+                  <div className="goldmint-light-card goldmint-outline-card rounded-2xl border bg-[rgba(255,249,236,0.7)] px-4 py-3">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--shell-text-soft)]">
                       {t("nft.purchased.yourBalance")}
                     </p>
@@ -422,7 +422,7 @@ export function NftPage() {
                   </div>
                 </div>
 
-                <div className="goldmint-outline-card mt-3 rounded-2xl border bg-[rgba(255,250,239,0.84)] px-4 py-3">
+                <div className="goldmint-light-card goldmint-outline-card mt-3 rounded-2xl border bg-[rgba(255,250,239,0.84)] px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--shell-text-soft)]">
@@ -466,7 +466,7 @@ export function NftPage() {
                 )}
 
                 <div className="mt-4 grid grid-cols-3 gap-2">
-                  <div className="goldmint-outline-card rounded-2xl border bg-[rgba(255,250,239,0.82)] px-3 py-2">
+                  <div className="goldmint-light-card goldmint-outline-card rounded-2xl border bg-[rgba(255,250,239,0.82)] px-3 py-2">
                     <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--shell-text-soft)]">
                       {t("nft.purchased.detailLabelSurface")}
                     </p>
@@ -474,7 +474,7 @@ export function NftPage() {
                       {t("nft.purchased.detailValueSurface")}
                     </p>
                   </div>
-                  <div className="goldmint-outline-card rounded-2xl border bg-[rgba(255,250,239,0.82)] px-3 py-2">
+                  <div className="goldmint-light-card goldmint-outline-card rounded-2xl border bg-[rgba(255,250,239,0.82)] px-3 py-2">
                     <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--shell-text-soft)]">
                       {t("nft.purchased.detailLabelFinish")}
                     </p>
@@ -482,7 +482,7 @@ export function NftPage() {
                       {t("nft.purchased.detailValueFinish")}
                     </p>
                   </div>
-                  <div className="goldmint-outline-card rounded-2xl border bg-[rgba(255,250,239,0.82)] px-3 py-2">
+                  <div className="goldmint-light-card goldmint-outline-card rounded-2xl border bg-[rgba(255,250,239,0.82)] px-3 py-2">
                     <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--shell-text-soft)]">
                       {t("nft.purchased.detailLabelClaim")}
                     </p>
@@ -509,7 +509,7 @@ export function NftPage() {
             <Gem className="w-4 h-4" />
             <span>{t("nft.referral.sectionTitle")}</span>
           </h2>
-          <GlassCard className="goldmint-outline-card bg-[linear-gradient(180deg,rgba(255,252,244,0.98)_0%,rgba(236,223,194,0.9)_100%)] p-5 space-y-5">
+          <GlassCard className="goldmint-light-card goldmint-outline-card bg-[linear-gradient(180deg,rgba(255,252,244,0.98)_0%,rgba(236,223,194,0.9)_100%)] p-5 space-y-5">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
                 <div className="goldmint-coin rounded-[1.25rem] p-2">
@@ -536,7 +536,7 @@ export function NftPage() {
               </div>
             </div>
 
-            <div className="goldmint-outline-card rounded-[1.6rem] border bg-[linear-gradient(160deg,rgba(27,67,107,0.18),rgba(255,250,241,0.86))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.48)]">
+            <div className="goldmint-light-card goldmint-outline-card rounded-[1.6rem] border bg-[linear-gradient(160deg,rgba(27,67,107,0.18),rgba(255,250,241,0.86))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.48)]">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-[10px] uppercase tracking-[0.28em]">

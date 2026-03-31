@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" preserveAspectRatio="none" fill="none">
+  <defs>
+    <linearGradient id="ivory-band" x1="30" y1="24" x2="970" y2="334" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8c5d26"/>
+      <stop offset="0.14" stop-color="#f7e2a7"/>
+      <stop offset="0.34" stop-color="#c58d37"/>
+      <stop offset="0.56" stop-color="#fff1cb"/>
+      <stop offset="0.82" stop-color="#a56f2b"/>
+      <stop offset="1" stop-color="#744b20"/>
+    </linearGradient>
+    <linearGradient id="ivory-core-lip" x1="500" y1="34" x2="500" y2="334" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fffdf8" stop-opacity="0.98"/>
+      <stop offset="0.48" stop-color="#fff7e7" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#efd8a3" stop-opacity="0.2"/>
+    </linearGradient>
+    <linearGradient id="ivory-top-glow" x1="500" y1="18" x2="500" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.94"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="ivory-bottom-weight" x1="500" y1="244" x2="500" y2="338" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9a6b2f" stop-opacity="0"/>
+      <stop offset="1" stop-color="#9a6b2f" stop-opacity="0.34"/>
+    </linearGradient>
+    <mask id="ivory-band-mask">
+      <rect x="18" y="18" width="964" height="324" rx="56" fill="#fff"/>
+      <rect x="40" y="40" width="920" height="280" rx="42" fill="#000"/>
+    </mask>
+    <mask id="ivory-lip-mask">
+      <rect x="32" y="32" width="936" height="296" rx="48" fill="#fff"/>
+      <rect x="50" y="50" width="900" height="260" rx="38" fill="#000"/>
+    </mask>
+  </defs>
+  <rect x="0" y="0" width="1000" height="360" fill="url(#ivory-band)" mask="url(#ivory-band-mask)"/>
+  <rect x="0" y="0" width="1000" height="360" fill="url(#ivory-core-lip)" mask="url(#ivory-lip-mask)"/>
+  <rect x="0" y="0" width="1000" height="360" fill="url(#ivory-top-glow)" mask="url(#ivory-band-mask)"/>
+  <rect x="0" y="0" width="1000" height="360" fill="url(#ivory-bottom-weight)" mask="url(#ivory-band-mask)"/>
+  <rect x="60" y="56" width="880" height="248" rx="34" stroke="#f0d7a0" stroke-opacity="0.26" stroke-width="1.5"/>
+</svg>

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" preserveAspectRatio="none" fill="none">
+  <defs>
+    <linearGradient id="hero-band" x1="34" y1="24" x2="970" y2="540" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8f5d23"/>
+      <stop offset="0.12" stop-color="#fdeeb8"/>
+      <stop offset="0.28" stop-color="#d39b3e"/>
+      <stop offset="0.48" stop-color="#fff4c7"/>
+      <stop offset="0.74" stop-color="#b47c2d"/>
+      <stop offset="1" stop-color="#7a4d1c"/>
+    </linearGradient>
+    <linearGradient id="hero-lip" x1="500" y1="36" x2="500" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff8e5" stop-opacity="0.98"/>
+      <stop offset="0.24" stop-color="#f9ebc3" stop-opacity="0.86"/>
+      <stop offset="0.6" stop-color="#f2d991" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#c9963b" stop-opacity="0.24"/>
+    </linearGradient>
+    <linearGradient id="hero-top-glow" x1="500" y1="20" x2="500" y2="178" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fffdf5" stop-opacity="0.96"/>
+      <stop offset="0.4" stop-color="#fff4cf" stop-opacity="0.46"/>
+      <stop offset="1" stop-color="#fff4cf" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="hero-bottom-weight" x1="500" y1="392" x2="500" y2="548" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8f5b22" stop-opacity="0"/>
+      <stop offset="0.46" stop-color="#8f5b22" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#6b4318" stop-opacity="0.62"/>
+    </linearGradient>
+    <linearGradient id="hero-right-shadow" x1="820" y1="140" x2="968" y2="516" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6f461a" stop-opacity="0"/>
+      <stop offset="1" stop-color="#6f461a" stop-opacity="0.44"/>
+    </linearGradient>
+    <mask id="hero-band-mask">
+      <rect x="18" y="18" width="964" height="524" rx="62" fill="#fff"/>
+      <rect x="64" y="62" width="872" height="436" rx="40" fill="#000"/>
+    </mask>
+    <mask id="hero-lip-mask">
+      <rect x="44" y="44" width="912" height="472" rx="50" fill="#fff"/>
+      <rect x="68" y="68" width="864" height="424" rx="38" fill="#000"/>
+    </mask>
+  </defs>
+  <rect x="0" y="0" width="1000" height="560" fill="url(#hero-band)" mask="url(#hero-band-mask)"/>
+  <rect x="0" y="0" width="1000" height="560" fill="url(#hero-lip)" mask="url(#hero-lip-mask)"/>
+  <rect x="0" y="0" width="1000" height="560" fill="url(#hero-top-glow)" mask="url(#hero-band-mask)"/>
+  <rect x="0" y="0" width="1000" height="560" fill="url(#hero-bottom-weight)" mask="url(#hero-band-mask)"/>
+  <rect x="0" y="0" width="1000" height="560" fill="url(#hero-right-shadow)" mask="url(#hero-band-mask)"/>
+  <rect x="80" y="70" width="840" height="404" rx="34" stroke="#fff4cf" stroke-opacity="0.52" stroke-width="2"/>
+</svg>

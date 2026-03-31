@@ -16,7 +16,7 @@
     "preferences": "偏好設定",
     "preferencesHint": "主題與語言",
     "theme": "主題風格",
-    "themeDescription": "在黑夜、白天與 Aura 風格之間切換。",
+    "themeDescription": "在黑夜與白天風格之間切換。",
     "language": "語言",
     "languageDescription": "選擇 dapp 內使用的顯示語言。",
     "themes": {

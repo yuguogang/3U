@@ -162,7 +162,7 @@ export function DashboardPage() {
               </div>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="goldmint-premium-tile rounded-2xl px-4 py-3">
+              <div className="goldmint-light-card goldmint-premium-tile rounded-2xl px-4 py-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--shell-text-soft)]">
                   {t("dashboard.stats.currentEpoch.label")}
                 </p>
@@ -171,7 +171,7 @@ export function DashboardPage() {
                 </p>
                 <p className="mt-1 text-xs text-[var(--shell-text-soft)]">{epochStatusLabel}</p>
               </div>
-              <div className="goldmint-premium-tile rounded-2xl px-4 py-3">
+              <div className="goldmint-light-card goldmint-premium-tile rounded-2xl px-4 py-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--shell-text-soft)]">
                   {t("dashboard.stats.smallLeg.label")}
                 </p>
@@ -224,7 +224,7 @@ export function DashboardPage() {
               pendingPlacementQuery.data.length > 0 && (
                 <GlassCard
                   variant="elevated"
-                  className="goldmint-premium-tile goldmint-outline-card p-4"
+                  className="goldmint-light-card goldmint-premium-tile goldmint-outline-card p-4"
                   hoverEffect
                 >
                   <Link href="/team">
@@ -287,7 +287,7 @@ export function DashboardPage() {
                 <Link key={card.href} href={card.href}>
                   <GlassCard
                     variant="interactive"
-                    className="goldmint-premium-tile goldmint-outline-card h-full p-4"
+                    className="goldmint-light-card goldmint-premium-tile goldmint-outline-card h-full p-4"
                   >
                     <div
                       className={cn(

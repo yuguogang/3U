@@ -42,8 +42,8 @@ const mainNavItems: NavItem[] = [
 ];
 
 type ThemeOption = {
-  id: "night" | "day" | "aura";
-  labelKey: "moreMenu.themes.night" | "moreMenu.themes.day" | "moreMenu.themes.aura";
+  id: "night" | "day";
+  labelKey: "moreMenu.themes.night" | "moreMenu.themes.day";
   previewClassName: string;
 };
 
@@ -71,11 +71,6 @@ const themeOptions: ThemeOption[] = [
     id: "day",
     labelKey: "moreMenu.themes.day",
     previewClassName: "from-[#fff8ee] via-[#d8ab57] to-[#6a4018]",
-  },
-  {
-    id: "aura",
-    labelKey: "moreMenu.themes.aura",
-    previewClassName: "from-[#0d1521] via-[#295882] to-[#f6e1aa]",
   },
 ];
 
@@ -192,7 +187,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
               type="button"
               onClick={() => setTheme(option.id)}
               className={cn(
-                "goldmint-premium-tile goldmint-outline-card rounded-2xl p-2 text-left transition-all duration-200",
+                "goldmint-light-card goldmint-premium-tile goldmint-outline-card rounded-2xl p-2 text-left transition-all duration-200",
                 isActive && "border-aura-primary/35 ring-1 ring-aura-primary/20 shadow-glow-sm",
               )}
             >
@@ -240,7 +235,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
               type="button"
               onClick={() => setLocale(candidate)}
               className={cn(
-                "goldmint-premium-tile goldmint-outline-card flex items-center gap-2 rounded-2xl px-3 py-3 text-left transition-all duration-200",
+                "goldmint-light-card goldmint-premium-tile goldmint-outline-card flex items-center gap-2 rounded-2xl px-3 py-3 text-left transition-all duration-200",
                 isActive && "border-aura-primary/35 ring-1 ring-aura-primary/20",
               )}
             >
@@ -322,7 +317,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
                             onClick={handleActionItemClick}
                             className={cn(
                               "flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border p-3 text-center transition-all duration-200",
-                              "goldmint-premium-tile goldmint-outline-card hover:-translate-y-0.5",
+                              "goldmint-light-card goldmint-premium-tile goldmint-outline-card hover:-translate-y-0.5",
                               isActive && "border-aura-primary/35 ring-1 ring-aura-primary/20",
                             )}
                           >
@@ -376,7 +371,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ className }) => {
                             key={entry.id}
                             type="button"
                             onClick={() => setDetailView(entry.id)}
-                            className="goldmint-premium-tile goldmint-outline-card flex min-h-[96px] items-center justify-between gap-3 rounded-2xl px-3 py-3 text-left transition-all duration-200 hover:-translate-y-0.5"
+                            className="goldmint-light-card goldmint-premium-tile goldmint-outline-card flex min-h-[96px] items-center justify-between gap-3 rounded-2xl px-3 py-3 text-left transition-all duration-200 hover:-translate-y-0.5"
                           >
                             <div className="flex min-w-0 items-center gap-3">
                               <div className="goldmint-pill flex h-10 w-10 items-center justify-center rounded-2xl text-aura-primary">

@@ -131,8 +131,8 @@
   --shell-surface: rgba(255, 251, 244, 0.78);
   --shell-surface-strong: rgba(255, 250, 241, 0.9);
   --shell-soft-surface: rgba(255, 250, 241, 0.94);
-  --shell-text-muted: rgba(82, 58, 34, 0.88);
-  --shell-text-soft: rgba(124, 92, 58, 0.88);
+  --shell-text-muted: rgba(78, 54, 30, 0.94);
+  --shell-text-soft: rgba(112, 80, 46, 0.94);
   --shell-top-glow: radial-gradient(circle at top, rgba(204, 152, 70, 0.18), transparent 64%);
   --toolbar-bg:
     radial-gradient(circle at 50% -70%, rgba(248, 217, 150, 0.22) 0%, rgba(0, 0, 0, 0) 58%),
@@ -170,7 +170,7 @@
     0 4px 10px rgba(180, 139, 75, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
   --shell-title: #352315;
-  --shell-copy: rgba(53, 35, 21, 0.86);
+  --shell-copy: rgba(53, 35, 21, 0.94);
   --shell-heading-gradient-start: #5f3b18;
   --shell-heading-gradient-end: #cb9846;
   --shell-inset: rgba(255, 255, 255, 0.68);
@@ -710,6 +710,18 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+  }
+
+  .night .goldmint-light-card {
+    --shell-title: #845520;
+    --shell-copy: rgba(138, 95, 38, 0.92);
+    --shell-text-soft: rgba(158, 112, 53, 0.78);
+    --shell-text-muted: rgba(146, 102, 47, 0.88);
+    --shell-border: rgba(188, 146, 72, 0.34);
+    --shell-inset: rgba(145, 104, 49, 0.1);
+    --shell-soft-surface: rgba(255, 249, 236, 0.84);
+    --shell-surface-strong: rgba(255, 250, 240, 0.92);
+    --shell-badge-fg: #8d5d27;
   }
 }
 

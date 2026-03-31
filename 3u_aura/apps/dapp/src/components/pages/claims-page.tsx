@@ -243,12 +243,12 @@ export function ClaimsPage() {
 
         {/* ─── Section 3: Lottery & Ranking (Merkle) ─── */}
         <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-medium text-white/70 flex items-center gap-2">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-sm font-medium text-[var(--shell-text-muted)]">
               <Trophy className="w-4 h-4 text-aura-primary" />
               <span>{t("claims.sections.merkle.title")}</span>
             </h2>
-            <span className="text-[10px] text-white/40">
+            <span className="text-[10px] text-[var(--shell-text-soft)]">
               {claimSummary.claimableMerkle > 0
                 ? t("claims.sections.merkle.badgeClaimable", {
                     count: claimSummary.claimableMerkle,
@@ -264,9 +264,9 @@ export function ClaimsPage() {
           ) : merkleClaims.length === 0 ? (
             <GlassCard className="p-6">
               <div className="flex flex-col items-center gap-2 text-center">
-                <InboxIcon className="w-8 h-8 text-white/20" />
-                <p className="text-sm text-white/40">{t("claims.sections.merkle.emptyTitle")}</p>
-                <p className="text-[10px] text-white/20">
+                <InboxIcon className="h-8 w-8 text-[var(--shell-text-soft)]" />
+                <p className="text-sm text-[var(--shell-title)]">{t("claims.sections.merkle.emptyTitle")}</p>
+                <p className="text-[10px] text-[var(--shell-copy)]">
                   {t("claims.sections.merkle.emptyDescription")}
                 </p>
               </div>
@@ -290,12 +290,12 @@ export function ClaimsPage() {
 
         {/* ─── Section 4: NFT Subsidies ─── */}
         <section className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-medium text-white/70 flex items-center gap-2">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-sm font-medium text-[var(--shell-text-muted)]">
               <Gem className="w-4 h-4 text-blue-400" />
               <span>{t("claims.sections.subsidy.title")}</span>
             </h2>
-            <span className="text-[10px] text-white/40">
+            <span className="text-[10px] text-[var(--shell-text-soft)]">
               {claimSummary.claimableSubsidy > 0
                 ? t("claims.sections.subsidy.badgeClaimable", {
                     count: claimSummary.claimableSubsidy,
@@ -311,9 +311,9 @@ export function ClaimsPage() {
           ) : nftSubsidyClaims.length === 0 ? (
             <GlassCard className="p-6">
               <div className="flex flex-col items-center gap-2 text-center">
-                <InboxIcon className="w-8 h-8 text-white/20" />
-                <p className="text-sm text-white/40">{t("claims.sections.subsidy.emptyTitle")}</p>
-                <p className="text-[10px] text-white/20">
+                <InboxIcon className="h-8 w-8 text-[var(--shell-text-soft)]" />
+                <p className="text-sm text-[var(--shell-title)]">{t("claims.sections.subsidy.emptyTitle")}</p>
+                <p className="text-[10px] text-[var(--shell-copy)]">
                   {t("claims.sections.subsidy.emptyDescription")}
                 </p>
               </div>
