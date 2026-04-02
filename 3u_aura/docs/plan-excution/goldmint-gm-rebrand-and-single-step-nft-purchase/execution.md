@@ -650,3 +650,138 @@ Implementation in progress. UI / branding phase is in second-pass refinement; pu
 - `pnpm --dir apps/dapp exec eslint ...` 通过；`globals.css` 在当前配置中被忽略，返回 1 条 warning，无错误。
 - `pnpm --dir apps/dapp typecheck` 通过。
 - `curl -I http://127.0.0.1:3100` 返回 `HTTP/1.1 200 OK`。
+
+## Incremental Update — 2026-04-01 Stat Hairline Debossed Experiment
+- 为了验证“极细金属压印边框”是否比当前 `stat` 的 9-slice 边框更接近目标，`gm-preview` 中的两个 `StatTile` 暂时从 `FrameShell + border-image` 切换到了纯 CSS 的 `HairlineFrameShell`。
+- 本轮只改 `stat` 小卡，`hero` 大卡和 `ivory` 白底卡保持原样，便于直接肉眼比较边框语言差异。
+- 新的 `HairlineFrameShell` 采用：
+  - 外层 2px 极细金属线宽
+  - 一层暖金高光 + 一层深茶压印阴影
+  - 内层再补 1px 顶/底细线，模拟贴边的 debossed 轮廓
+- `stat` 卡面本身的拉丝/放射金属光泽与圆形徽章未改，只替换外框实现方式。
+
+### Commands Run (Stat Hairline Debossed Experiment)
+- `/usr/local/bin/node node_modules/eslint/bin/eslint.js src/app/gm-preview/page.tsx`
+- `/usr/local/bin/node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json`
+- `curl -I http://127.0.0.1:3100/gm-preview`
+
+### Verification Results (Stat Hairline Debossed Experiment)
+- `eslint` 通过。
+- `typecheck` 通过。
+- `curl -I http://127.0.0.1:3100/gm-preview` 返回 `HTTP/1.1 200 OK`。
+
+## Incremental Update — 2026-04-01 Stat Asset-Driven Hairline Rim Retry
+- 用户提供了新的 `screen1.png` 作为极细金属边框参考图，目标是让 `stat` 小卡回到素材驱动，而不是纯 CSS 压印模拟。
+- 该素材文件本身仍为 `RGB` 且无 alpha，因此先用 ImageMagick 将深灰棋盘背景抠除并裁边，生成了可直接用于 `border-image` 的透明边框资产：
+  - `apps/dapp/public/images/goldmint/frames-9slice/stat-frame-hairline-9slice.png`
+- `gm-preview` 中的 `stat` 小卡已从 `HairlineFrameShell` 切回 `FrameShell`，并接入上述新资产：
+  - `framePaths.stat = "/images/goldmint/frames-9slice/stat-frame-hairline-9slice.png"`
+  - 当前试值：`borderWidth={7}`, `slice={112}`
+  - 内层圆角同步调大到 `rounded-[1.55rem]`，以贴近新素材的圆角语言
+- 同时移除了本轮纯 CSS 实验用的 `HairlineFrameShell`，避免影响后续判断。
+
+### Commands Run (Stat Asset-Driven Hairline Rim Retry)
+- `/usr/local/bin/magick apps/dapp/public/images/goldmint/frames-9slice/screen1.png -alpha set -fuzz 20% -transparent '#1E1E1E' -trim +repage apps/dapp/public/images/goldmint/frames-9slice/stat-frame-hairline-9slice.png`
+- `/usr/local/bin/node node_modules/eslint/bin/eslint.js src/app/gm-preview/page.tsx`
+- `/usr/local/bin/node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json`
+- `curl -I http://127.0.0.1:3100/gm-preview`
+
+### Verification Results (Stat Asset-Driven Hairline Rim Retry)
+- `stat-frame-hairline-9slice.png` 已生成，尺寸为 `898 x 887`，`RGBA`，带 alpha。
+- `eslint` 通过。
+- `typecheck` 通过。
+- `curl -I http://127.0.0.1:3100/gm-preview` 返回 `HTTP/1.1 200 OK`。
+
+## Incremental Update — 2026-04-01 Borderless Baseline Pass
+- 根据最新反馈，`gm-preview` 当前版本的主要判断任务从“继续调边框”切换为“先去掉所有显式边框，观察纯材质关系”。
+- 因此本轮统一移除了页面中的显式边框语言：
+  - 所有 `FrameShell` 的 `border-image` 接法暂停使用
+  - 顶部导航栏的底部分隔线移除
+  - 顶部两个胶囊筛选器的边框移除
+  - 底部说明 pill 的描边移除
+- `FrameShell` 被临时降级为无边框容器，只保留卡面、圆角、内层光泽与徽章，用来建立新的“无边框基线版”。
+- 本轮未改文案、排版层级、金属徽章，也未改 hero/stat/ivory 的卡面纹理。
+
+### Commands Run (Borderless Baseline Pass)
+- `/usr/local/bin/node node_modules/eslint/bin/eslint.js src/app/gm-preview/page.tsx`
+- `/usr/local/bin/node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json`
+- `curl -I http://127.0.0.1:3100/gm-preview`
+
+### Verification Results (Borderless Baseline Pass)
+- `eslint` 通过。
+- `typecheck` 通过。
+- `curl -I http://127.0.0.1:3100/gm-preview` 返回 `HTTP/1.1 200 OK`。
+
+## Incremental Update — 2026-04-01 Ivory Hairline Frame Attempt Using 24.png
+- 用户指定尝试将 `24.png` 这类更克制的细金属边框语言应用到 `ivory` 组卡片。
+- 先将 `24.png` 的白底背景抠成透明，并裁边生成新资产：
+  - `apps/dapp/public/images/goldmint/frames-9slice/ivory-frame-hairline-24.png`
+- 新资产尺寸为 `797 x 799`，`RGBA`，带 alpha，可直接用于 `border-image`。
+- `FrameShell` 重新改为支持“可选边框”模式：
+  - 未提供 `frameSrc / borderWidth / slice` 时继续作为无边框容器
+  - 提供参数时再启用 `border-image`
+- 本轮只把 `ivory` 组卡片重新接回细边框：
+  - 功能入口四张卡
+  - “里程碑与提醒”卡
+- 当前试值：
+  - `frameSrc = "/images/goldmint/frames-9slice/ivory-frame-hairline-24.png"`
+  - `borderWidth = 5`
+  - `slice = 88`
+  - 内层圆角从 `1.18rem` 调整为 `1.45rem`
+- `hero` 与 `stat` 继续保持无边框基线，便于独立判断 `ivory` 细边效果。
+
+### Commands Run (Ivory Hairline Frame Attempt)
+- `/usr/local/bin/magick apps/dapp/public/images/goldmint/frames-9slice/24.png -alpha set -channel RGBA -fuzz 8% -fill none -draw "color 1,1 floodfill" -draw "color 1022,1 floodfill" -draw "color 1,1022 floodfill" -draw "color 1022,1022 floodfill" -draw "color 512,512 floodfill" -trim +repage apps/dapp/public/images/goldmint/frames-9slice/ivory-frame-hairline-24.png`
+- `/usr/local/bin/node node_modules/eslint/bin/eslint.js src/app/gm-preview/page.tsx`
+- `/usr/local/bin/node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json`
+- `curl -I http://127.0.0.1:3100/gm-preview`
+
+### Verification Results (Ivory Hairline Frame Attempt)
+- `ivory-frame-hairline-24.png` 已生成，尺寸为 `797 x 799`，`RGBA`，带 alpha。
+- `eslint` 通过。
+- `typecheck` 通过。
+- `curl -I http://127.0.0.1:3100/gm-preview` 返回 `HTTP/1.1 200 OK`。
+
+## Incremental Update — 2026-04-01 Ivory Hairline Reverted
+- 实际页面验证后，`24.png` 抠底生成的 `ivory` 细边资产出现两个不可接受的问题：
+  - 白底抠出的边缘存在残留与毛刺
+  - 素材的角半径与横向 `ivory` 卡片不匹配，导致轮廓“套不上”
+- 因此本轮不继续微调 `slice / borderWidth`，而是直接撤回 `ivory` 边框尝试。
+- `gm-preview` 重新回到“无边框基线版”：
+  - 功能入口四张卡恢复无边框
+  - “里程碑与提醒”卡恢复无边框
+  - `FrameShell` 再次简化为纯容器，不再带可选 `border-image` 参数
+- 结论：
+  - 当前由白底图抠出的 `ivory` 细边资产不适合继续使用
+  - 后续如果要重启 `ivory` 边框，需要直接从设计工具导出真正透明、且与卡片长宽比/圆角一致的专用素材
+
+### Commands Run (Ivory Hairline Reverted)
+- `/usr/local/bin/node node_modules/eslint/bin/eslint.js src/app/gm-preview/page.tsx`
+- `/usr/local/bin/node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json`
+- `curl -I http://127.0.0.1:3100/gm-preview`
+
+### Verification Results (Ivory Hairline Reverted)
+- `eslint` 通过。
+- `typecheck` 通过。
+- `curl -I http://127.0.0.1:3100/gm-preview` 返回 `HTTP/1.1 200 OK`。
+
+## Incremental Update — 2026-04-02 Wallet Icon And Metadata Refresh
+- 用户提供新的 `GM` 金币图作为钱包入口图标参考。
+- 已将该图片裁成圆形币面资源，并落到 DApp 根级图标入口：
+  - `apps/dapp/src/app/icon.png`
+  - `apps/dapp/src/app/apple-icon.png`
+  - `apps/dapp/src/app/favicon.ico`
+  - `apps/dapp/public/gm-icon-192.png`
+  - `apps/dapp/public/gm-icon-512.png`
+- 已删除旧的 `apps/dapp/src/app/icon.svg`，避免 Next.js 文件路由继续暴露旧图标。
+- 已补齐根级 metadata 与 web manifest，统一改为 `Goldmint GM`，不再暴露旧的 AURA 提示语。
+
+### Commands Run (Wallet Icon And Metadata Refresh)
+- `swift -module-cache-path /tmp/swift-module-cache - <<'SWIFT' ... SWIFT`
+- `/usr/local/bin/magick apps/dapp/src/app/icon.png -define icon:auto-resize=64,48,32,16 apps/dapp/src/app/favicon.ico`
+- `sips -s format png apps/dapp/src/app/favicon.ico --out /tmp/gm-favicon-preview.png`
+
+### Verification Results (Wallet Icon And Metadata Refresh)
+- 新 `icon.png` 已使用用户提供的 GM 金币图，且已放大消除原图棋盘格边缘。
+- 新 `favicon.ico` 已包含 `64/48/32/16` 多尺寸输出，预览可正常显示 GM 金币图标。
+- 根级 metadata / manifest 已切换到 `Goldmint GM` 文案，不再使用旧的 `AURA` 提示语。

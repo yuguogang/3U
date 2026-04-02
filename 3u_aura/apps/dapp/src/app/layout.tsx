@@ -9,6 +9,9 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Web3Provider } from "@/components/providers/web3-provider";
 
+const siteName = "Goldmint GM";
+const siteDescription = "Goldmint GM DApp for daily check-in, founder card access, team rewards, and claims.";
+
 const bodyFont = Manrope({
   subsets: ["latin"],
   variable: "--font-body",
@@ -23,12 +26,39 @@ const displayFont = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "Goldmint | $GM Wealth DApp",
-  description: "Goldmint wealth dashboard, founder card access, and reward operations shell.",
-  icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
-    apple: "/icon.svg",
+  metadataBase: new URL("https://app.goldmint.vip"),
+  title: {
+    default: siteName,
+    template: `%s | ${siteName}`,
+  },
+  description: siteDescription,
+  applicationName: siteName,
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: siteName,
+  },
+  openGraph: {
+    title: siteName,
+    description: siteDescription,
+    siteName,
+    url: "https://app.goldmint.vip",
+    type: "website",
+    images: [
+      {
+        url: "/gm-icon-512.png",
+        width: 512,
+        height: 512,
+        alt: "Goldmint GM coin icon",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: siteName,
+    description: siteDescription,
+    images: ["/gm-icon-512.png"],
   },
 };
 

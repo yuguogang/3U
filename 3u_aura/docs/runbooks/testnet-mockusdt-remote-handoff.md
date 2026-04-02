@@ -130,7 +130,7 @@ sudo mkdir -p 3u-aura
 cd 3u-aura
 sudo curl -L https://github.com/your-org/3u-aura/archive/refs/heads/main.zip -o main.zip
 sudo unzip main.zip
-sudo mv 3u-aura-main current
+sudo mv 3u-aura-main/3u_aura current
 
 ### 3. Prepare Local Secret Files On VPS
 

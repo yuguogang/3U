@@ -6,12 +6,6 @@ const texturePaths = {
   copper: "/images/goldmint/textures/copper-dark-01.jpg",
 } as const;
 
-const framePaths = {
-  hero: "/images/goldmint/frames-9slice/hero-frame-9slice.png",
-  stat: "/images/goldmint/frames-9slice/stat-frame-9slice.png",
-  ivory: "/images/goldmint/frames-9slice/ivory-frame-9slice.png",
-} as const;
-
 const badgePath = "/images/goldmint/badges/badge-coin.svg";
 
 const iconPaths = {
@@ -226,34 +220,18 @@ function TextCoinBadge({
 }
 
 function FrameShell({
-  frameSrc,
-  borderWidth,
-  slice,
   outerClassName,
   innerClassName,
   surfaceStyle,
   children,
 }: {
-  frameSrc: string;
-  borderWidth: number;
-  slice: number;
   outerClassName: string;
   innerClassName: string;
   surfaceStyle: CSSProperties;
   children: ReactNode;
 }) {
   return (
-    <div
-      className={`relative ${outerClassName}`}
-      style={{
-        boxSizing: "border-box",
-        borderStyle: "solid",
-        borderWidth,
-        borderImageSource: `url("${frameSrc}")`,
-        borderImageSlice: slice,
-        borderImageRepeat: "stretch",
-      }}
-    >
+    <div className={`relative ${outerClassName}`}>
       <div className={`relative z-10 h-full overflow-hidden ${innerClassName}`} style={surfaceStyle}>
         {children}
       </div>
@@ -272,9 +250,6 @@ function FeatureTile({
 }) {
   return (
     <FrameShell
-      frameSrc={framePaths.ivory}
-      borderWidth={8}
-      slice={4}
       outerClassName="h-[142px]"
       innerClassName="rounded-[1.18rem] px-4 py-4"
       surfaceStyle={ivorySurface}
@@ -299,11 +274,8 @@ function StatTile({
 }) {
   return (
     <FrameShell
-      frameSrc={framePaths.stat}
-      borderWidth={10}
-      slice={6}
       outerClassName="h-[144px]"
-      innerClassName="rounded-[1.15rem] px-4 py-3"
+      innerClassName="rounded-[1.55rem] px-4 py-3"
       surfaceStyle={statSurface}
     >
       <div className="flex items-start justify-between gap-3">
@@ -346,7 +318,7 @@ export default function GmPreviewPage() {
     <main className="min-h-screen text-[#5e3d18]" style={marbleBackdrop}>
       <div className="mx-auto min-h-screen w-full max-w-[430px] overflow-hidden">
         <header
-          className="sticky top-0 z-10 border-b border-[rgba(121,87,43,0.16)] px-4 py-3"
+          className="sticky top-0 z-10 px-4 py-3"
           style={navShell}
         >
           <div className="flex items-center justify-between gap-3">
@@ -367,13 +339,13 @@ export default function GmPreviewPage() {
 
             <div className="flex items-center gap-2">
               <div
-                className="rounded-full border border-[rgba(245,225,179,0.16)] px-3 py-2 text-[0.85rem] text-[#f3dfb4]"
+                className="rounded-full px-3 py-2 text-[0.85rem] text-[#f3dfb4]"
                 style={metalPill}
               >
                 BSC Testnet
               </div>
               <div
-                className="rounded-full border border-[rgba(245,225,179,0.16)] px-3 py-2 text-[0.85rem] text-[#f3dfb4]"
+                className="rounded-full px-3 py-2 text-[0.85rem] text-[#f3dfb4]"
                 style={metalPill}
               >
                 0x3C4*...93BC
@@ -384,9 +356,6 @@ export default function GmPreviewPage() {
 
         <div className="px-4 pb-28 pt-4">
           <FrameShell
-            frameSrc={framePaths.hero}
-            borderWidth={14}
-            slice={6}
             outerClassName="h-[214px]"
             innerClassName="rounded-[1.65rem] px-5 py-6"
             surfaceStyle={heroSurface}
@@ -441,9 +410,6 @@ export default function GmPreviewPage() {
           <section className="mt-5">
             <div className="mb-2 text-[1rem] font-medium text-[#7b5528]">里程碑与提醒</div>
             <FrameShell
-              frameSrc={framePaths.ivory}
-              borderWidth={8}
-              slice={4}
               outerClassName="h-[86px]"
               innerClassName="flex items-center justify-between rounded-[1.18rem] px-4"
               surfaceStyle={ivorySurface}
@@ -487,7 +453,7 @@ export default function GmPreviewPage() {
             </div>
           </section>
 
-          <div className="mt-6 rounded-full border border-[rgba(181,141,72,0.54)] bg-[rgba(103,71,30,0.16)] px-4 py-2 text-center text-[11px] uppercase tracking-[0.24em] text-[#8a6632]">
+          <div className="mt-6 rounded-full bg-[rgba(103,71,30,0.16)] px-4 py-2 text-center text-[11px] uppercase tracking-[0.24em] text-[#8a6632]">
             Sample Preview · Asset Driven Frame / Texture / Solid Glyph
           </div>
         </div>
