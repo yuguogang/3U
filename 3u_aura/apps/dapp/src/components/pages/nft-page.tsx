@@ -95,12 +95,10 @@ export function NftPage() {
   const allowance = contractState.allowance ?? BigInt(0);
   const nftBalance = contractState.nftBalance ?? BigInt(0);
   const usdtBalance = contractState.usdtBalance ?? BigInt(0);
-  const purchasedMinted =
-    BigInt(30) - (contractState.remainingSupply?.purchasedRemaining ?? BigInt(30));
-  const referralMinted =
-    BigInt(70) - (contractState.remainingSupply?.referralRemaining ?? BigInt(70));
   const purchasedRemaining =
     contractState.remainingSupply?.purchasedRemaining ?? BigInt(0);
+  const referralMinted =
+    BigInt(70) - (contractState.remainingSupply?.referralRemaining ?? BigInt(70));
   const nftSaleAddress = promotionContracts.nftSaleAddress;
   const paymentTokenAddress = promotionContracts.paymentTokenAddress;
   const isCorrectReadChain = isPromotionChain(effectiveReadChainId);
@@ -271,8 +269,7 @@ export function NftPage() {
           <div className="grid grid-cols-2 gap-3">
             <StatCard
               label={t("nft.stats.purchasedMinted")}
-              value={purchasedMinted.toString()}
-              unit="/ 30"
+              value={purchasedRemaining.toString()}
               icon={<ShoppingBag className="w-5 h-5" />}
             />
             <StatCard
@@ -373,7 +370,7 @@ export function NftPage() {
                 mode={cardFace}
                 badge={t("nft.purchased.surfaceBadge")}
                 footer={t("nft.purchased.cardTitle")}
-                serialLabel={`#${(purchasedMinted + BigInt(1)).toString().padStart(3, "0")} / 030`}
+                serialLabel={t("nft.purchased.serialLabel")}
                 utilityItems={[
                   t("nft.purchased.utilityOne"),
                   t("nft.purchased.utilityTwo"),

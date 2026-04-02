@@ -5,6 +5,7 @@ export * from './admin-checkin-repair-request.dto';
 export * from './admin-claim-issue-list-query.dto';
 export * from './admin-claim-sync-request.dto';
 export * from './admin-epoch-sync-request.dto';
+export * from './admin-gift-referral-nft-request.dto';
 export * from './admin-nft-eligibility-list-query.dto';
 export * from './admin-pending-placement-list-query.dto';
 export * from './admin-reject-referral-nft-request.dto';

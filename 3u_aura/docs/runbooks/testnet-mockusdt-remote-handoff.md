@@ -6,6 +6,8 @@ This document is the operator-facing handoff for bringing up the new
 `testnet-mockusdt` environment on the isolated Ubuntu VPS after contracts
 have already been deployed from the local operator machine.
 
+It is intentionally a manual verification path. Automated CI remains in `scripts/ci/*`; `apps/e2e/phase94` and `scripts/uat/*` are preserved as explicit operator-run tooling only.
+
 It assumes:
 
 - repo contains the latest deployment assets
@@ -95,6 +97,12 @@ Otherwise:
 
 - lottery/ranking funding actions may fail
 - subsidy publish/funding actions may fail
+
+## Verification Policy
+
+- Automated CI stays with `scripts/ci/*`.
+- Manual verification uses `apps/e2e/phase94` and `scripts/uat/*`.
+- If you need a quick local or VPS smoke, run the opt-in operator commands from those tools directly rather than reintroducing them into a default CI lane.
 
 ## Secrets The Remote Operator Must Supply
 

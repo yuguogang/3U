@@ -63,10 +63,20 @@ export function CheckinPage() {
 
   const profile = profileQuery.data?.profile;
   const currentLottery = currentLotteryQuery.data;
-  const lotteryStreakDays =
-    currentLottery?.currentStreakDays ?? (profile?.currentStreakDays || 0) % 7;
-  const lotteryProgressDays = Math.min(lotteryStreakDays, 7);
-  const remainingLotteryDays = Math.max(0, 7 - lotteryStreakDays);
+  const totalCheckinCount = profile?.totalCheckinCount ?? 0;
+  const lotteryProgressCheckins =
+    totalCheckinCount === 0
+      ? 0
+      : totalCheckinCount % 7 === 0
+        ? 7
+        : totalCheckinCount % 7;
+  const earnedLotteryTickets = Math.floor(totalCheckinCount / 7);
+  const remainingLotteryCheckins =
+    totalCheckinCount === 0
+      ? 7
+      : lotteryProgressCheckins === 7
+        ? 0
+        : 7 - lotteryProgressCheckins;
   const useAutomationInjectedWallet =
     process.env.NEXT_PUBLIC_E2E_INJECTED_WALLET === "true";
   const effectiveAddress =
@@ -411,29 +421,33 @@ export function CheckinPage() {
         {/* Progress to Next Reward */}
         <section>
           <GlassCard variant="highlight" className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Coins className="w-4 h-4 text-aura-primary" />
-                <span className="text-sm text-[var(--shell-title)]">{t("checkin.lottery.title")}</span>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Coins className="w-4 h-4 text-aura-primary" />
+                  <span className="text-sm text-[var(--shell-title)]">{t("checkin.lottery.title")}</span>
+                </div>
+                <span className="text-xs text-aura-primary">
+                  {t("checkin.lottery.progress", {
+                    current: totalCheckinCount,
+                  })}
+                </span>
               </div>
-              <span className="text-xs text-aura-primary">
-                {t("checkin.lottery.progress", {
-                  current: lotteryProgressDays,
-                })}
-              </span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-[var(--shell-inset)]">
-              <div
-                className="h-full bg-gradient-to-r from-aura-primary to-aura-primary-light rounded-full transition-all duration-500"
-                style={{
-                  width: `${(lotteryProgressDays / 7) * 100}%`,
-                }}
-              />
-            </div>
+              <div className="h-2 overflow-hidden rounded-full bg-[var(--shell-inset)]">
+                <div
+                  className="h-full bg-gradient-to-r from-aura-primary to-aura-primary-light rounded-full transition-all duration-500"
+                  style={{
+                    width: `${(lotteryProgressCheckins / 7) * 100}%`,
+                  }}
+                />
+              </div>
             <p className="mt-2 text-xs text-[var(--shell-text-soft)]">
-              {t("checkin.lottery.remaining", {
-                count: remainingLotteryDays,
-              })}
+              {remainingLotteryCheckins === 0 && earnedLotteryTickets > 0
+                ? t("checkin.lottery.earned", {
+                    count: earnedLotteryTickets,
+                  })
+                : t("checkin.lottery.remaining", {
+                    count: remainingLotteryCheckins,
+                  })}
             </p>
             <div className="mt-4 rounded-2xl border border-[var(--shell-border)] bg-[var(--shell-soft-surface)] p-4">
               <div className="flex items-center justify-between gap-3">

@@ -21,6 +21,7 @@ import {
   EpochStatus,
   EpochType as CommonEpochType,
 } from '3u-aura-common';
+import type { AdminGiftReferralNftRequest } from '../dto';
 import { AuditTrailService } from '../../audit/services/audit-trail.service';
 import { CheckinApplicationService } from '../../checkin/services/checkin-application.service';
 import { ClaimSyncService } from '../../claims/services/claim-sync.service';
@@ -374,6 +375,35 @@ export class AdminOpsService {
 
     return {
       action: 'admin.ops.nft-eligibility.approve',
+      dryRun: false,
+      result,
+    };
+  }
+
+  async giftReferralNft(
+    operator: AdminOperator,
+    command: AdminGiftReferralNftRequest,
+  ) {
+    const result =
+      await this.nftEligibilityApplicationService.giftReferralMintEligibility({
+        decisionReason: command.decisionReason,
+        operatorWallet: operator.walletAddress,
+        userId: command.userId,
+      });
+
+    await this.auditTrailService.record({
+      action: 'admin.ops.nft-eligibility.gift',
+      operatorWallet: operator.walletAddress,
+      payload: {
+        decisionReason: command.decisionReason,
+        userId: command.userId,
+      },
+      targetId: command.userId,
+      targetType: 'NftReferralEligibility',
+    });
+
+    return {
+      action: 'admin.ops.nft-eligibility.gift',
       dryRun: false,
       result,
     };

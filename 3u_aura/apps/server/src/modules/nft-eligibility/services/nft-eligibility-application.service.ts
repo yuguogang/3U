@@ -111,6 +111,34 @@ export class NftEligibilityApplicationService {
     });
   }
 
+  async giftReferralMintEligibility(input: {
+    decisionReason?: string;
+    operatorWallet: string;
+    userId: string;
+  }): Promise<NftEligibilityView> {
+    const current = await this.getCurrentEligibility({ userId: input.userId });
+    this.nftEligibilityPolicyEngine.assertGiftable(current);
+
+    const updated = (await this.nftEligibilityRepository.markApproved(
+      input,
+    )) as EligibilityRecord;
+
+    return this.nftEligibilityPolicyEngine.toView({
+      approvedAt: updated.approvedAt,
+      approvedByWallet: updated.approvedByWallet,
+      decisionReason: updated.decisionReason,
+      expiresAt: updated.expiresAt,
+      mintedTokenId: updated.mintedTokenId,
+      personalCheckinCount: current.personalCheckinCount,
+      rejectedAt: updated.rejectedAt,
+      rejectedByWallet: updated.rejectedByWallet,
+      signedAt: updated.signedAt,
+      smallLegVolumeAtomic: current.smallLegVolumeUsdt,
+      status: updated.status as unknown as NftEligibilityStatus,
+      userId: updated.userId,
+    });
+  }
+
   async rejectReferralMintEligibility(input: {
     decisionReason: string;
     operatorWallet: string;

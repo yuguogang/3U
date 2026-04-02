@@ -35,6 +35,11 @@ import type {
 } from "3u-aura-common";
 import { fetchClient } from "@/lib/fetch.client";
 
+export interface AdminGiftReferralNftRequest {
+  decisionReason?: string;
+  userId: string;
+}
+
 export async function apiGetAdminOverview() {
   return fetchClient<AdminOverviewView>("/api/v1/admin/overview");
 }
@@ -260,6 +265,16 @@ export async function apiRejectReferralNft(
 ) {
   return fetchClient<AdminOperationResultEnvelope<Record<string, unknown>>>(
     "/api/v1/admin/ops/nft-eligibility/reject",
+    {
+      body,
+      method: "POST",
+    },
+  );
+}
+
+export async function apiGiftReferralNft(body: AdminGiftReferralNftRequest) {
+  return fetchClient<AdminOperationResultEnvelope<Record<string, unknown>>>(
+    "/api/v1/admin/ops/nft-eligibility/gift",
     {
       body,
       method: "POST",

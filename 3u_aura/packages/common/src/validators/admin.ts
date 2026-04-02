@@ -118,6 +118,15 @@ export type AdminApproveReferralNftRequest = z.infer<
   typeof AdminApproveReferralNftRequestSchema
 >;
 
+export const AdminGiftReferralNftRequestSchema = z.object({
+  decisionReason: z.string().trim().max(500).optional(),
+  userId: z.string().trim().min(1),
+});
+
+export type AdminGiftReferralNftRequest = z.infer<
+  typeof AdminGiftReferralNftRequestSchema
+>;
+
 export const AdminRejectReferralNftRequestSchema = z.object({
   decisionReason: z.string().trim().min(1).max(500),
   userId: z.string().trim().min(1),

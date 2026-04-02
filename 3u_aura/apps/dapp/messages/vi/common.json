@@ -211,7 +211,7 @@
     },
     "referral": {
       "title": "Invite Friends",
-      "description": "Earn 10% from direct referrals"
+      "description": "Nhận 10% từ giới thiệu trực tiếp và 5% từ giới thiệu gián tiếp"
     }
   },
   "team": {
@@ -359,18 +359,19 @@
       }
     },
     "lottery": {
-      "title": "Weekly Lottery Ticket",
-      "progress": "{current}/7 days",
-      "remaining": "Check in for {count} more {count, plural, one {day} other {days}} to earn a lottery ticket",
+      "title": "1 vé sau mỗi 7 lần điểm danh",
+      "progress": "Tổng {current} lần điểm danh",
+      "remaining": "Còn {count} lần điểm danh nữa để nhận 1 vé xổ số",
+      "earned": "Bạn đã nhận {count} vé xổ số",
       "optInTitle": "Join This Week's Lottery",
-      "optInDescription": "Qualification is tracked automatically, but you still need to opt in manually before the weekly draw.",
+      "optInDescription": "Mỗi 7 lần điểm danh sẽ nhận thêm 1 vé xổ số, và hãy xác nhận tham gia trước khi chốt kỳ.",
       "joinedQualified": "You already joined this week's lottery and currently meet the ticket requirement.",
-      "joinedPending": "You already joined this week's lottery. Keep checking in so you qualify by settlement time.",
+      "joinedPending": "You already joined this week's lottery. Hãy tiếp tục điểm danh để nhận thêm vé sau mỗi 7 lần.",
       "joinedBadge": "Joined",
       "joinButton": "Join Weekly Lottery",
       "joining": "Joining...",
-      "qualifiedBadge": "Joined and ready",
-      "pendingBadge": "Joined, still qualifying",
+      "qualifiedBadge": "Đã tham gia, chờ chốt kỳ",
+      "pendingBadge": "Đã tham gia, tiếp tục điểm danh",
       "waitingEpoch": "Lottery opt-in is unavailable for the current epoch",
       "signInHint": "Connect wallet and sign in before joining"
     },
@@ -487,7 +488,7 @@
     "eyebrow": "Goldmint / Founder Card",
     "title": "Goldmint Founder Card",
     "stats": {
-      "purchasedMinted": "Purchased Minted",
+      "purchasedMinted": "Hạn mức mua",
       "referralMinted": "Referral Minted"
     },
     "summary": {
@@ -510,11 +511,12 @@
       "success": "Purchase successful! Check your wallet.",
       "surfaceBadge": "Bullion grade",
       "availability": "Live offer",
-      "remaining": "Remaining",
+      "remaining": "Hàng khả dụng",
       "approvalHint": "Approval needed",
       "approvalHelp": "The current sale contract still uses approve + buyNFT. First purchase needs one approval transaction before payment.",
       "approvalReady": "Approval ready",
       "purchaseHint": "Allowance is already prepared. The next step is a direct purchase transaction.",
+      "serialLabel": "Phiên mở",
       "previewFront": "Front",
       "previewBack": "Back",
       "previewDetail": "Detail",
@@ -538,7 +540,7 @@
       "detailLabelCore": "Core",
       "detailValueCore": "Blue enamel",
       "detailLabelSupply": "Supply",
-      "detailValueSupply": "30 buy / 70 referral",
+      "detailValueSupply": "Mua / Giới thiệu",
       "detailLabelFinish": "Finish",
       "detailValueFinish": "Brushed metal",
       "detailLabelClaim": "Claim",

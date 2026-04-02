@@ -174,7 +174,11 @@ export interface PromotionCurrentLotteryParticipationView {
   epochStatus: EpochStatus;
   startAt: Date;
   endAt: Date;
+  checkinsPerTicket: number;
+  currentCheckinCount: number;
   currentStreakDays: number;
+  currentTicketCount: number;
+  checkinsUntilNextTicket: number;
   daysUntilTicket: number;
   isCurrentlyQualified: boolean;
   isParticipating: boolean;
@@ -198,6 +202,9 @@ export interface PromotionLotteryOutcomeView {
   isEligible: boolean;
   isRevealed: boolean;
   canReveal: boolean;
+  ticketCount?: number;
+  winningRewardCount?: number;
+  consolationRewardCount?: number;
   participatedAt?: Date;
   revealedAt?: Date;
   resultStatus: PromotionLotteryResultStatus;

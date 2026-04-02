@@ -211,7 +211,7 @@
     },
     "referral": {
       "title": "Invite Friends",
-      "description": "Earn 10% from direct referrals"
+      "description": "Earn 10% from direct referrals and 5% from indirect referrals"
     }
   },
   "team": {
@@ -359,18 +359,19 @@
       }
     },
     "lottery": {
-      "title": "Weekly Lottery Ticket",
-      "progress": "{current}/7 days",
-      "remaining": "Check in for {count} more {count, plural, one {day} other {days}} to earn a lottery ticket",
+      "title": "1 ticket per 7 check-ins",
+      "progress": "Total {current} check-ins",
+      "remaining": "Check in {count} more times to earn 1 lottery ticket",
+      "earned": "You have earned {count} lottery tickets",
       "optInTitle": "Join This Week's Lottery",
-      "optInDescription": "Qualification is tracked automatically, but you still need to opt in manually before the weekly draw.",
+      "optInDescription": "Earn 1 lottery ticket for every 7 check-ins, and remember to opt in before settlement.",
       "joinedQualified": "You already joined this week's lottery and currently meet the ticket requirement.",
-      "joinedPending": "You already joined this week's lottery. Keep checking in so you qualify by settlement time.",
+      "joinedPending": "You already joined this week's lottery. Keep checking in to earn another ticket every 7 check-ins.",
       "joinedBadge": "Joined",
       "joinButton": "Join Weekly Lottery",
       "joining": "Joining...",
-      "qualifiedBadge": "Joined and ready",
-      "pendingBadge": "Joined, still qualifying",
+      "qualifiedBadge": "Joined, waiting for settlement",
+      "pendingBadge": "Joined, keep checking in",
       "waitingEpoch": "Lottery opt-in is unavailable for the current epoch",
       "signInHint": "Connect wallet and sign in before joining"
     },
@@ -487,7 +488,7 @@
     "eyebrow": "Goldmint / Founder Card",
     "title": "Goldmint Founder Card",
     "stats": {
-      "purchasedMinted": "Purchased Minted",
+      "purchasedMinted": "Purchase stock",
       "referralMinted": "Referral Minted"
     },
     "summary": {
@@ -510,11 +511,12 @@
       "success": "Purchase successful! Check your wallet.",
       "surfaceBadge": "Bullion grade",
       "availability": "Live offer",
-      "remaining": "Remaining",
+      "remaining": "Available stock",
       "approvalHint": "Approval needed",
       "approvalHelp": "The current sale contract still uses approve + buyNFT. First purchase needs one approval transaction before payment.",
       "approvalReady": "Approval ready",
       "purchaseHint": "Allowance is already prepared. The next step is a direct purchase transaction.",
+      "serialLabel": "Open edition",
       "previewFront": "Front",
       "previewBack": "Back",
       "previewDetail": "Detail",
@@ -538,7 +540,7 @@
       "detailLabelCore": "Core",
       "detailValueCore": "Blue enamel",
       "detailLabelSupply": "Supply",
-      "detailValueSupply": "30 buy / 70 referral",
+      "detailValueSupply": "Purchase / Referral",
       "detailLabelFinish": "Finish",
       "detailValueFinish": "Brushed metal",
       "detailLabelClaim": "Claim",

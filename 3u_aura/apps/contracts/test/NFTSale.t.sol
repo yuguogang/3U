@@ -51,7 +51,7 @@ contract NFTSaleTest is Test {
         assertTrue(founderNFT.isPurchasedNFT(tokenId));
 
         (uint256 purchasedRemaining, uint256 referralRemaining, uint256 totalRemaining) = sale.getRemainingNFT();
-        assertEq(purchasedRemaining, 29);
+        assertEq(purchasedRemaining, 99);
         assertEq(referralRemaining, 70);
         assertEq(totalRemaining, 99);
     }
@@ -93,9 +93,29 @@ contract NFTSaleTest is Test {
         vm.stopPrank();
     }
 
-    function testPurchasedSupplyCapIsEnforcedThroughSale() public {
-        for (uint256 index = 0; index < founderNFT.MAX_PURCHASED_SUPPLY(); index++) {
+    function testBuyNFTCanExceedFormerThirtyCap() public {
+        for (uint256 index = 0; index < 31; index++) {
             address currentBuyer = address(uint160(index + 0x1000));
+            usdt.mint(currentBuyer, sale.PURCHASE_PRICE());
+            vm.startPrank(currentBuyer);
+            usdt.approve(address(sale), sale.PURCHASE_PRICE());
+            uint256 tokenId = sale.buyNFT();
+            vm.stopPrank();
+
+            assertEq(tokenId, index + 1);
+        }
+
+        assertEq(founderNFT.purchasedMinted(), 31);
+
+        (uint256 purchasedRemaining, uint256 referralRemaining, uint256 totalRemaining) = sale.getRemainingNFT();
+        assertEq(purchasedRemaining, 69);
+        assertEq(referralRemaining, 70);
+        assertEq(totalRemaining, 69);
+    }
+
+    function testBuyNFTRevertsWhenTotalSupplyIsExhausted() public {
+        for (uint256 index = 0; index < founderNFT.MAX_TOTAL_SUPPLY(); index++) {
+            address currentBuyer = address(uint160(index + 0x2000));
             usdt.mint(currentBuyer, sale.PURCHASE_PRICE());
             vm.startPrank(currentBuyer);
             usdt.approve(address(sale), sale.PURCHASE_PRICE());
@@ -107,7 +127,7 @@ contract NFTSaleTest is Test {
         usdt.mint(overflowBuyer, sale.PURCHASE_PRICE());
         vm.startPrank(overflowBuyer);
         usdt.approve(address(sale), sale.PURCHASE_PRICE());
-        vm.expectRevert(FounderNFT.PurchasedSupplySoldOut.selector);
+        vm.expectRevert(FounderNFT.TotalSupplySoldOut.selector);
         sale.buyNFT();
         vm.stopPrank();
     }

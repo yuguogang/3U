@@ -1,4 +1,3 @@
 packages:
   - "apps/*"
-  - "apps/e2e/*"
   - "packages/*"

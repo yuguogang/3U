@@ -167,24 +167,6 @@ importers:
         specifier: ^5
         version: 5.9.3
 
-  apps/e2e/phase94:
-    devDependencies:
-      '@playwright/test':
-        specifier: 1.48.2
-        version: 1.48.2
-      '@synthetixio/synpress':
-        specifier: 4.0.5
-        version: 4.0.5(@depay/solana-web3.js@1.98.3)(@depay/web3-blockchains@9.8.10)(@playwright/test@1.48.2)(@swc/core@1.15.21)(bufferutil@4.1.0)(ethers@5.8.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))(playwright-core@1.48.2)(postcss@8.5.8)(ts-node@10.9.2(@swc/core@1.15.21)(@types/node@24.12.0)(typescript@5.9.3))(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@types/node':
-        specifier: ^24.3.0
-        version: 24.12.0
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      viem:
-        specifier: 2.45.1
-        version: 2.45.1(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
-
   apps/server:
     dependencies:
       3u-aura-common:

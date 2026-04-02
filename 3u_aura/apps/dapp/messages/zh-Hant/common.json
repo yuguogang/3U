@@ -211,7 +211,7 @@
     },
     "referral": {
       "title": "邀請好友",
-      "description": "直推可獲得 10% 獎勵"
+      "description": "直推可獲得 10% 獎勵，間推可獲得 5% 獎勵"
     }
   },
   "team": {
@@ -359,18 +359,19 @@
       }
     },
     "lottery": {
-      "title": "每週抽獎券",
-      "progress": "{current}/7 天",
-      "remaining": "再簽到 {count} 天即可獲得一張抽獎券",
+      "title": "每 7 次簽到 1 張抽獎券",
+      "progress": "累計 {current} 次簽到",
+      "remaining": "再簽到 {count} 次即可獲得 1 張抽獎券",
+      "earned": "已獲得 {count} 張抽獎券",
       "optInTitle": "參與本週抽獎",
-      "optInDescription": "拿到資格後，記得手動確認參與本週抽獎。結算完成後可以去獎勵頁揭曉結果。",
-      "joinedQualified": "你已經報名本週抽獎，而且目前已滿足門票條件。",
-      "joinedPending": "你已經報名本週抽獎。繼續完成本週簽到，結算時達標就會進入抽獎池。",
+      "optInDescription": "每滿 7 次簽到可獲得 1 張抽獎券，結算前記得手動確認參與本週抽獎。",
+      "joinedQualified": "你已經報名本週抽獎，並且目前已滿足抽獎條件。",
+      "joinedPending": "你已經報名本週抽獎。繼續簽到，滿 7 次就會多獲得 1 張抽獎券。",
       "joinedBadge": "已參與",
       "joinButton": "參與本週抽獎",
       "joining": "參與中...",
-      "qualifiedBadge": "已報名，等待開獎",
-      "pendingBadge": "已報名，等待達標",
+      "qualifiedBadge": "已報名，等待結算",
+      "pendingBadge": "已報名，繼續簽到",
       "waitingEpoch": "目前週期不在參與時間內",
       "signInHint": "先連接錢包並完成登入後再參與"
     },
@@ -487,7 +488,7 @@
     "eyebrow": "Goldmint / 創始卡",
     "title": "Goldmint 創始卡",
     "stats": {
-      "purchasedMinted": "已售 NFT",
+      "purchasedMinted": "購買庫存",
       "referralMinted": "已發推薦 NFT"
     },
     "summary": {
@@ -510,11 +511,12 @@
       "success": "購買成功，請到錢包中查看。",
       "surfaceBadge": "金屬銘牌",
       "availability": "正在發售",
-      "remaining": "剩餘數量",
+      "remaining": "可購庫存",
       "approvalHint": "需先授權",
       "approvalHelp": "當前售賣合約仍是 approve + buyNFT 模式，因此首次購買前仍需先完成一次授權交易。",
       "approvalReady": "已可直購",
       "purchaseHint": "當前額度已就緒，下一步就是直接發起購買交易。",
+      "serialLabel": "開放版式",
       "previewFront": "正面",
       "previewBack": "卡背",
       "previewDetail": "詳情",
@@ -538,7 +540,7 @@
       "detailLabelCore": "核心",
       "detailValueCore": "藍色琺瑯",
       "detailLabelSupply": "配額",
-      "detailValueSupply": "購買 30 / 推薦 70",
+      "detailValueSupply": "購買 / 推薦",
       "detailLabelFinish": "工藝",
       "detailValueFinish": "拉絲金屬",
       "detailLabelClaim": "權益",

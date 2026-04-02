@@ -6,7 +6,15 @@ describe('LotteryTicketService', () => {
       record: jest.fn().mockResolvedValue(undefined),
     };
     const lotteryQualificationEngine = {
-      qualifiesForTicket: jest.fn((streakDays: number) => streakDays >= 7),
+      calculateTicketCount: jest.fn((checkinCount: number) =>
+        Math.floor(checkinCount / 7),
+      ),
+      getCheckinsPerTicket: jest.fn(() => 7),
+      getRemainingCheckinsUntilNextTicket: jest.fn((checkinCount: number) => {
+        const remainder = checkinCount % 7;
+        return remainder === 0 ? 0 : 7 - remainder;
+      }),
+      qualifiesForTicket: jest.fn((checkinCount: number) => checkinCount >= 7),
       toDateKey: jest
         .fn()
         .mockReturnValueOnce('2026-03-01')
@@ -14,14 +22,14 @@ describe('LotteryTicketService', () => {
     };
     const lotteryTicketRepository = {
       countEpochTicketState: jest.fn().mockResolvedValue({
-        participantCount: 1,
-        qualifiedTicketCount: 1,
+        participantCount: 2,
+        qualifiedTicketCount: 2,
       }),
       clearTicketsOutsideUserSet: jest.fn().mockResolvedValue(undefined),
       upsertTicket: jest.fn().mockResolvedValue(undefined),
     };
     const statsRepository = {
-      summarizeEpochCheckinDays: jest.fn().mockResolvedValue([]),
+      summarizeEpochCheckinTimes: jest.fn().mockResolvedValue([]),
     };
     const transactionOrchestrator = {
       run: jest.fn(async (operation: (tx: object) => Promise<unknown>) =>
@@ -62,7 +70,7 @@ describe('LotteryTicketService', () => {
     };
   };
 
-  it('materializes one ticket for users with 7 counted check-in days', async () => {
+  it('materializes one ticket per 7 check-ins during refresh', async () => {
     const {
       lotteryTicketRepository,
       service,
@@ -75,13 +83,13 @@ describe('LotteryTicketService', () => {
       id: 'epoch_1',
       startAt: new Date('2026-03-01T16:00:00.000Z'),
     });
-    statsRepository.summarizeEpochCheckinDays.mockResolvedValue([
+    statsRepository.summarizeEpochCheckinTimes.mockResolvedValue([
       {
-        countedCheckinDays: 7,
+        checkinTimes: 14,
         userId: 'user_1',
       },
       {
-        countedCheckinDays: 6,
+        checkinTimes: 6,
         userId: 'user_2',
       },
     ]);
@@ -93,7 +101,7 @@ describe('LotteryTicketService', () => {
       expect.objectContaining({
         epochId: 'epoch_1',
         isEligible: true,
-        ticketCount: 1,
+        ticketCount: 2,
         userId: 'user_1',
       }),
       expect.any(Object),
@@ -111,16 +119,16 @@ describe('LotteryTicketService', () => {
     expect(weeklyEpochRepository.updateTicketCounts).toHaveBeenCalledWith(
       {
         epochId: 'epoch_1',
-        participantCount: 1,
-        qualifiedTicketCount: 1,
+        participantCount: 2,
+        qualifiedTicketCount: 2,
       },
       expect.any(Object),
     );
     expect(result).toEqual({
       eligibleUserIds: ['user_1'],
       epochId: 'epoch_1',
-      participantCount: 1,
-      qualifiedTicketCount: 1,
+      participantCount: 2,
+      qualifiedTicketCount: 2,
     });
   });
 });

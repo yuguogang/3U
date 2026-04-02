@@ -11,6 +11,8 @@
     "local:testnet:server": "PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/server env:start:dev",
     "local:testnet:dapp": "PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/dapp env:dev",
     "local:testnet:admin": "PROMOTION_ENV=testnet-mockusdt pnpm --dir apps/admin env:dev",
+    "ci:run": "node scripts/ci/run.mjs",
+    "ci:all": "node scripts/ci/run-all.mjs",
     "promotion-env:fork:create": "node scripts/uat/create-weekly-fork-env.mjs --env ${PROMOTION_ENV:-fork-anvil}",
     "promotion-env:fork:db:prepare": "node scripts/uat/prepare-weekly-fork-db.mjs --env ${PROMOTION_ENV:-fork-anvil}",
     "promotion-env:fork:db:reset": "node scripts/uat/reset-weekly-fork-db.mjs --env ${PROMOTION_ENV:-fork-anvil}",

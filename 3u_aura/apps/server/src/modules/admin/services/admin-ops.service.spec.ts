@@ -31,6 +31,7 @@ describe('AdminOpsService', () => {
     };
     const nftEligibilityApplicationService = {
       approveReferralMintEligibility: jest.fn(),
+      giftReferralMintEligibility: jest.fn(),
       rejectReferralMintEligibility: jest.fn(),
     };
     const rewardPublicationService = {
@@ -340,6 +341,38 @@ describe('AdminOpsService', () => {
     expect(auditTrailService.record).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'admin.ops.nft-eligibility.approve',
+        operatorWallet: operator.walletAddress,
+        targetId: 'user_1',
+      }),
+    );
+  });
+
+  it('records audit and returns the updated view when gifting referral eligibility', async () => {
+    const { auditTrailService, nftEligibilityApplicationService, service } =
+      createService();
+    nftEligibilityApplicationService.giftReferralMintEligibility.mockResolvedValue(
+      {
+        approvedAt: new Date('2026-03-12T12:00:00.000Z'),
+        approvedByWallet: operator.walletAddress,
+        decisionReason: 'manual gift',
+        personalCheckinCount: 0,
+        requiredCheckinCount: 30,
+        requiredSmallLegUsdt: '6000000000',
+        smallLegVolumeUsdt: '0',
+        status: 'APPROVED',
+        userId: 'user_1',
+      },
+    );
+
+    const result = await service.giftReferralNft(operator, {
+      decisionReason: 'manual gift',
+      userId: 'user_1',
+    });
+
+    expect(result.action).toBe('admin.ops.nft-eligibility.gift');
+    expect(auditTrailService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'admin.ops.nft-eligibility.gift',
         operatorWallet: operator.walletAddress,
         targetId: 'user_1',
       }),

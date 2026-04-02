@@ -28,6 +28,7 @@ export class AdminConsoleRepository {
       totalUsers,
       activeUsers,
       recentUsers24h,
+      teamLeaderSummary,
       pendingPlacementCount,
       pendingReferralNftApprovalCount,
       approvedReferralNftCount,
@@ -41,6 +42,21 @@ export class AdminConsoleRepository {
       this.db.user.count(),
       this.db.user.count({ where: { status: UserStatus.ACTIVE } }),
       this.db.user.count({ where: { createdAt: { gte: recentThreshold } } }),
+      this.db.userProfile.aggregate({
+        where: {
+          OR: [
+            { leftTeamVolume: { gt: 0 } },
+            { rightTeamVolume: { gt: 0 } },
+          ],
+        },
+        _count: {
+          _all: true,
+        },
+        _sum: {
+          leftTeamVolume: true,
+          rightTeamVolume: true,
+        },
+      }),
       this.db.user.count({
         where: {
           inviterId: { not: null },
@@ -91,6 +107,11 @@ export class AdminConsoleRepository {
       rejectedReferralNftCount,
       recentUsers24h,
       signedReferralNftCount,
+      teamLeaderCount: teamLeaderSummary._count._all,
+      teamLeaderTotalPerformanceUsdt: (
+        BigInt(teamLeaderSummary._sum.leftTeamVolume?.toFixed(0) ?? '0') +
+        BigInt(teamLeaderSummary._sum.rightTeamVolume?.toFixed(0) ?? '0')
+      ).toString(),
       totalUsers,
     };
   }

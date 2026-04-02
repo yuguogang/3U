@@ -211,7 +211,7 @@
     },
     "referral": {
       "title": "邀请好友",
-      "description": "直推可获得 10% 奖励"
+      "description": "直推可获得 10% 奖励，间推可获得 5% 奖励"
     }
   },
   "team": {
@@ -359,18 +359,19 @@
       }
     },
     "lottery": {
-      "title": "每周抽奖券",
-      "progress": "{current}/7 天",
-      "remaining": "再签到 {count} 天即可获得一张抽奖券",
+      "title": "每 7 次签到 1 张抽奖券",
+      "progress": "累计 {current} 次签到",
+      "remaining": "再签到 {count} 次即可获得 1 张抽奖券",
+      "earned": "已获得 {count} 张抽奖券",
       "optInTitle": "参与本周抽奖",
-      "optInDescription": "拿到资格后，记得手动确认参与本周抽奖。结算完成后可以去奖励页揭晓结果。",
-      "joinedQualified": "你已经报名本周抽奖，并且当前已经满足门票条件。",
-      "joinedPending": "你已经报名本周抽奖。继续完成本周签到，结算时满足条件就会进入抽奖池。",
+      "optInDescription": "每满 7 次签到可获得 1 张抽奖券，结算前记得手动确认参与本周抽奖。",
+      "joinedQualified": "你已经报名本周抽奖，并且当前已满足抽奖条件。",
+      "joinedPending": "你已经报名本周抽奖。继续签到，满 7 次就会多获得 1 张抽奖券。",
       "joinedBadge": "已参与",
       "joinButton": "参与本周抽奖",
       "joining": "参与中...",
-      "qualifiedBadge": "已报名，等待开奖",
-      "pendingBadge": "已报名，等待达标",
+      "qualifiedBadge": "已报名，等待结算",
+      "pendingBadge": "已报名，继续签到",
       "waitingEpoch": "当前周期不在参与时间内",
       "signInHint": "先连接钱包并完成登录后再参与"
     },
@@ -487,7 +488,7 @@
     "eyebrow": "Goldmint / 创始卡",
     "title": "Goldmint 创始卡",
     "stats": {
-      "purchasedMinted": "已售 NFT",
+      "purchasedMinted": "购买库存",
       "referralMinted": "已发推荐 NFT"
     },
     "summary": {
@@ -510,11 +511,12 @@
       "success": "购买成功，请到钱包中查看。",
       "surfaceBadge": "金属铭牌",
       "availability": "正在发售",
-      "remaining": "剩余数量",
+      "remaining": "可购库存",
       "approvalHint": "需先授权",
       "approvalHelp": "当前售卖合约仍是 approve + buyNFT 模式，因此首次购买前仍需先完成一次授权交易。",
       "approvalReady": "已可直购",
       "purchaseHint": "当前额度已经就绪，下一步就是直接发起购买交易。",
+      "serialLabel": "开放版式",
       "previewFront": "正面",
       "previewBack": "卡背",
       "previewDetail": "详情",
@@ -538,7 +540,7 @@
       "detailLabelCore": "核心",
       "detailValueCore": "蓝色珐琅",
       "detailLabelSupply": "配额",
-      "detailValueSupply": "购买 30 / 推荐 70",
+      "detailValueSupply": "购买 / 推荐",
       "detailLabelFinish": "工艺",
       "detailValueFinish": "拉丝金属",
       "detailLabelClaim": "权益",

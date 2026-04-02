@@ -211,7 +211,7 @@
     },
     "referral": {
       "title": "Invite Friends",
-      "description": "Earn 10% from direct referrals"
+      "description": "직접 추천 10%와 간접 추천 5% 보상을 받을 수 있습니다"
     }
   },
   "team": {
@@ -359,18 +359,19 @@
       }
     },
     "lottery": {
-      "title": "Weekly Lottery Ticket",
-      "progress": "{current}/7 days",
-      "remaining": "Check in for {count} more {count, plural, one {day} other {days}} to earn a lottery ticket",
+      "title": "7회 체크인마다 1장",
+      "progress": "총 {current}회 체크인",
+      "remaining": "추가로 {count}회 체크인하면 로또 티켓 1장을 얻습니다",
+      "earned": "로또 티켓 {count}장을 획득했습니다",
       "optInTitle": "Join This Week's Lottery",
-      "optInDescription": "Qualification is tracked automatically, but you still need to opt in manually before the weekly draw.",
+      "optInDescription": "7회 체크인마다 로또 티켓이 1장 늘어나며, 정산 전에 참여를 확정해 주세요.",
       "joinedQualified": "You already joined this week's lottery and currently meet the ticket requirement.",
-      "joinedPending": "You already joined this week's lottery. Keep checking in so you qualify by settlement time.",
+      "joinedPending": "You already joined this week's lottery. Keep checking in to earn another ticket every 7 check-ins.",
       "joinedBadge": "Joined",
       "joinButton": "Join Weekly Lottery",
       "joining": "Joining...",
-      "qualifiedBadge": "Joined and ready",
-      "pendingBadge": "Joined, still qualifying",
+      "qualifiedBadge": "Joined, waiting for settlement",
+      "pendingBadge": "Joined, keep checking in",
       "waitingEpoch": "Lottery opt-in is unavailable for the current epoch",
       "signInHint": "Connect wallet and sign in before joining"
     },
@@ -487,7 +488,7 @@
     "eyebrow": "Goldmint / Founder Card",
     "title": "Goldmint Founder Card",
     "stats": {
-      "purchasedMinted": "Purchased Minted",
+      "purchasedMinted": "구매 가능 수량",
       "referralMinted": "Referral Minted"
     },
     "summary": {
@@ -510,11 +511,12 @@
       "success": "Purchase successful! Check your wallet.",
       "surfaceBadge": "Bullion grade",
       "availability": "Live offer",
-      "remaining": "Remaining",
+      "remaining": "구매 가능 재고",
       "approvalHint": "Approval needed",
       "approvalHelp": "The current sale contract still uses approve + buyNFT. First purchase needs one approval transaction before payment.",
       "approvalReady": "Approval ready",
       "purchaseHint": "Allowance is already prepared. The next step is a direct purchase transaction.",
+      "serialLabel": "오픈 에디션",
       "previewFront": "Front",
       "previewBack": "Back",
       "previewDetail": "Detail",
@@ -538,7 +540,7 @@
       "detailLabelCore": "Core",
       "detailValueCore": "Blue enamel",
       "detailLabelSupply": "Supply",
-      "detailValueSupply": "30 buy / 70 referral",
+      "detailValueSupply": "구매 / 추천",
       "detailLabelFinish": "Finish",
       "detailValueFinish": "Brushed metal",
       "detailLabelClaim": "Claim",

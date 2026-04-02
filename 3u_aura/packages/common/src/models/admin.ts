@@ -62,6 +62,8 @@ export interface AdminOverviewView {
   rejectedReferralNftCount: number;
   recentUsers24h: number;
   signedReferralNftCount: number;
+  teamLeaderCount?: number;
+  teamLeaderTotalPerformanceUsdt?: string;
   totalUsers: number;
 }
 

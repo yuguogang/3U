@@ -52,4 +52,21 @@ describe('LotteryPayoutEngine', () => {
     ).toHaveLength(4);
     expect(projection.rolloverUsdt).toBe('0');
   });
+
+  it('treats repeated user ids as separate ticket entries', () => {
+    const projection = engine.projectPayout({
+      epochId: 'epoch_3',
+      lotteryPoolUsdt: '1000',
+      participantUserIds: ['user_1', 'user_1', 'user_2', 'user_3'],
+    });
+
+    expect(projection.winners).toHaveLength(2);
+    expect(projection.consolationUserIds).toHaveLength(2);
+    expect(
+      projection.winners.reduce(
+        (sum, winner) => sum + BigInt(winner.amountUsdt),
+        0n,
+      ) + BigInt(projection.rolloverUsdt),
+    ).toBe(1000n);
+  });
 });

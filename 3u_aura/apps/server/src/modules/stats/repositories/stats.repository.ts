@@ -408,6 +408,43 @@ export class StatsRepository {
     }));
   }
 
+  async summarizeEpochCheckinTimes(
+    data: {
+      dateKeyFromInclusive: string;
+      dateKeyToExclusive: string;
+    },
+    executor: DbExecutor = this.db,
+  ): Promise<
+    Array<{
+      checkinTimes: number;
+      lastCheckinDateKey?: string;
+      userId: string;
+    }>
+  > {
+    const rows = await executor.userDailyStat.groupBy({
+      by: ['userId'],
+      where: {
+        checkinTimes: { gt: 0 },
+        dateKey: {
+          gte: data.dateKeyFromInclusive,
+          lt: data.dateKeyToExclusive,
+        },
+      },
+      _max: {
+        dateKey: true,
+      },
+      _sum: {
+        checkinTimes: true,
+      },
+    });
+
+    return rows.map((row) => ({
+      checkinTimes: row._sum.checkinTimes ?? 0,
+      lastCheckinDateKey: row._max.dateKey ?? undefined,
+      userId: row.userId,
+    }));
+  }
+
   async summarizeUserEpochCheckinDays(
     data: {
       dateKeyFromInclusive: string;
@@ -439,6 +476,40 @@ export class StatsRepository {
     return {
       countedCheckinDays: result._sum.countedCheckinDays ?? 0,
       lastQualifiedDateKey: result._max.dateKey ?? undefined,
+    };
+  }
+
+  async summarizeUserEpochCheckinTimes(
+    data: {
+      dateKeyFromInclusive: string;
+      dateKeyToExclusive: string;
+      userId: string;
+    },
+    executor: DbExecutor = this.db,
+  ): Promise<{
+    checkinTimes: number;
+    lastCheckinDateKey?: string;
+  }> {
+    const result = await executor.userDailyStat.aggregate({
+      where: {
+        checkinTimes: { gt: 0 },
+        dateKey: {
+          gte: data.dateKeyFromInclusive,
+          lt: data.dateKeyToExclusive,
+        },
+        userId: data.userId,
+      },
+      _max: {
+        dateKey: true,
+      },
+      _sum: {
+        checkinTimes: true,
+      },
+    });
+
+    return {
+      checkinTimes: result._sum.checkinTimes ?? 0,
+      lastCheckinDateKey: result._max.dateKey ?? undefined,
     };
   }
 

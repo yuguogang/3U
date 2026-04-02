@@ -110,6 +110,9 @@ describe('NftEligibilityApplicationService', () => {
       findCurrentByWallet: jest.fn() as jest.MockedFunction<
         NftEligibilityRepository['findCurrentByWallet']
       >,
+      markApproved: jest.fn() as jest.MockedFunction<
+        NftEligibilityRepository['markApproved']
+      >,
       upsertEligibilitySnapshot: jest.fn() as jest.MockedFunction<
         NftEligibilityRepository['upsertEligibilitySnapshot']
       >,
@@ -168,7 +171,7 @@ describe('NftEligibilityApplicationService', () => {
     expect(result.status).toBe(NftEligibilityStatus.PENDING_APPROVAL);
   });
 
-  it('preserves APPROVED status while the user remains qualified', async () => {
+  it('preserves APPROVED status even when the user no longer meets thresholds', async () => {
     const { nftEligibilityRepository, service } = createService();
     const approvedAt = new Date('2026-03-11T12:15:00.000Z');
     nftEligibilityRepository.findCurrentByWallet.mockResolvedValue(
@@ -179,8 +182,8 @@ describe('NftEligibilityApplicationService', () => {
           decisionReason: 'verified by admin',
           status: NftEligibilityStatus.APPROVED,
         },
-        smallLegVolume: new Prisma.Decimal('7000000000'),
-        totalCheckinCount: 35,
+        smallLegVolume: new Prisma.Decimal('0'),
+        totalCheckinCount: 0,
       }),
     );
     nftEligibilityRepository.upsertEligibilitySnapshot.mockImplementation(
@@ -201,6 +204,44 @@ describe('NftEligibilityApplicationService', () => {
     expect(result.status).toBe(NftEligibilityStatus.APPROVED);
     expect(result.approvedAt).toEqual(approvedAt);
     expect(result.decisionReason).toBe('verified by admin');
+  });
+
+  it('gifts eligibility for a non-qualified user through the admin gift path', async () => {
+    const { nftEligibilityRepository, service } = createService();
+    const giftedAt = new Date('2026-03-12T12:15:00.000Z');
+    nftEligibilityRepository.findCurrentByUser.mockResolvedValue(
+      createLookupResult({
+        nftEligibility: null,
+        smallLegVolume: new Prisma.Decimal('0'),
+        totalCheckinCount: 0,
+      }),
+    );
+    nftEligibilityRepository.upsertEligibilitySnapshot.mockImplementation(
+      (data) => Promise.resolve(createUpsertResult(data)),
+    );
+    nftEligibilityRepository.markApproved.mockResolvedValue(
+      createEligibilitySnapshot({
+        approvedAt: giftedAt,
+        approvedByWallet: '0x2222222222222222222222222222222222222222',
+        decisionReason: 'manual gift',
+        status: NftEligibilityStatus.APPROVED,
+      }) as unknown as Awaited<
+        ReturnType<NftEligibilityRepository['markApproved']>
+      >,
+    );
+
+    const result = await service.giftReferralMintEligibility({
+      decisionReason: 'manual gift',
+      operatorWallet: '0x2222222222222222222222222222222222222222',
+      userId: 'user_1',
+    });
+
+    expect(result.status).toBe(NftEligibilityStatus.APPROVED);
+    expect(nftEligibilityRepository.markApproved).toHaveBeenCalledWith({
+      decisionReason: 'manual gift',
+      operatorWallet: '0x2222222222222222222222222222222222222222',
+      userId: 'user_1',
+    });
   });
 
   it('preserves SIGNED status while the preview is still valid', async () => {

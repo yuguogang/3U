@@ -27,10 +27,13 @@ export class LotterySettlementService {
         epoch.id,
         tx,
       );
+    const participantUserIds = participants.flatMap((item) =>
+      Array.from({ length: item.ticketCount }, () => item.userId),
+    );
     const projection = this.lotteryPayoutEngine.projectPayout({
       epochId: epoch.id,
       lotteryPoolUsdt: epoch.lotteryPoolUsdt.toFixed(0),
-      participantUserIds: participants.map((item) => item.userId),
+      participantUserIds,
     });
 
     await this.weeklyRewardRepository.deleteDraftRewardsByTypes(
@@ -55,11 +58,11 @@ export class LotterySettlementService {
       );
     }
 
-    for (const userId of projection.consolationUserIds) {
+    for (const [index, userId] of projection.consolationUserIds.entries()) {
       await this.weeklyRewardRepository.createReward(
         {
           amountAura: new Prisma.Decimal((100n * 10n ** 18n).toString()),
-          distributionKey: 'CONSOLATION_DEFAULT',
+          distributionKey: `CONSOLATION_DEFAULT_${index + 1}`,
           epochId: epoch.id,
           rewardType: 'CONSOLATION_AURA',
           sourceNote: 'Lottery consolation reward',

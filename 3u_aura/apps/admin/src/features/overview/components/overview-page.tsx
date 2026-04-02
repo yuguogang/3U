@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { formatCount } from "@/lib/admin-format";
+import type { AdminOverviewView } from "3u-aura-common";
+import { formatAtomic, formatCount } from "@/lib/admin-format";
 import { useAdminOverviewQuery } from "@/queries/admin.query";
 import { useAdminSessionReady } from "@/store/auth.store";
 import {
@@ -46,10 +47,18 @@ export function OverviewPage() {
     );
   }
 
+  type AdminOverviewWithTeamLeaderPerformance = AdminOverviewView & {
+    teamLeaderCount?: number;
+    teamLeaderTotalPerformanceUsdt?: string;
+  };
+
+  const overviewWithTeamLeaderPerformance =
+    overview as AdminOverviewWithTeamLeaderPerformance;
+
   return (
     <div className="space-y-6">
       <PageIntro
-        description="这套后台覆盖 promotion 阶段的最小运营闭环：看统计、查异常、做最小 repair/sync，并处理 referral NFT 人工审批。签名发放前必须先经过管理员审批。"
+        description="这套后台覆盖 promotion 阶段的最小运营闭环：看统计、查异常、做最小 repair/sync，并处理 referral NFT 人工审批和赠送入口。签名发放前必须先经过管理员审批。"
         eyebrow="Phase 9.3"
         title="Promotion Overview"
       />
@@ -61,6 +70,36 @@ export function OverviewPage() {
         <MetricCard label="Claimable Merkle" value={formatCount(overview.claimableMerkleClaimCount)} />
         <MetricCard label="Pending Subsidy Claims" value={formatCount(overview.pendingSubsidyClaimCount)} />
       </div>
+
+      <Panel>
+        <PanelTitle
+          description="这个区块预留给团队长总业绩聚合字段；如果后端还没回填，它会保持为空而不会影响其余概览。"
+          title="Team Leader Performance"
+        />
+        <div className="grid gap-4 md:grid-cols-2">
+          <MetricCard
+            label="Team Leaders"
+            value={
+              typeof overviewWithTeamLeaderPerformance.teamLeaderCount === "number"
+                ? formatCount(overviewWithTeamLeaderPerformance.teamLeaderCount)
+                : "—"
+            }
+          />
+          <MetricCard
+            label="Total Performance"
+            tone="accent"
+            value={
+              overviewWithTeamLeaderPerformance.teamLeaderTotalPerformanceUsdt
+                ? formatAtomic(
+                    overviewWithTeamLeaderPerformance.teamLeaderTotalPerformanceUsdt,
+                    6,
+                    "USDT",
+                  )
+                : "—"
+            }
+          />
+        </div>
+      </Panel>
 
       <div className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
         <Panel>

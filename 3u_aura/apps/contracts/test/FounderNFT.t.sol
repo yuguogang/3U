@@ -53,13 +53,25 @@ contract FounderNFTTest is Test {
         founderNFT.mintReferral(buyer);
     }
 
-    function testPurchasedSupplyCapIsEnforced() public {
-        for (uint256 index = 0; index < founderNFT.MAX_PURCHASED_SUPPLY(); index++) {
+    function testPurchasedMintCanExceedFormerThirtyCap() public {
+        for (uint256 index = 0; index < 31; index++) {
+            vm.prank(sale);
+            uint256 tokenId = founderNFT.mintPurchased(address(uint160(index + 10)));
+            assertEq(tokenId, index + 1);
+        }
+
+        assertEq(founderNFT.purchasedMinted(), 31);
+        assertEq(founderNFT.remainingPurchasedSupply(), 69);
+        assertEq(founderNFT.remainingTotalSupply(), 69);
+    }
+
+    function testPurchasedMintRevertsWhenTotalSupplyIsExhausted() public {
+        for (uint256 index = 0; index < founderNFT.MAX_TOTAL_SUPPLY(); index++) {
             vm.prank(sale);
             founderNFT.mintPurchased(address(uint160(index + 10)));
         }
 
-        vm.expectRevert(FounderNFT.PurchasedSupplySoldOut.selector);
+        vm.expectRevert(FounderNFT.TotalSupplySoldOut.selector);
         vm.prank(sale);
         founderNFT.mintPurchased(makeAddr("overflow"));
     }

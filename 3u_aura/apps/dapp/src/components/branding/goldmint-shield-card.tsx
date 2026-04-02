@@ -145,7 +145,7 @@ export function GoldmintShieldCard({
   badge = "FOUNDER ACCESS",
   footer = "Goldmint Founder Card",
   mode = "front",
-  serialLabel = "#001 / 030",
+  serialLabel = "#001 / ∞",
   utilityItems = [
     "Founder-grade access",
     "Weekly subsidy rights",
@@ -178,7 +178,7 @@ export function GoldmintShieldCard({
     detailLabelCore: copy?.detailLabelCore ?? "Core",
     detailValueCore: copy?.detailValueCore ?? "Blue enamel",
     detailLabelSupply: copy?.detailLabelSupply ?? "Supply",
-    detailValueSupply: copy?.detailValueSupply ?? "30 buy / 70 referral",
+    detailValueSupply: copy?.detailValueSupply ?? "Purchased / Referral",
     detailLabelClaim: copy?.detailLabelClaim ?? "Claim",
     detailValueClaim: copy?.detailValueClaim ?? "Weekly subsidy",
     detailCertificateLabel:

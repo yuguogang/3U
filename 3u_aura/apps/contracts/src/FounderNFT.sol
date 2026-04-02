@@ -7,7 +7,6 @@ import {Ownable} from "./access/Ownable.sol";
 /// @title FounderNFT
 /// @notice ERC721A founder NFT with separate purchased/referral supply accounting.
 contract FounderNFT is ERC721A, Ownable {
-    error PurchasedSupplySoldOut();
     error ReferralAlreadyMinted(address recipient);
     error ReferralSupplySoldOut();
     error TotalSupplySoldOut();
@@ -21,9 +20,6 @@ contract FounderNFT is ERC721A, Ownable {
 
     /// @notice Maximum founder NFT supply across purchased and referral mints.
     uint256 public constant MAX_TOTAL_SUPPLY = 100;
-
-    /// @notice Maximum purchased NFT supply.
-    uint256 public constant MAX_PURCHASED_SUPPLY = 30;
 
     /// @notice Maximum referral NFT supply.
     uint256 public constant MAX_REFERRAL_SUPPLY = 70;
@@ -85,9 +81,6 @@ contract FounderNFT is ERC721A, Ownable {
         if (recipient == address(0)) {
             revert ZeroAddress();
         }
-        if (purchasedMinted >= MAX_PURCHASED_SUPPLY) {
-            revert PurchasedSupplySoldOut();
-        }
         if (totalSupply() >= MAX_TOTAL_SUPPLY) {
             revert TotalSupplySoldOut();
         }
@@ -125,9 +118,9 @@ contract FounderNFT is ERC721A, Ownable {
         emit ReferralMinted(recipient, tokenId);
     }
 
-    /// @notice Remaining purchased NFT supply.
+    /// @notice Remaining capacity available to purchased mints under the total supply cap.
     function remainingPurchasedSupply() external view returns (uint256) {
-        return MAX_PURCHASED_SUPPLY - purchasedMinted;
+        return MAX_TOTAL_SUPPLY - totalSupply();
     }
 
     /// @notice Remaining referral NFT supply.

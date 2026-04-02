@@ -6,8 +6,23 @@ import { Injectable } from '@nestjs/common';
 export class LotteryQualificationEngine {
   constructor(private readonly configService: ConfigService<ConfigOptions>) {}
 
-  qualifiesForTicket(streakDays: number): boolean {
-    return streakDays >= this.getTicketStreakDays();
+  qualifiesForTicket(checkinCount: number): boolean {
+    return this.calculateTicketCount(checkinCount) > 0;
+  }
+
+  calculateTicketCount(checkinCount: number): number {
+    return Math.floor(checkinCount / this.getTicketStreakDays());
+  }
+
+  getRemainingCheckinsUntilNextTicket(checkinCount: number): number {
+    const perTicket = this.getTicketStreakDays();
+    const remainder = checkinCount % perTicket;
+
+    return remainder === 0 ? 0 : perTicket - remainder;
+  }
+
+  getCheckinsPerTicket(): number {
+    return this.getTicketStreakDays();
   }
 
   toDateKey(value: Date): string {

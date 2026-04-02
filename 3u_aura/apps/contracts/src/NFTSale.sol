@@ -151,7 +151,7 @@ contract NFTSale is Ownable, ReentrancyGuard {
         view
         returns (uint256 purchasedRemaining, uint256 referralRemaining, uint256 totalRemaining)
     {
-        purchasedRemaining = FounderNFT(address(founderNFT)).MAX_PURCHASED_SUPPLY() - founderNFT.purchasedMinted();
+        purchasedRemaining = founderNFT.remainingPurchasedSupply();
         referralRemaining = FounderNFT(address(founderNFT)).MAX_REFERRAL_SUPPLY() - founderNFT.referralMinted();
         totalRemaining = FounderNFT(address(founderNFT)).MAX_TOTAL_SUPPLY() - founderNFT.totalSupply();
     }

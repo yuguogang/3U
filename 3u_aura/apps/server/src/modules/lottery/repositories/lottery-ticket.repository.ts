@@ -66,7 +66,7 @@ export class LotteryTicketRepository {
   async listEligibleTicketsForSettlement(
     epochId: string,
     executor: DbExecutor = this.db,
-  ): Promise<Array<{ userId: string }>> {
+  ): Promise<Array<{ ticketCount: number; userId: string }>> {
     return executor.lotteryTicket.findMany({
       where: {
         epochId,
@@ -76,6 +76,7 @@ export class LotteryTicketRepository {
       },
       orderBy: { userId: 'asc' },
       select: {
+        ticketCount: true,
         userId: true,
       },
     });
@@ -181,26 +182,32 @@ export class LotteryTicketRepository {
     qualifiedTicketCount: number;
   }> {
     const [qualifiedTicketCount, participantCount] = await Promise.all([
-      executor.lotteryTicket.count({
+      executor.lotteryTicket.aggregate({
         where: {
           epochId,
           isEligible: true,
           ticketCount: { gt: 0 },
         },
+        _sum: {
+          ticketCount: true,
+        },
       }),
-      executor.lotteryTicket.count({
+      executor.lotteryTicket.aggregate({
         where: {
           epochId,
           isEligible: true,
           isParticipating: true,
           ticketCount: { gt: 0 },
         },
+        _sum: {
+          ticketCount: true,
+        },
       }),
     ]);
 
     return {
-      participantCount,
-      qualifiedTicketCount,
+      participantCount: participantCount._sum.ticketCount ?? 0,
+      qualifiedTicketCount: qualifiedTicketCount._sum.ticketCount ?? 0,
     };
   }
 }

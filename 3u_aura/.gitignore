@@ -55,6 +55,7 @@ coverage/
 # pnpm
 .pnpm-store/
 .pnpm-debug.log
+apps/e2e/phase94/pnpm-lock.yaml
 config/promotion-envs/*/local.override.env
 config/promotion-envs/*/*.local.override.env
 

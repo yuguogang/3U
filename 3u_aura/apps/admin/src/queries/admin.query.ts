@@ -3,12 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   AdminApproveReferralNftRequest,
-  AdminNotificationArchiveRequest,
-  AdminNotificationCreateRequest,
-  AdminNotificationListQuery,
-  AdminNotificationPublishRequest,
-  AdminNotificationUnpublishRequest,
-  AdminNotificationUpdateRequest,
   AdminAuditLogListQuery,
   AdminCheckinIssueListQuery,
   AdminCheckinRepairRequest,
@@ -16,6 +10,12 @@ import type {
   AdminClaimSyncRequest,
   AdminEpochSyncRequest,
   AdminNftEligibilityListQuery,
+  AdminNotificationArchiveRequest,
+  AdminNotificationCreateRequest,
+  AdminNotificationListQuery,
+  AdminNotificationPublishRequest,
+  AdminNotificationUnpublishRequest,
+  AdminNotificationUpdateRequest,
   AdminPendingPlacementListQuery,
   AdminRejectReferralNftRequest,
   AdminRewardPublicationRequest,
@@ -37,6 +37,7 @@ import {
   apiGetClaimIssues,
   apiGetNftEligibility,
   apiGetPendingPlacements,
+  apiGiftReferralNft,
   apiPublishAdminNotification,
   apiPreviewCheckinRepair,
   apiPreviewClaimSync,
@@ -45,6 +46,7 @@ import {
   apiRejectReferralNft,
   apiUnpublishAdminNotification,
   apiUpdateAdminNotification,
+  type AdminGiftReferralNftRequest,
 } from "@/api/admin";
 
 export const adminQueryKeys = {
@@ -255,6 +257,21 @@ export function useRejectReferralNftMutation() {
     mutationFn: (body: AdminRejectReferralNftRequest) =>
       apiRejectReferralNft(body),
     mutationKey: ["admin", "ops", "nft-eligibility", "reject"],
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.overview }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "nft-eligibility"] }),
+      ]);
+    },
+  });
+}
+
+export function useGiftReferralNftMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: AdminGiftReferralNftRequest) => apiGiftReferralNft(body),
+    mutationKey: ["admin", "ops", "nft-eligibility", "gift"],
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.overview }),

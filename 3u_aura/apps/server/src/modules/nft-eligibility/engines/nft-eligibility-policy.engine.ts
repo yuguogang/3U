@@ -42,6 +42,17 @@ export class NftEligibilityPolicyEngine {
     }
   }
 
+  assertGiftable(view: NftEligibilityView): void {
+    if (
+      view.status === NftEligibilityStatus.SIGNED ||
+      view.status === NftEligibilityStatus.MINTED
+    ) {
+      throw new ConflictException(
+        'NFT referral gift is not allowed for the current eligibility state',
+      );
+    }
+  }
+
   assertApprovable(view: NftEligibilityView): void {
     if (
       view.status !== NftEligibilityStatus.PENDING_APPROVAL &&
@@ -76,8 +87,14 @@ export class NftEligibilityPolicyEngine {
     previousStatus?: NftEligibilityStatus | null;
     smallLegVolumeAtomic: string;
   }): NftEligibilityStatus {
+    const previousStatus = params.previousStatus?.toString();
+
     if (params.hasReferralNft || params.mintedTokenId) {
       return NftEligibilityStatus.MINTED;
+    }
+
+    if (previousStatus === NftEligibilityStatus.APPROVED) {
+      return NftEligibilityStatus.APPROVED;
     }
 
     const meetsThresholds =
@@ -89,35 +106,31 @@ export class NftEligibilityPolicyEngine {
       return NftEligibilityStatus.INELIGIBLE;
     }
 
-    if (params.previousStatus === NftEligibilityStatus.REVOKED) {
+    if (previousStatus === NftEligibilityStatus.REVOKED) {
       return NftEligibilityStatus.REVOKED;
     }
 
     if (
-      params.previousStatus === NftEligibilityStatus.SIGNED &&
+      previousStatus === NftEligibilityStatus.SIGNED &&
       params.expiresAt &&
       params.expiresAt.getTime() > Date.now()
     ) {
       return NftEligibilityStatus.SIGNED;
     }
 
-    if (params.previousStatus === NftEligibilityStatus.SIGNED) {
+    if (previousStatus === NftEligibilityStatus.SIGNED) {
       return NftEligibilityStatus.EXPIRED;
     }
 
-    if (params.previousStatus === NftEligibilityStatus.EXPIRED) {
+    if (previousStatus === NftEligibilityStatus.EXPIRED) {
       return NftEligibilityStatus.EXPIRED;
     }
 
-    if (params.previousStatus === NftEligibilityStatus.APPROVED) {
-      return NftEligibilityStatus.APPROVED;
-    }
-
-    if (params.previousStatus === NftEligibilityStatus.REJECTED) {
+    if (previousStatus === NftEligibilityStatus.REJECTED) {
       return NftEligibilityStatus.REJECTED;
     }
 
-    if (params.previousStatus === NftEligibilityStatus.PENDING_APPROVAL) {
+    if (previousStatus === NftEligibilityStatus.PENDING_APPROVAL) {
       return NftEligibilityStatus.PENDING_APPROVAL;
     }
 

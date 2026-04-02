@@ -14,6 +14,7 @@ import {
   AdminCheckinRepairRequestDto,
   AdminClaimSyncRequestDto,
   AdminEpochSyncRequestDto,
+  AdminGiftReferralNftRequestDto,
   AdminRejectReferralNftRequestDto,
   AdminRewardPublicationRequestDto,
 } from './dto';
@@ -91,6 +92,15 @@ export class AdminOpsController {
     @Body() command: AdminApproveReferralNftRequestDto,
   ) {
     return this.adminOpsService.approveReferralNft(operator, command);
+  }
+
+  @Post('nft-eligibility/gift')
+  @HttpCode(HttpStatus.OK)
+  giftReferralNft(
+    @CurrentUser() operator: User,
+    @Body() command: AdminGiftReferralNftRequestDto,
+  ) {
+    return this.adminOpsService.giftReferralNft(operator, command);
   }
 
   @Post('nft-eligibility/reject')

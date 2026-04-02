@@ -56,20 +56,18 @@ export class LotteryTicketService {
       userId,
     );
 
-    return {
+    return this.buildParticipationView({
       canParticipate:
         epoch.status === DbEpochStatus.OPEN && !ticket?.isParticipating,
-      currentStreakDays: summary.countedCheckinDays,
-      daysUntilTicket: Math.max(0, 7 - summary.countedCheckinDays),
       endAt: epoch.endAt,
       epochId: epoch.id,
       epochNo: epoch.epochNo,
       epochStatus: epoch.status as EpochStatus,
-      isCurrentlyQualified: summary.isEligible,
       isParticipating: ticket?.isParticipating ?? false,
       participatedAt: ticket?.participatedAt ?? undefined,
+      qualification: summary,
       startAt: epoch.startAt,
-    };
+    });
   }
 
   async participateInCurrentEpoch(
@@ -102,8 +100,8 @@ export class LotteryTicketService {
             epochId: epoch.id,
             isEligible: summary.isEligible,
             participatedAt: new Date(),
-            streakDays: summary.countedCheckinDays,
-            ticketCount: summary.isEligible ? 1 : 0,
+            streakDays: summary.checkinCount,
+            ticketCount: summary.ticketCount,
             userId,
           },
           tx,
@@ -114,7 +112,8 @@ export class LotteryTicketService {
           payload: {
             epochNo: epoch.epochNo,
             isEligibleAtParticipation: summary.isEligible,
-            streakDaysAtParticipation: summary.countedCheckinDays,
+            checkinCountAtParticipation: summary.checkinCount,
+            ticketCountAtParticipation: summary.ticketCount,
           },
           targetId: epoch.id,
           targetType: 'WeeklyEpoch',
@@ -127,19 +126,17 @@ export class LotteryTicketService {
         tx,
       );
 
-      return {
+      return this.buildParticipationView({
         canParticipate: false,
-        currentStreakDays: summary.countedCheckinDays,
-        daysUntilTicket: Math.max(0, 7 - summary.countedCheckinDays),
         endAt: epoch.endAt,
         epochId: epoch.id,
         epochNo: epoch.epochNo,
         epochStatus: epoch.status as EpochStatus,
-        isCurrentlyQualified: summary.isEligible,
         isParticipating: ticket?.isParticipating ?? true,
         participatedAt: ticket?.participatedAt ?? undefined,
+        qualification: summary,
         startAt: epoch.startAt,
-      };
+      });
     });
   }
 
@@ -205,7 +202,7 @@ export class LotteryTicketService {
       const dateKeyToExclusive = this.lotteryQualificationEngine.toDateKey(
         epoch.endAt,
       );
-      const summaries = await this.statsRepository.summarizeEpochCheckinDays(
+      const summaries = await this.statsRepository.summarizeEpochCheckinTimes(
         {
           dateKeyFromInclusive,
           dateKeyToExclusive,
@@ -217,9 +214,10 @@ export class LotteryTicketService {
 
       for (const summary of summaries) {
         touchedUserIds.push(summary.userId);
-        const isEligible = this.lotteryQualificationEngine.qualifiesForTicket(
-          summary.countedCheckinDays,
+        const ticketCount = this.lotteryQualificationEngine.calculateTicketCount(
+          summary.checkinTimes,
         );
+        const isEligible = ticketCount > 0;
         if (isEligible) {
           eligibleUserIds.push(summary.userId);
         }
@@ -229,8 +227,8 @@ export class LotteryTicketService {
             epochId: epoch.id,
             isEligible,
             qualifiedAt: isEligible ? epoch.endAt : undefined,
-            streakDays: summary.countedCheckinDays,
-            ticketCount: isEligible ? 1 : 0,
+            streakDays: summary.checkinTimes,
+            ticketCount,
             userId: summary.userId,
           },
           tx,
@@ -312,8 +310,10 @@ export class LotteryTicketService {
     userId: string,
     tx?: TxExecutor,
   ): Promise<{
-    countedCheckinDays: number;
+    checkinCount: number;
+    checkinsUntilNextTicket: number;
     isEligible: boolean;
+    ticketCount: number;
   }> {
     const epoch = await this.weeklyEpochRepository.findById(epochId, tx);
     if (!epoch) {
@@ -325,7 +325,7 @@ export class LotteryTicketService {
     const dateKeyToExclusive = this.lotteryQualificationEngine.toDateKey(
       epoch.endAt,
     );
-    const summary = await this.statsRepository.summarizeUserEpochCheckinDays(
+    const summary = await this.statsRepository.summarizeUserEpochCheckinTimes(
       {
         dateKeyFromInclusive,
         dateKeyToExclusive,
@@ -333,12 +333,18 @@ export class LotteryTicketService {
       },
       tx,
     );
+    const ticketCount = this.lotteryQualificationEngine.calculateTicketCount(
+      summary.checkinTimes,
+    );
 
     return {
-      countedCheckinDays: summary.countedCheckinDays,
-      isEligible: this.lotteryQualificationEngine.qualifiesForTicket(
-        summary.countedCheckinDays,
-      ),
+      checkinCount: summary.checkinTimes,
+      checkinsUntilNextTicket:
+        this.lotteryQualificationEngine.getRemainingCheckinsUntilNextTicket(
+          summary.checkinTimes,
+        ),
+      isEligible: ticketCount > 0,
+      ticketCount,
     };
   }
 
@@ -363,10 +369,10 @@ export class LotteryTicketService {
       throw new NotFoundException('Weekly promotion epoch not found');
     }
 
-    const lotteryReward = rewards.find(
+    const lotteryRewards = rewards.filter(
       (reward) => reward.rewardType === 'LOTTERY_USDT',
     );
-    const consolationReward = rewards.find(
+    const consolationRewards = rewards.filter(
       (reward) => reward.rewardType === 'CONSOLATION_AURA',
     );
 
@@ -380,6 +386,7 @@ export class LotteryTicketService {
         isParticipating: false,
         isRevealed: ticket?.isResultRevealed ?? false,
         resultStatus: 'NOT_PARTICIPATING',
+        ticketCount: ticket?.ticketCount ?? 0,
       };
     }
 
@@ -397,6 +404,7 @@ export class LotteryTicketService {
         isRevealed: false,
         participatedAt: ticket.participatedAt ?? undefined,
         resultStatus: 'PENDING',
+        ticketCount: ticket.ticketCount,
       };
     }
 
@@ -412,6 +420,7 @@ export class LotteryTicketService {
         participatedAt: ticket.participatedAt ?? undefined,
         resultStatus: 'ROLLED_OVER',
         revealedAt: ticket.revealedAt ?? undefined,
+        ticketCount: ticket.ticketCount,
       };
     }
 
@@ -427,15 +436,22 @@ export class LotteryTicketService {
         participatedAt: ticket.participatedAt ?? undefined,
         resultStatus: 'NOT_QUALIFIED',
         revealedAt: ticket.revealedAt ?? undefined,
+        ticketCount: ticket.ticketCount,
       };
     }
 
-    if (lotteryReward) {
+    if (lotteryRewards.length) {
+      const primaryReward = [...lotteryRewards].sort(
+        (left, right) =>
+          this.getPrizePriority(right.distributionKey) -
+          this.getPrizePriority(left.distributionKey),
+      )[0];
+
       return {
-        amountUsdt: lotteryReward.amountUsdt.toFixed(0),
+        amountUsdt: this.sumRewardAmounts(lotteryRewards, 'amountUsdt'),
         canReveal: false,
-        claimRecordId: lotteryReward.claimRecords[0]?.id,
-        claimStatus: lotteryReward.claimRecords[0]?.status as
+        claimRecordId: primaryReward?.claimRecords[0]?.id,
+        claimStatus: primaryReward?.claimRecords[0]?.status as
           | ClaimStatus
           | undefined,
         epochId: epoch.id,
@@ -445,15 +461,20 @@ export class LotteryTicketService {
         isParticipating: true,
         isRevealed: true,
         participatedAt: ticket.participatedAt ?? undefined,
-        prizeLabel: this.toPrizeLabel(lotteryReward.distributionKey),
+        prizeLabel: primaryReward
+          ? this.toPrizeLabel(primaryReward.distributionKey)
+          : undefined,
         resultStatus: 'WON',
         revealedAt: ticket.revealedAt ?? undefined,
+        ticketCount: ticket.ticketCount,
+        winningRewardCount: lotteryRewards.length,
       };
     }
 
     return {
-      amountAura: consolationReward?.amountAura.toFixed(0),
+      amountAura: this.sumRewardAmounts(consolationRewards, 'amountAura'),
       canReveal: false,
+      consolationRewardCount: consolationRewards.length,
       epochId: epoch.id,
       epochNo: epoch.epochNo,
       epochStatus: epoch.status as EpochStatus,
@@ -463,7 +484,80 @@ export class LotteryTicketService {
       participatedAt: ticket.participatedAt ?? undefined,
       resultStatus: 'LOST',
       revealedAt: ticket.revealedAt ?? undefined,
+      ticketCount: ticket.ticketCount,
     };
+  }
+
+  private buildParticipationView(params: {
+    canParticipate: boolean;
+    endAt: Date;
+    epochId: string;
+    epochNo: number;
+    epochStatus: EpochStatus;
+    isParticipating: boolean;
+    participatedAt?: Date;
+    qualification: {
+      checkinCount: number;
+      checkinsUntilNextTicket: number;
+      isEligible: boolean;
+      ticketCount: number;
+    };
+    startAt: Date;
+  }): PromotionCurrentLotteryParticipationView {
+    return {
+      canParticipate: params.canParticipate,
+      checkinsPerTicket: this.lotteryQualificationEngine.getCheckinsPerTicket(),
+      checkinsUntilNextTicket: params.qualification.checkinsUntilNextTicket,
+      currentCheckinCount: params.qualification.checkinCount,
+      currentStreakDays: params.qualification.checkinCount,
+      currentTicketCount: params.qualification.ticketCount,
+      daysUntilTicket: params.qualification.checkinsUntilNextTicket,
+      endAt: params.endAt,
+      epochId: params.epochId,
+      epochNo: params.epochNo,
+      epochStatus: params.epochStatus,
+      isCurrentlyQualified: params.qualification.isEligible,
+      isParticipating: params.isParticipating,
+      participatedAt: params.participatedAt,
+      startAt: params.startAt,
+    };
+  }
+
+  private getPrizePriority(distributionKey: string): number {
+    if (distributionKey.startsWith('LOTTERY_FIRST_PRIZE')) {
+      return 4;
+    }
+    if (distributionKey.startsWith('LOTTERY_SECOND_PRIZE')) {
+      return 3;
+    }
+    if (distributionKey.startsWith('LOTTERY_THIRD_PRIZE')) {
+      return 2;
+    }
+    if (distributionKey.startsWith('LOTTERY_LUCKY_PRIZE')) {
+      return 1;
+    }
+
+    return 0;
+  }
+
+  private sumRewardAmounts(
+    rewards: Array<{
+      amountAura?: { toFixed: (digits?: number) => string } | null;
+      amountUsdt?: { toFixed: (digits?: number) => string } | null;
+    }>,
+    key: 'amountAura' | 'amountUsdt',
+  ): string | undefined {
+    if (!rewards.length) {
+      return undefined;
+    }
+
+    return rewards
+      .reduce((sum, reward) => {
+        const amount = reward[key];
+
+        return sum + BigInt(amount?.toFixed(0) ?? '0');
+      }, 0n)
+      .toString();
   }
 
   private toPrizeLabel(

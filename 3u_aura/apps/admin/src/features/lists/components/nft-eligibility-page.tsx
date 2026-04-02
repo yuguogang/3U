@@ -5,6 +5,7 @@ import { NftEligibilityStatus } from "3u-aura-common";
 import { formatAddress, formatAtomic, formatDateTime } from "@/lib/admin-format";
 import {
   useApproveReferralNftMutation,
+  useGiftReferralNftMutation,
   useNftEligibilityQuery,
   useRejectReferralNftMutation,
 } from "@/queries/admin.query";
@@ -27,9 +28,12 @@ import {
 export function NftEligibilityPage() {
   const enabled = useAdminSessionReady();
   const [decisionReasons, setDecisionReasons] = useState<Record<string, string>>({});
+  const [giftDecisionReason, setGiftDecisionReason] = useState("");
+  const [giftUserId, setGiftUserId] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"" | NftEligibilityStatus>("");
   const approveMutation = useApproveReferralNftMutation();
+  const giftMutation = useGiftReferralNftMutation();
   const query = useNftEligibilityQuery(
     {
       search: search || undefined,
@@ -53,45 +57,92 @@ export function NftEligibilityPage() {
   return (
     <div className="space-y-6">
       <PageIntro
-        description="Referral NFT 现在必须先经过人工审批。这里既是待审列表，也是查看拒绝原因、批准记录和 signed/minted 积压的主页面。"
+        description="Referral NFT 现在保留人工审批，同时新增后台赠送入口。这里既是待审列表，也是查看拒绝原因、批准记录、signed/minted 积压和赠送入口的主页面。"
         title="NFT Eligibility"
       />
 
-      <Panel>
-        <PanelTitle description="按钱包地址和 eligibility status 过滤。" title="Filters" />
-        <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
-          <div>
-            <FieldLabel htmlFor="eligibility-search">Search</FieldLabel>
-            <TextInput
-              id="eligibility-search"
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="wallet"
-              value={search}
-            />
+      <div className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
+        <Panel>
+          <PanelTitle description="按钱包地址和 eligibility status 过滤。" title="Filters" />
+          <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
+            <div>
+              <FieldLabel htmlFor="eligibility-search">Search</FieldLabel>
+              <TextInput
+                id="eligibility-search"
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="wallet or userId"
+                value={search}
+              />
+            </div>
+            <div>
+              <FieldLabel htmlFor="eligibility-status">Status</FieldLabel>
+              <SelectInput
+                id="eligibility-status"
+                onChange={(event) =>
+                  setStatus(
+                    (event.target.value || "") as "" | NftEligibilityStatus,
+                  )
+                }
+                value={status}
+              >
+                <option value="">All</option>
+                <option value={NftEligibilityStatus.PENDING_APPROVAL}>PENDING_APPROVAL</option>
+                <option value={NftEligibilityStatus.APPROVED}>APPROVED</option>
+                <option value={NftEligibilityStatus.SIGNED}>SIGNED</option>
+                <option value={NftEligibilityStatus.MINTED}>MINTED</option>
+                <option value={NftEligibilityStatus.REJECTED}>REJECTED</option>
+                <option value={NftEligibilityStatus.REVOKED}>REVOKED</option>
+                <option value={NftEligibilityStatus.EXPIRED}>EXPIRED</option>
+              </SelectInput>
+            </div>
           </div>
-          <div>
-            <FieldLabel htmlFor="eligibility-status">Status</FieldLabel>
-            <SelectInput
-              id="eligibility-status"
-              onChange={(event) =>
-                setStatus(
-                  (event.target.value || "") as "" | NftEligibilityStatus,
-                )
-              }
-              value={status}
-            >
-              <option value="">All</option>
-              <option value={NftEligibilityStatus.PENDING_APPROVAL}>PENDING_APPROVAL</option>
-              <option value={NftEligibilityStatus.APPROVED}>APPROVED</option>
-              <option value={NftEligibilityStatus.SIGNED}>SIGNED</option>
-              <option value={NftEligibilityStatus.MINTED}>MINTED</option>
-              <option value={NftEligibilityStatus.REJECTED}>REJECTED</option>
-              <option value={NftEligibilityStatus.REVOKED}>REVOKED</option>
-              <option value={NftEligibilityStatus.EXPIRED}>EXPIRED</option>
-            </SelectInput>
+        </Panel>
+
+        <Panel>
+          <PanelTitle
+            description="赠送流程保留现有 mint 领取方式，但独立于人工审批。"
+            title="Referral Gift"
+          />
+          <div className="grid gap-4">
+            <div>
+              <FieldLabel htmlFor="gift-user-id">User ID</FieldLabel>
+              <TextInput
+                id="gift-user-id"
+                onChange={(event) => setGiftUserId(event.target.value)}
+                placeholder="user id"
+                value={giftUserId}
+              />
+            </div>
+            <div>
+              <FieldLabel htmlFor="gift-decision-reason">Gift reason</FieldLabel>
+              <TextInput
+                id="gift-decision-reason"
+                onChange={(event) => setGiftDecisionReason(event.target.value)}
+                placeholder="optional note for audit trail"
+                value={giftDecisionReason}
+              />
+            </div>
+            <p className="text-xs leading-6 text-slate-400">
+              Gifted referral eligibility should still route through the existing mint/signature path and keep the one-wallet-one-referral rule.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <ActionButton
+                disabled={giftMutation.isPending || !giftUserId.trim()}
+                onClick={async () => {
+                  await giftMutation.mutateAsync({
+                    decisionReason: giftDecisionReason.trim() || undefined,
+                    userId: giftUserId.trim(),
+                  });
+                  setGiftUserId("");
+                  setGiftDecisionReason("");
+                }}
+              >
+                {giftMutation.isPending ? "Granting..." : "Grant gift"}
+              </ActionButton>
+            </div>
           </div>
-        </div>
-      </Panel>
+        </Panel>
+      </div>
 
       {query.isLoading ? <LoadingState label="Loading NFT eligibility" /> : null}
       {query.error ? <ErrorState error={query.error} /> : null}

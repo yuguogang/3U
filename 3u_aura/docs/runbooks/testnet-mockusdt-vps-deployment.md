@@ -10,6 +10,9 @@ Deploy the latest 3U AURA promotion stack to a fresh Ubuntu VPS using:
 - Docker for Postgres/Redis
 - systemd for `server / dapp / admin`
 
+This runbook is for manual verification and remote bring-up only.
+Automated CI should stay on `scripts/ci/*`; `apps/e2e/phase94` and `scripts/uat/*` are manual tooling, not default CI gates.
+
 ## Required Inputs
 
 Before remote execution, prepare:
@@ -56,6 +59,12 @@ node scripts/promotion-env/print-env.mjs --env testnet-mockusdt --target dapp
 node scripts/promotion-env/print-env.mjs --env testnet-mockusdt --target admin
 node scripts/promotion-env/print-env.mjs --env testnet-mockusdt --target contracts
 ```
+
+## Manual Verification Boundary
+
+- Use `scripts/ci/*` for automated CI checks.
+- Use `apps/e2e/phase94` and `scripts/uat/*` only when you explicitly want manual UAT or local smoke validation.
+- Do not wire `test:uat` or `test:weekly-fork` into new default CI jobs; keep them as opt-in operator commands.
 
 ## Step 2: Deploy Contracts To BSC Testnet (Local Operator Machine)
 

@@ -77,12 +77,15 @@ export class RewardsReadService {
       this.lotteryTicketRepository.findByEpochAndUser(epoch.id, userId),
     ]);
 
-    const userRewardByType = new Map(
-      userRewards.map((reward) => [reward.rewardType, reward]),
+    const myLotteryRewards = userRewards.filter(
+      (reward) => reward.rewardType === 'LOTTERY_USDT',
     );
-    const myLotteryReward = userRewardByType.get('LOTTERY_USDT');
-    const myConsolationReward = userRewardByType.get('CONSOLATION_AURA');
-    const myRankingReward = userRewardByType.get('RANKING_USDT');
+    const myConsolationRewards = userRewards.filter(
+      (reward) => reward.rewardType === 'CONSOLATION_AURA',
+    );
+    const myRankingReward = userRewards.find(
+      (reward) => reward.rewardType === 'RANKING_USDT',
+    );
 
     return {
       endAt: epoch.endAt,
@@ -98,11 +101,11 @@ export class RewardsReadService {
           walletAddress: reward.user.walletAddress,
         })),
       myLottery: this.buildLotteryOutcome({
+        consolationRewards: myConsolationRewards,
         epochId: epoch.id,
         epochNo: epoch.epochNo,
         epochStatus: epoch.status as any,
-        lotteryReward: myLotteryReward,
-        consolationReward: myConsolationReward,
+        lotteryRewards: myLotteryRewards,
         ticket,
       }),
       participantCount: epoch.participantCount,
@@ -129,20 +132,20 @@ export class RewardsReadService {
   }
 
   private buildLotteryOutcome(params: {
-    consolationReward?: Awaited<
+    consolationRewards: Awaited<
       ReturnType<WeeklyRewardRepository['listUserRewardsByEpochAndTypes']>
-    >[number];
+    >;
     epochId: string;
     epochNo: number;
     epochStatus: PromotionWeeklyResultsView['epochStatus'];
-    lotteryReward?: Awaited<
+    lotteryRewards: Awaited<
       ReturnType<WeeklyRewardRepository['listUserRewardsByEpochAndTypes']>
-    >[number];
+    >;
     ticket:
       | Awaited<ReturnType<LotteryTicketRepository['findByEpochAndUser']>>
       | null;
   }): PromotionWeeklyResultsView['myLottery'] {
-    const { consolationReward, epochId, epochNo, epochStatus, lotteryReward, ticket } =
+    const { consolationRewards, epochId, epochNo, epochStatus, lotteryRewards, ticket } =
       params;
 
     if (!ticket?.isParticipating) {
@@ -155,6 +158,7 @@ export class RewardsReadService {
         isParticipating: false,
         isRevealed: ticket?.isResultRevealed ?? false,
         resultStatus: 'NOT_PARTICIPATING',
+        ticketCount: ticket?.ticketCount ?? 0,
       };
     }
 
@@ -169,6 +173,7 @@ export class RewardsReadService {
         isRevealed: false,
         participatedAt: ticket.participatedAt ?? undefined,
         resultStatus: 'PENDING',
+        ticketCount: ticket.ticketCount,
       };
     }
 
@@ -184,6 +189,7 @@ export class RewardsReadService {
         participatedAt: ticket.participatedAt ?? undefined,
         resultStatus: 'ROLLED_OVER',
         revealedAt: ticket.revealedAt ?? undefined,
+        ticketCount: ticket.ticketCount,
       };
     }
 
@@ -199,15 +205,22 @@ export class RewardsReadService {
         participatedAt: ticket.participatedAt ?? undefined,
         resultStatus: 'NOT_QUALIFIED',
         revealedAt: ticket.revealedAt ?? undefined,
+        ticketCount: ticket.ticketCount,
       };
     }
 
-    if (lotteryReward) {
+    if (lotteryRewards.length) {
+      const primaryReward = [...lotteryRewards].sort(
+        (left, right) =>
+          this.getPrizePriority(right.distributionKey) -
+          this.getPrizePriority(left.distributionKey),
+      )[0];
+
       return {
-        amountUsdt: lotteryReward.amountUsdt.toFixed(0),
+        amountUsdt: this.sumRewardAmounts(lotteryRewards, 'amountUsdt'),
         canReveal: false,
-        claimRecordId: lotteryReward.claimRecords[0]?.id,
-        claimStatus: lotteryReward.claimRecords[0]?.status as
+        claimRecordId: primaryReward?.claimRecords[0]?.id,
+        claimStatus: primaryReward?.claimRecords[0]?.status as
           | ClaimStatus
           | undefined,
         epochId,
@@ -217,15 +230,20 @@ export class RewardsReadService {
         isParticipating: true,
         isRevealed: true,
         participatedAt: ticket.participatedAt ?? undefined,
-        prizeLabel: this.toPrizeLabel(lotteryReward.distributionKey),
+        prizeLabel: primaryReward
+          ? this.toPrizeLabel(primaryReward.distributionKey)
+          : undefined,
         resultStatus: 'WON',
         revealedAt: ticket.revealedAt ?? undefined,
+        ticketCount: ticket.ticketCount,
+        winningRewardCount: lotteryRewards.length,
       };
     }
 
     return {
-      amountAura: consolationReward?.amountAura.toFixed(0),
+      amountAura: this.sumRewardAmounts(consolationRewards, 'amountAura'),
       canReveal: false,
+      consolationRewardCount: consolationRewards.length,
       epochId,
       epochNo,
       epochStatus,
@@ -235,7 +253,40 @@ export class RewardsReadService {
       participatedAt: ticket.participatedAt ?? undefined,
       resultStatus: 'LOST',
       revealedAt: ticket.revealedAt ?? undefined,
+      ticketCount: ticket.ticketCount,
     };
+  }
+
+  private getPrizePriority(distributionKey: string): number {
+    if (distributionKey.startsWith('LOTTERY_FIRST_PRIZE')) {
+      return 4;
+    }
+    if (distributionKey.startsWith('LOTTERY_SECOND_PRIZE')) {
+      return 3;
+    }
+    if (distributionKey.startsWith('LOTTERY_THIRD_PRIZE')) {
+      return 2;
+    }
+    if (distributionKey.startsWith('LOTTERY_LUCKY_PRIZE')) {
+      return 1;
+    }
+
+    return 0;
+  }
+
+  private sumRewardAmounts(
+    rewards: Awaited<
+      ReturnType<WeeklyRewardRepository['listUserRewardsByEpochAndTypes']>
+    >,
+    key: 'amountAura' | 'amountUsdt',
+  ): string | undefined {
+    if (!rewards.length) {
+      return undefined;
+    }
+
+    return rewards
+      .reduce((sum, reward) => sum + BigInt(reward[key]?.toFixed(0) ?? '0'), 0n)
+      .toString();
   }
 
   private toPrizeLabel(distributionKey: string) {
