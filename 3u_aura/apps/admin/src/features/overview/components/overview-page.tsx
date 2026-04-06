@@ -209,6 +209,14 @@ export function OverviewPage() {
                 label: "Weekly epoch sync",
               },
               {
+                href: "/dashboard/settlement",
+                label: "Weekly settlement",
+              },
+              {
+                href: "/dashboard/subsidy",
+                label: "Purchased NFT subsidy",
+              },
+              {
                 href: "/dashboard/claims",
                 label: "Claim sync replay",
               },

@@ -423,4 +423,29 @@ export class AdminConsoleRepository {
       take: limit,
     });
   }
+
+  async findLatestAuditEntriesByActions(
+    targetId: string,
+    actions: string[],
+  ) {
+    const entries = await Promise.all(
+      actions.map((action) =>
+        this.db.adminAuditLog.findFirst({
+          where: {
+            action,
+            targetId,
+          },
+          orderBy: { createdAt: 'desc' },
+        }),
+      ),
+    );
+
+    return actions.reduce<Record<string, (typeof entries)[number]>>(
+      (result, action, index) => {
+        result[action] = entries[index] ?? null;
+        return result;
+      },
+      {},
+    );
+  }
 }

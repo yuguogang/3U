@@ -19,7 +19,11 @@ import type {
   AdminPendingPlacementListQuery,
   AdminRejectReferralNftRequest,
   AdminRewardPublicationRequest,
+  AdminSubsidyCenterQuery,
+  AdminSubsidyPublicationRequest,
   AdminUserListQuery,
+  AdminWeeklySettlementEpochRequest,
+  AdminWeeklySettlementQuery,
 } from "3u-aura-common";
 import {
   apiApproveReferralNft,
@@ -30,18 +34,23 @@ import {
   apiExecuteClaimSync,
   apiExecuteEpochSync,
   apiExecuteRewardPublication,
+  apiExecuteWeeklySettlementDraft,
+  apiExecuteWeeklySettlementPublish,
   apiGetAdminOverview,
+  apiGetSubsidyOverview,
   apiGetAdminUsers,
   apiGetAuditLogs,
   apiGetCheckinIssues,
   apiGetClaimIssues,
   apiGetNftEligibility,
   apiGetPendingPlacements,
+  apiGetWeeklySettlement,
   apiGiftReferralNft,
   apiPublishAdminNotification,
   apiPreviewCheckinRepair,
   apiPreviewClaimSync,
   apiPreviewEpochSync,
+  apiPreviewSubsidyPublish,
   apiPreviewRewardPublication,
   apiRejectReferralNft,
   apiUnpublishAdminNotification,
@@ -62,7 +71,10 @@ export const adminQueryKeys = {
   overview: ["admin", "overview"] as const,
   placements: (query: AdminPendingPlacementListQuery) =>
     ["admin", "placements", query] as const,
+  subsidyOverview: ["admin", "subsidy", "overview"] as const,
   users: (query: AdminUserListQuery) => ["admin", "users", query] as const,
+  weeklySettlement: (query: AdminWeeklySettlementQuery) =>
+    ["admin", "settlement", "weekly", query] as const,
 };
 
 export function useAdminOverviewQuery(enabled: boolean) {
@@ -70,6 +82,28 @@ export function useAdminOverviewQuery(enabled: boolean) {
     enabled,
     queryFn: apiGetAdminOverview,
     queryKey: adminQueryKeys.overview,
+  });
+}
+
+export function useWeeklySettlementQuery(
+  query: AdminWeeklySettlementQuery,
+  enabled: boolean,
+) {
+  return useQuery({
+    enabled,
+    queryFn: () => apiGetWeeklySettlement(query),
+    queryKey: adminQueryKeys.weeklySettlement(query),
+  });
+}
+
+export function useSubsidyOverviewQuery(
+  query: AdminSubsidyCenterQuery,
+  enabled: boolean,
+) {
+  return useQuery({
+    enabled,
+    queryFn: () => apiGetSubsidyOverview(query),
+    queryKey: [...adminQueryKeys.subsidyOverview, query],
   });
 }
 
@@ -231,6 +265,40 @@ export function useExecuteRewardPublicationMutation() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["admin"] });
     },
+  });
+}
+
+export function useExecuteWeeklySettlementDraftMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: AdminWeeklySettlementEpochRequest) =>
+      apiExecuteWeeklySettlementDraft(body),
+    mutationKey: ["admin", "ops", "settlement", "weekly", "draft"],
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin", "settlement"] });
+    },
+  });
+}
+
+export function useExecuteWeeklySettlementPublishMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: AdminWeeklySettlementEpochRequest) =>
+      apiExecuteWeeklySettlementPublish(body),
+    mutationKey: ["admin", "ops", "settlement", "weekly", "publish"],
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin", "settlement"] });
+    },
+  });
+}
+
+export function usePreviewSubsidyPublishMutation() {
+  return useMutation({
+    mutationFn: (body: AdminSubsidyPublicationRequest) =>
+      apiPreviewSubsidyPublish(body),
+    mutationKey: ["admin", "ops", "subsidy", "publish", "preview"],
   });
 }
 

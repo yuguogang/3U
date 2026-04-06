@@ -8,9 +8,15 @@ import { ConfigService } from '@nestjs/config';
 import { createPublicClient, getAddress, http, type PublicClient } from 'viem';
 
 export type PromotionChainRuntimeConfig = {
+  adminAllowlistWallets: string[];
   chainId: number;
   checkinReceiverAddress?: string;
+  environment?: string;
+  financeWalletAddress?: string;
   rewardFunderAddress?: string;
+  ownerAddress?: string;
+  rootPublisherAddress?: string;
+  settlementPublisherAddress?: string;
   merkleDistributorAddress?: string;
   nftSaleAddress?: string;
   paymentTokenAddress?: string;
@@ -56,12 +62,29 @@ export class PromotionChainClientService {
     }
 
     return {
+      adminAllowlistWallets: [
+        ...(this.configService.get<ConfigOptions['admin']>('admin')
+          ?.allowlistWallets ?? []),
+      ].map((wallet) => getAddress(wallet)),
       chainId: promotion?.claimChainId ?? 97,
       checkinReceiverAddress: this.normalizeOptionalAddress(
         promotion?.checkinReceiverAddress,
       ),
+      environment: promotion?.environment,
+      financeWalletAddress: this.normalizeOptionalAddress(
+        promotion?.financeWalletAddress,
+      ),
+      ownerAddress: this.normalizeOptionalAddress(promotion?.ownerAddress),
       rewardFunderAddress: this.normalizeOptionalAddress(
         promotion?.rewardFunderAddress || promotion?.checkinReceiverAddress,
+      ),
+      rootPublisherAddress: this.normalizeOptionalAddress(
+        promotion?.rootPublisherAddress || promotion?.ownerAddress,
+      ),
+      settlementPublisherAddress: this.normalizeOptionalAddress(
+        promotion?.settlementPublisherAddress ||
+          promotion?.financeWalletAddress ||
+          promotion?.ownerAddress,
       ),
       merkleDistributorAddress: this.normalizeOptionalAddress(
         promotion?.merkleDistributorAddress,

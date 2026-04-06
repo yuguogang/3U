@@ -121,7 +121,9 @@ export class AdminConsoleService {
             epochId: latestResultEpoch.id,
             epochNo: latestResultEpoch.epochNo,
             lotteryWinners: latestResultRewards
-              .filter((reward) => reward.rewardType === CommonRewardType.LOTTERY_USDT)
+              .filter(
+                (reward) => reward.rewardType === CommonRewardType.LOTTERY_USDT,
+              )
               .map((reward) => ({
                 amountUsdt: reward.amountUsdt.toFixed(0),
                 prizeLabel: this.toLotteryPrizeLabel(reward.distributionKey),
@@ -136,7 +138,9 @@ export class AdminConsoleService {
               undefined,
             qualifiedTicketCount: latestResultEpoch.qualifiedTicketCount,
             rankingEntries: latestResultRewards
-              .filter((reward) => reward.rewardType === CommonRewardType.RANKING_USDT)
+              .filter(
+                (reward) => reward.rewardType === CommonRewardType.RANKING_USDT,
+              )
               .sort(
                 (left, right) =>
                   (left.rank ?? Number.MAX_SAFE_INTEGER) -

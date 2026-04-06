@@ -207,7 +207,15 @@ function buildCommonPromotionEnv(manifest) {
     PROMOTION_REFERRAL_RPC_URL:
       manifest.chain.referralRpcUrl || manifest.chain.rpcUrl,
     PROMOTION_CHECKIN_RECEIVER_ADDRESS: manifest.roles.checkinReceiverAddress || '',
+    PROMOTION_OWNER_ADDRESS: manifest.roles.owner || '',
+    PROMOTION_FINANCE_WALLET_ADDRESS: manifest.roles.financeWallet || '',
+    PROMOTION_FINANCE_WALLET: manifest.roles.financeWallet || '',
     PROMOTION_REWARD_FUNDER_ADDRESS: rewardFunderAddress,
+    PROMOTION_ROOT_PUBLISHER_ADDRESS: manifest.roles.rootPublisher || '',
+    PROMOTION_ROOT_PUBLISHER: manifest.roles.rootPublisher || '',
+    PROMOTION_SETTLEMENT_PUBLISHER_ADDRESS:
+      manifest.roles.settlementPublisher || '',
+    PROMOTION_SETTLEMENT_PUBLISHER: manifest.roles.settlementPublisher || '',
     PROMOTION_PAYMENT_TOKEN_ADDRESS: manifest.contracts.paymentTokenAddress || '',
     PROMOTION_NFT_SALE_ADDRESS: manifest.contracts.nftSaleAddress || '',
     PROMOTION_MERKLE_DISTRIBUTOR_ADDRESS:

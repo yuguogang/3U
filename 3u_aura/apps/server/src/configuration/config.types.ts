@@ -43,9 +43,14 @@ export type ConfigOptions = {
   };
   promotion: {
     claimChainId: number;
+    environment?: string;
     startAt: string;
     checkinReceiverAddress?: string;
+    ownerAddress?: string;
+    financeWalletAddress?: string;
     rewardFunderAddress?: string;
+    rootPublisherAddress?: string;
+    settlementPublisherAddress?: string;
     merkleDistributorAddress?: string;
     nftSaleAddress?: string;
     paymentTokenAddress?: string;

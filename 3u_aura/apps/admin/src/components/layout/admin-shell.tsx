@@ -9,6 +9,7 @@ import {
   FilePenLine,
   Gem,
   LayoutDashboard,
+  Rocket,
   Shield,
   Users,
 } from "lucide-react";
@@ -21,6 +22,8 @@ const navItems = [
   { href: "/dashboard/placements", icon: Activity, label: "Placements" },
   { href: "/dashboard/checkins", icon: ClipboardList, label: "Check-ins" },
   { href: "/dashboard/claims", icon: FilePenLine, label: "Claims" },
+  { href: "/dashboard/settlement", icon: Rocket, label: "Settlement" },
+  { href: "/dashboard/subsidy", icon: Rocket, label: "Subsidy" },
   { href: "/dashboard/nft-eligibility", icon: Gem, label: "NFT Eligibility" },
   { href: "/dashboard/audit", icon: Shield, label: "Audit" },
   { href: "/dashboard/ops", icon: Activity, label: "Ops" },

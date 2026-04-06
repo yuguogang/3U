@@ -9,6 +9,22 @@ import type { ClientUser } from './aura';
 import type { WeeklyEpochBoundaryView } from './promotion';
 
 export type AdminClaimKind = 'MERKLE' | 'NFT_SUBSIDY';
+export type AdminOperatorStatus = 'BLOCKED' | 'COMPLETED' | 'FAILED' | 'READY';
+export type AdminPromotionRoleKey =
+  | 'CHECKIN_RECEIVER'
+  | 'FINANCE_WALLET'
+  | 'OPERATOR'
+  | 'OWNER'
+  | 'REWARD_FUNDER'
+  | 'ROOT_PUBLISHER'
+  | 'SETTLEMENT_PUBLISHER';
+export type AdminWeeklySettlementStepKey =
+  | 'EPOCH_SYNC'
+  | 'GENERATE_DRAFT'
+  | 'PUBLISH_DRAFT'
+  | 'FUND_DISTRIBUTOR'
+  | 'PUBLISH_ROOT'
+  | 'ACTIVATE_CLAIMS';
 
 export interface AdminSessionView {
   isAdmin: boolean;
@@ -65,6 +81,128 @@ export interface AdminOverviewView {
   teamLeaderCount?: number;
   teamLeaderTotalPerformanceUsdt?: string;
   totalUsers: number;
+}
+
+export interface AdminPromotionRoleView {
+  address?: string;
+  key: AdminPromotionRoleKey;
+  label: string;
+  matchesOperator: boolean;
+}
+
+export interface AdminOperatorCheckView {
+  blockers: string[];
+  description: string;
+  key: string;
+  label: string;
+  status: AdminOperatorStatus;
+  value?: string;
+}
+
+export interface AdminWalletActionView {
+  args: string[];
+  blockers: string[];
+  contractAddress?: string;
+  enabled: boolean;
+  functionName: string;
+  label: string;
+}
+
+export interface AdminWeeklySettlementEpochView {
+  endAt: Date;
+  epochId: string;
+  epochNo: number;
+  lotteryPoolUsdt: string;
+  merkleRoot?: string;
+  participantCount: number;
+  qualifiedTicketCount: number;
+  rankingPoolUsdt: string;
+  rewardJsonUri?: string;
+  rolloverUsdt: string;
+  snapshotAt?: Date;
+  startAt: Date;
+  status: EpochStatus;
+}
+
+export interface AdminWeeklySettlementCenterView {
+  chainId: number;
+  checks: AdminOperatorCheckView[];
+  currentBoundary: WeeklyEpochBoundaryView;
+  distributorBalanceAtomic: string;
+  draftMerkleRoot: string;
+  fundingShortfallAtomic: string;
+  latestEpochs: AdminOverviewLatestEpochView[];
+  merkleDistributorAddress?: string;
+  onChainMerkleRoot?: string;
+  operatorWallet: string;
+  paymentTokenAddress?: string;
+  rewardFunderAddress?: string;
+  rewardFunderAllowanceAtomic: string;
+  rewardFunderBalanceAtomic: string;
+  roles: AdminPromotionRoleView[];
+  selectedEpoch?: AdminWeeklySettlementEpochView;
+  steps: Array<
+    AdminOperatorCheckView & {
+      action?: AdminWalletActionView;
+      key: AdminWeeklySettlementStepKey;
+    }
+  >;
+  totalRewardAmountAtomic: string;
+  totalRewardAmountUsdt: string;
+}
+
+export interface AdminPurchasedNftSubsidyEpochView {
+  chainId: number;
+  claimDeadline: Date;
+  contractAddress: string;
+  eligiblePurchasedSupply: number;
+  epochNo: number;
+  maxEligibleTokenId: string;
+  publishedAt: Date;
+  publishedFundingAmountAtomic: string;
+  remainingBudgetAtomic: string;
+  claimedPurchasedSupply: number;
+  subsidyAmountAtomic: string;
+  subsidyAmountUsdt: string;
+}
+
+export interface AdminPurchasedNftSubsidyCenterView {
+  chainId: number;
+  currentChainTime: Date;
+  operatorWallet: string;
+  paymentTokenAddress?: string;
+  publishedEpochs: AdminPurchasedNftSubsidyEpochView[];
+  roles: AdminPromotionRoleView[];
+  settlementAddress?: string;
+}
+
+export interface AdminSubsidyPublicationPreviewView {
+  blockers: string[];
+  canPublish: boolean;
+  chainId: number;
+  claimDeadline: Date;
+  currentChainTime: Date;
+  estimatedFundingAmountAtomic: string;
+  financeWalletAddress?: string;
+  operatorAllowanceAtomic: string;
+  operatorBalanceAtomic: string;
+  operatorMatchesOwner: boolean;
+  operatorMatchesSettlementPublisher: boolean;
+  operatorWallet: string;
+  paymentTokenAddress?: string;
+  roles: AdminPromotionRoleView[];
+  settlementAddress?: string;
+  settlementPublisherAddress?: string;
+  subsidyAmountAtomic: string;
+  subsidyAmountUsdt: string;
+  walletAction?: AdminWalletActionView;
+  epochNo: number;
+}
+
+export interface AdminSubsidyPublicationExecuteView
+  extends AdminSubsidyPublicationPreviewView {
+  expectedEpochView: AdminPurchasedNftSubsidyEpochView;
+  published: boolean;
 }
 
 export interface AdminPendingPlacementItemView {

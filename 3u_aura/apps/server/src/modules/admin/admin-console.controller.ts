@@ -1,4 +1,6 @@
+import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { JwtAuthGuard, AdminWalletGuard } from '@/auth';
+import type { User } from '@/db';
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import {
   AdminAuditLogListQueryDto,
@@ -6,13 +8,19 @@ import {
   AdminClaimIssueListQueryDto,
   AdminNftEligibilityListQueryDto,
   AdminPendingPlacementListQueryDto,
+  AdminSubsidyCenterQueryDto,
+  AdminWeeklySettlementQueryDto,
 } from './dto';
 import { AdminConsoleService } from './services/admin-console.service';
+import { AdminSettlementService } from './services/admin-settlement.service';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, AdminWalletGuard)
 export class AdminConsoleController {
-  constructor(private readonly adminConsoleService: AdminConsoleService) {}
+  constructor(
+    private readonly adminConsoleService: AdminConsoleService,
+    private readonly adminSettlementService: AdminSettlementService,
+  ) {}
 
   @Get('overview')
   getOverview() {
@@ -42,5 +50,24 @@ export class AdminConsoleController {
   @Get('audit')
   listAuditLogs(@Query() query: AdminAuditLogListQueryDto) {
     return this.adminConsoleService.listAuditLogs(query);
+  }
+
+  @Get('settlement/weekly')
+  getWeeklySettlement(
+    @CurrentUser() operator: User,
+    @Query() query: AdminWeeklySettlementQueryDto,
+  ) {
+    return this.adminSettlementService.getWeeklySettlement(operator, query);
+  }
+
+  @Get('subsidy')
+  getSubsidyOverview(
+    @CurrentUser() operator: User,
+    @Query() query: AdminSubsidyCenterQueryDto,
+  ) {
+    return this.adminSettlementService.getPurchasedNftSubsidyCenter(
+      operator,
+      query,
+    );
   }
 }

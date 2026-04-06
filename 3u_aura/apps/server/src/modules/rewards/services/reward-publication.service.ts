@@ -194,6 +194,40 @@ export class RewardPublicationService {
     };
   }
 
+  async materializeEpochRewardDraft(epochNo: number) {
+    const epoch = await this.weeklyEpochRepository.findByEpochNo(
+      EpochType.WEEKLY_PROMOTION,
+      epochNo,
+    );
+    if (!epoch) {
+      throw new NotFoundException(`Weekly promotion epoch #${epochNo} not found`);
+    }
+
+    const result = await this.rewardsService.materializeEpochRewards(epoch.id);
+
+    return {
+      ...result,
+      epochNo: epoch.epochNo,
+    };
+  }
+
+  async publishEpochRewardDraft(epochNo: number) {
+    const epoch = await this.weeklyEpochRepository.findByEpochNo(
+      EpochType.WEEKLY_PROMOTION,
+      epochNo,
+    );
+    if (!epoch) {
+      throw new NotFoundException(`Weekly promotion epoch #${epochNo} not found`);
+    }
+
+    const result = await this.rewardsService.publishEpochRewards(epoch.id);
+
+    return {
+      ...result,
+      epochNo: epoch.epochNo,
+    };
+  }
+
   async activateEpochRewardPublication(
     epochNo: number,
     rewardJsonUri?: string,

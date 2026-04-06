@@ -49,6 +49,16 @@ const SETTLEMENT_READ_ABI = [
   },
 ] as const;
 
+const FOUNDER_NFT_READ_ABI = [
+  {
+    inputs: [],
+    name: 'purchasedMinted',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
+
 export type PurchasedMintOnChain = {
   chainId: number;
   contractAddress: string;
@@ -59,13 +69,25 @@ export type PurchasedMintOnChain = {
 };
 
 export type PublishedSubsidyEpochOnChain = {
+  claimedPurchasedSupply: number;
   chainId: number;
   claimDeadline: Date;
   contractAddress: string;
   epochNo: number;
+  eligiblePurchasedSupply: number;
   maxEligibleTokenId: bigint;
+  publishedFundingAmountUsdt: string;
   publishedAt: Date;
+  remainingBudgetUsdt: string;
   subsidyAmountUsdt: string;
+};
+
+export type SubsidyPublishPreflightOnChain = {
+  contractAddress: string;
+  existingEpoch?: PublishedSubsidyEpochOnChain;
+  founderNftAddress: string;
+  maxSubsidyEpochs: number;
+  purchasedSupply: number;
 };
 
 type PurchasedNftBoughtLog = {
@@ -255,12 +277,18 @@ export class PurchasedNftChainRepository {
 
       return [
         {
+          claimedPurchasedSupply: Number(epoch[3]),
           chainId: runtime.chainId,
           claimDeadline: new Date(Number(epoch[0]) * 1000),
           contractAddress: settlementAddress,
           epochNo: index + 1,
+          eligiblePurchasedSupply: Number(epoch[2]),
           maxEligibleTokenId: BigInt(epoch[4]),
+          publishedFundingAmountUsdt: (
+            BigInt(epoch[5]) * BigInt(epoch[2])
+          ).toString(),
           publishedAt: new Date(Number(epoch[1]) * 1000),
+          remainingBudgetUsdt: epoch[6].toString(),
           subsidyAmountUsdt: epoch[5].toString(),
         },
       ];
@@ -271,6 +299,69 @@ export class PurchasedNftChainRepository {
     const publicClient = this.promotionChainClientService.getPublicClient();
     const block = await publicClient.getBlock({ blockTag: 'latest' });
     return new Date(Number(block.timestamp) * 1000);
+  }
+
+  async previewSubsidyEpochPublication(
+    epochNo: number,
+  ): Promise<SubsidyPublishPreflightOnChain> {
+    const runtime = this.promotionChainClientService.getRuntimeConfig();
+    if (!runtime.settlementAddress) {
+      throw new BadRequestException(
+        'Promotion settlement contract is not configured',
+      );
+    }
+
+    const publicClient = this.promotionChainClientService.getPublicClient();
+    const settlementAddress = getAddress(runtime.settlementAddress);
+    const [founderNftAddress, maxSubsidyEpochs, epoch] = await Promise.all([
+      publicClient.readContract({
+        abi: SETTLEMENT_READ_ABI,
+        address: settlementAddress,
+        functionName: 'founderNFT',
+      }),
+      publicClient.readContract({
+        abi: SETTLEMENT_READ_ABI,
+        address: settlementAddress,
+        functionName: 'maxSubsidyEpochs',
+      }),
+      publicClient.readContract({
+        abi: SETTLEMENT_READ_ABI,
+        address: settlementAddress,
+        functionName: 'subsidyEpochs',
+        args: [BigInt(epochNo)],
+      }),
+    ]);
+
+    const purchasedSupply = await publicClient.readContract({
+      abi: FOUNDER_NFT_READ_ABI,
+      address: getAddress(founderNftAddress),
+      functionName: 'purchasedMinted',
+    });
+
+    return {
+      contractAddress: settlementAddress,
+      existingEpoch:
+        epoch[7] && epoch[0] > 0n && epoch[1] > 0n
+          ? {
+              claimedPurchasedSupply: Number(epoch[3]),
+              chainId: runtime.chainId,
+              claimDeadline: new Date(Number(epoch[0]) * 1000),
+              contractAddress: settlementAddress,
+              eligiblePurchasedSupply: Number(epoch[2]),
+              epochNo,
+              maxEligibleTokenId: BigInt(epoch[4]),
+              publishedFundingAmountUsdt: (
+                BigInt(epoch[5]) * BigInt(epoch[2])
+              ).toString(),
+              publishedAt: new Date(Number(epoch[1]) * 1000),
+              remainingBudgetUsdt: epoch[6].toString(),
+              subsidyAmountUsdt: epoch[5].toString(),
+            }
+          : undefined,
+      founderNftAddress: getAddress(founderNftAddress),
+      maxSubsidyEpochs: Number(maxSubsidyEpochs),
+      purchasedSupply: Number(purchasedSupply),
+    };
   }
 
   private async resolveBlockTimestamps(

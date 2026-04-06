@@ -13,6 +13,8 @@ import { StatsRepository } from '../../stats/repositories/stats.repository';
 import { RewardAllocationEngine } from '../engines/reward-allocation.engine';
 import { WeeklyRewardRepository } from '../repositories/weekly-reward.repository';
 
+const PUBLISH_PREPARED_MARKER = 'PUBLISH_PREPARED';
+
 @Injectable()
 export class RewardsService {
   constructor(
@@ -149,6 +151,9 @@ export class RewardsService {
   }> {
     return this.transactionOrchestrator.run(async (tx) => {
       const epoch = await this.getCalculatingEpochOrThrow(epochId, tx);
+      if (this.hasPublishPreparedMarker(epoch.calculationRemark)) {
+        throw new Error(`Weekly epoch ${epochId} is already publish-prepared`);
+      }
       const rewards = await this.weeklyRewardRepository.listRewardsByTypes(
         {
           epochId,
@@ -254,6 +259,16 @@ export class RewardsService {
 
       const merkle = await this.merkleDraftService.inspectDraftForEpoch(
         epoch.id,
+        tx,
+      );
+      await this.weeklyEpochRepository.updateCalculationRemark(
+        {
+          calculationRemark: this.appendCalculationRemark(
+            epoch.calculationRemark,
+            PUBLISH_PREPARED_MARKER,
+          ),
+          epochId: epoch.id,
+        },
         tx,
       );
 
@@ -526,6 +541,30 @@ export class RewardsService {
     }
 
     return epoch;
+  }
+
+  private appendCalculationRemark(
+    current: string | null,
+    marker: string,
+  ): string {
+    const parts = (current ?? '')
+      .split('|')
+      .map((item) => item.trim())
+      .filter(Boolean);
+    if (!parts.includes(marker)) {
+      parts.push(marker);
+    }
+
+    return parts.join('|');
+  }
+
+  private hasPublishPreparedMarker(
+    calculationRemark: string | null,
+  ): boolean {
+    return (calculationRemark ?? '')
+      .split('|')
+      .map((item) => item.trim())
+      .includes(PUBLISH_PREPARED_MARKER);
   }
 
   private async getEpochReadyForActivationOrThrow(

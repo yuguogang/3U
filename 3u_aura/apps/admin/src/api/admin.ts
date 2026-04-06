@@ -29,8 +29,15 @@ import type {
   AdminRewardPublicationExecuteView,
   AdminRewardPublicationPreviewView,
   AdminRewardPublicationRequest,
+  AdminPurchasedNftSubsidyCenterView,
+  AdminSubsidyCenterQuery,
+  AdminSubsidyPublicationPreviewView,
+  AdminSubsidyPublicationRequest,
   AdminUserListItemView,
   AdminUserListQuery,
+  AdminWeeklySettlementEpochRequest,
+  AdminWeeklySettlementCenterView,
+  AdminWeeklySettlementQuery,
   PaginateData,
 } from "3u-aura-common";
 import { fetchClient } from "@/lib/fetch.client";
@@ -42,6 +49,25 @@ export interface AdminGiftReferralNftRequest {
 
 export async function apiGetAdminOverview() {
   return fetchClient<AdminOverviewView>("/api/v1/admin/overview");
+}
+
+export async function apiGetWeeklySettlement(
+  query: AdminWeeklySettlementQuery,
+) {
+  return fetchClient<AdminWeeklySettlementCenterView>(
+    "/api/v1/admin/settlement/weekly",
+    {
+      method: "GET",
+      query,
+    },
+  );
+}
+
+export async function apiGetSubsidyOverview(query: AdminSubsidyCenterQuery = {}) {
+  return fetchClient<AdminPurchasedNftSubsidyCenterView>("/api/v1/admin/subsidy", {
+    method: "GET",
+    query,
+  });
 }
 
 export async function apiGetAdminUsers(query: AdminUserListQuery) {
@@ -243,6 +269,41 @@ export async function apiExecuteRewardPublication(
   return fetchClient<
     AdminOperationResultEnvelope<AdminRewardPublicationExecuteView>
   >("/api/v1/admin/ops/rewards/publish", {
+    body,
+    method: "POST",
+  });
+}
+
+export async function apiExecuteWeeklySettlementDraft(
+  body: AdminWeeklySettlementEpochRequest,
+) {
+  return fetchClient<AdminOperationResultEnvelope<Record<string, unknown>>>(
+    "/api/v1/admin/ops/settlement/weekly/draft",
+    {
+      body,
+      method: "POST",
+    },
+  );
+}
+
+export async function apiExecuteWeeklySettlementPublish(
+  body: AdminWeeklySettlementEpochRequest,
+) {
+  return fetchClient<AdminOperationResultEnvelope<Record<string, unknown>>>(
+    "/api/v1/admin/ops/settlement/weekly/publish",
+    {
+      body,
+      method: "POST",
+    },
+  );
+}
+
+export async function apiPreviewSubsidyPublish(
+  body: AdminSubsidyPublicationRequest,
+) {
+  return fetchClient<
+    AdminOperationResultEnvelope<AdminSubsidyPublicationPreviewView>
+  >("/api/v1/admin/ops/subsidy/publish/preview", {
     body,
     method: "POST",
   });

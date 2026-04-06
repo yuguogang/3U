@@ -133,14 +133,35 @@ export const configuration = () => {
       ),
     },
     promotion: {
+      environment: process.env.PROMOTION_ENV || undefined,
       claimChainId: Number.parseInt(
         process.env.PROMOTION_CLAIM_CHAIN_ID || '97',
       ),
       startAt: process.env.PROMOTION_START_AT || '2026-03-11T00:00:00+08:00',
       checkinReceiverAddress:
         process.env.PROMOTION_CHECKIN_RECEIVER_ADDRESS || undefined,
+      ownerAddress:
+        process.env.PROMOTION_OWNER_ADDRESS ||
+        process.env.PROMOTION_OWNER ||
+        process.env.OWNER ||
+        undefined,
+      financeWalletAddress:
+        process.env.PROMOTION_FINANCE_WALLET_ADDRESS ||
+        process.env.PROMOTION_FINANCE_WALLET ||
+        process.env.FINANCE_WALLET ||
+        undefined,
       rewardFunderAddress:
         process.env.PROMOTION_REWARD_FUNDER_ADDRESS || undefined,
+      rootPublisherAddress:
+        process.env.PROMOTION_ROOT_PUBLISHER_ADDRESS ||
+        process.env.PROMOTION_ROOT_PUBLISHER ||
+        process.env.ROOT_PUBLISHER ||
+        undefined,
+      settlementPublisherAddress:
+        process.env.PROMOTION_SETTLEMENT_PUBLISHER_ADDRESS ||
+        process.env.PROMOTION_SETTLEMENT_PUBLISHER ||
+        process.env.SETTLEMENT_PUBLISHER ||
+        undefined,
       merkleDistributorAddress:
         process.env.PROMOTION_MERKLE_DISTRIBUTOR_ADDRESS || undefined,
       nftSaleAddress: process.env.PROMOTION_NFT_SALE_ADDRESS || undefined,

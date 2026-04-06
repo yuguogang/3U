@@ -11,12 +11,6 @@ import {
     EpochStatus,
     RewardType,
     RewardStatus,
-    ClaimType,
-    ClaimStatus,
-    NftType,
-    NftStatus,
-    NftEligibilityStatus,
-    SignatureScenarios,
     DEVICES
 } from '../enums';
 

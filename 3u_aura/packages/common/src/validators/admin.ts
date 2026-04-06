@@ -109,6 +109,61 @@ export type AdminRewardPublicationRequest = z.infer<
   typeof AdminRewardPublicationRequestSchema
 >;
 
+export const AdminSubsidyPublishPreviewRequestSchema = z.object({
+  claimDeadline: z.string().datetime(),
+  epochNo: z.preprocess((value) => Number(value), z.number().int().positive()),
+  subsidyAmountAtomic: AtomicAmountStringSchema,
+});
+
+export type AdminSubsidyPublishPreviewRequest = z.infer<
+  typeof AdminSubsidyPublishPreviewRequestSchema
+>;
+
+export const AdminWeeklySettlementQuerySchema = z.object({
+  epochNo: z
+    .preprocess((value) => (value === undefined ? undefined : Number(value)), z.number().int().positive())
+    .optional(),
+  referenceAt: z.string().datetime().optional(),
+});
+
+export type AdminWeeklySettlementQuery = z.infer<
+  typeof AdminWeeklySettlementQuerySchema
+>;
+
+export const AdminWeeklySettlementOverviewQuerySchema =
+  AdminWeeklySettlementQuerySchema;
+
+export type AdminWeeklySettlementOverviewQuery =
+  AdminWeeklySettlementQuery;
+
+export const AdminWeeklySettlementEpochRequestSchema = z.object({
+  epochNo: z.preprocess((value) => Number(value), z.number().int().positive()),
+});
+
+export type AdminWeeklySettlementEpochRequest = z.infer<
+  typeof AdminWeeklySettlementEpochRequestSchema
+>;
+
+export const AdminSubsidyCenterQuerySchema = z.object({
+  epochNo: z
+    .preprocess((value) => (value === undefined ? undefined : Number(value)), z.number().int().positive())
+    .optional(),
+});
+
+export type AdminSubsidyCenterQuery = z.infer<
+  typeof AdminSubsidyCenterQuerySchema
+>;
+
+export const AdminSubsidyPublicationRequestSchema = z.object({
+  claimDeadline: z.string().datetime(),
+  epochNo: z.preprocess((value) => Number(value), z.number().int().positive()),
+  subsidyAmountAtomic: AtomicAmountStringSchema,
+});
+
+export type AdminSubsidyPublicationRequest = z.infer<
+  typeof AdminSubsidyPublicationRequestSchema
+>;
+
 export const AdminApproveReferralNftRequestSchema = z.object({
   decisionReason: z.string().trim().max(500).optional(),
   userId: z.string().trim().min(1),

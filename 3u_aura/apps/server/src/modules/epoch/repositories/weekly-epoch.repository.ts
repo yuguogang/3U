@@ -169,6 +169,21 @@ export class WeeklyEpochRepository {
     });
   }
 
+  async updateCalculationRemark(
+    data: {
+      calculationRemark?: string | null;
+      epochId: string;
+    },
+    executor: DbExecutor = this.db,
+  ): Promise<WeeklyEpoch> {
+    return executor.weeklyEpoch.update({
+      where: { id: data.epochId },
+      data: {
+        calculationRemark: data.calculationRemark,
+      },
+    });
+  }
+
   async findLatestPromotionResultEpoch(
     executor: DbExecutor = this.db,
   ): Promise<WeeklyEpoch | null> {

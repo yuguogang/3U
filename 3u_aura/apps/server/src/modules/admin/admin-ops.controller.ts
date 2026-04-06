@@ -17,13 +17,19 @@ import {
   AdminGiftReferralNftRequestDto,
   AdminRejectReferralNftRequestDto,
   AdminRewardPublicationRequestDto,
+  AdminSubsidyPublicationRequestDto,
+  AdminWeeklySettlementEpochRequestDto,
 } from './dto';
 import { AdminOpsService } from './services/admin-ops.service';
+import { AdminSettlementService } from './services/admin-settlement.service';
 
 @Controller('admin/ops')
 @UseGuards(JwtAuthGuard, AdminWalletGuard)
 export class AdminOpsController {
-  constructor(private readonly adminOpsService: AdminOpsService) {}
+  constructor(
+    private readonly adminOpsService: AdminOpsService,
+    private readonly adminSettlementService: AdminSettlementService,
+  ) {}
 
   @Post('checkins/repair/preview')
   @HttpCode(HttpStatus.OK)
@@ -83,6 +89,42 @@ export class AdminOpsController {
     @Body() command: AdminRewardPublicationRequestDto,
   ) {
     return this.adminOpsService.executeRewardPublication(operator, command);
+  }
+
+  @Post('settlement/weekly/draft')
+  @HttpCode(HttpStatus.OK)
+  executeWeeklySettlementDraft(
+    @CurrentUser() operator: User,
+    @Body() command: AdminWeeklySettlementEpochRequestDto,
+  ) {
+    return this.adminSettlementService.executeWeeklySettlementDraft(
+      operator,
+      command,
+    );
+  }
+
+  @Post('settlement/weekly/publish')
+  @HttpCode(HttpStatus.OK)
+  executeWeeklySettlementPublish(
+    @CurrentUser() operator: User,
+    @Body() command: AdminWeeklySettlementEpochRequestDto,
+  ) {
+    return this.adminSettlementService.executeWeeklySettlementPublish(
+      operator,
+      command,
+    );
+  }
+
+  @Post('subsidy/publish/preview')
+  @HttpCode(HttpStatus.OK)
+  previewSubsidyPublish(
+    @CurrentUser() operator: User,
+    @Body() command: AdminSubsidyPublicationRequestDto,
+  ) {
+    return this.adminSettlementService.previewSubsidyPublication(
+      operator,
+      command,
+    );
   }
 
   @Post('nft-eligibility/approve')
