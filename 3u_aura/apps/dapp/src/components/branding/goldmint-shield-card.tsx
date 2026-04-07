@@ -275,8 +275,9 @@ export function GoldmintShieldCard({
           strokeWidth="1.2"
         />
         <path
-          d="M278 0H420V164C384 176 350 186 318 194C290 160 276 118 278 0Z"
+          d="M318 0H420V132C397 140 375 147 354 153C334 130 320 89 318 0Z"
           fill={`url(#${accentId})`}
+          opacity="0.42"
         />
         <rect
           x="70"

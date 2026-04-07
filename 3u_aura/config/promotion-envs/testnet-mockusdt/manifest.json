@@ -18,10 +18,10 @@
     "paymentTokenAddress": "0x3639e64AB81769fEbBDA96Fd8e5BB9922D8053fF",
     "paymentTokenKind": "mockusdt",
     "paymentTokenSymbol": "USDT",
-    "founderNftAddress": "0x5E8D0bBD325c13d661396E7E1eAD7DAD2d902EC2",
-    "nftSaleAddress": "0xa8C4bc346fFCba0F806629F9939BEF722e75c0C2",
-    "merkleDistributorAddress": "0x2d069889DE1d664f3440bEC8030B176019A8823F",
-    "settlementAddress": "0x7Ab52fEaE668b2f012945Db8840498C3A3BCb7eC",
+    "founderNftAddress": "0xe299aE531c962476B1b5E5CF9A09a866B8618454",
+    "nftSaleAddress": "0x1cEA1aBD04Ba5178e17F31954749824f3495B8A0",
+    "merkleDistributorAddress": "0x2998d910B4c22C765B0ba3e82018f7D04Ee7c1c0",
+    "settlementAddress": "0x992ED6f4AE1a5aF6eF427Ab8507431Af1B5C2615",
     "nftName": "3U AURA Founder NFT",
     "nftSymbol": "3UAURA",
     "baseUri": "",
@@ -76,7 +76,7 @@
   },
   "artifacts": {
     "deployMockUsdtBroadcast": "apps/contracts/broadcast/DeployMockUSDT.s.sol/97/run-1774437661.json",
-    "deployCoreBroadcast": "apps/contracts/broadcast/DeployNFTCore.s.sol/97/run-1774437685.json",
-    "deploySettlementBroadcast": "apps/contracts/broadcast/DeploySettlementClaim.s.sol/97/run-1774437709.json"
+    "deployCoreBroadcast": "apps/contracts/broadcast/DeployNFTCore.s.sol/97/run-1775524671.json",
+    "deploySettlementBroadcast": "apps/contracts/broadcast/DeploySettlementClaim.s.sol/97/run-1775524712.json"
   }
 }

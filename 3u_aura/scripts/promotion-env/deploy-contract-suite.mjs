@@ -10,6 +10,7 @@ const CONTRACTS_DIR = path.join(REPO_ROOT, 'apps', 'contracts');
 function parseArgs(argv) {
   let envName;
   let force = false;
+  let reusePaymentToken = false;
 
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
@@ -27,6 +28,11 @@ function parseArgs(argv) {
 
     if (value === '--force') {
       force = true;
+      continue;
+    }
+
+    if (value === '--reuse-payment-token' || value === '--skip-payment-token-deploy') {
+      reusePaymentToken = true;
     }
   }
 
@@ -34,7 +40,7 @@ function parseArgs(argv) {
     throw new Error('Missing --env <environment>');
   }
 
-  return { envName, force };
+  return { envName, force, reusePaymentToken };
 }
 
 function isAddress(value) {
@@ -188,7 +194,7 @@ function saveManifest(manifestPath, manifest) {
   writeJson(manifestPath, manifest);
 }
 
-const { envName, force } = parseArgs(process.argv.slice(2));
+const { envName, force, reusePaymentToken } = parseArgs(process.argv.slice(2));
 const manifestPath = path.join(REPO_ROOT, 'config', 'promotion-envs', envName, 'manifest.json');
 const manifest = loadManifest(envName);
 const baseEnv = loadBaseEnv(CONTRACTS_DIR);
@@ -202,6 +208,7 @@ const commonEnv = buildCommonContractsEnv(baseEnv, manifest);
 
 if (
   manifest.contracts.paymentTokenKind === 'mockusdt' &&
+  !reusePaymentToken &&
   (force || !isAddress(manifest.contracts.paymentTokenAddress))
 ) {
   runForgeScript('DeployMockUSDT', commonEnv);
@@ -214,6 +221,16 @@ if (
   saveManifest(manifestPath, manifest);
   process.stdout.write(
     `deployed MockUSDT ${manifest.contracts.paymentTokenAddress} (${broadcast.relativePath})\n`,
+  );
+}
+
+if (
+  reusePaymentToken &&
+  manifest.contracts.paymentTokenKind === 'mockusdt' &&
+  !isAddress(manifest.contracts.paymentTokenAddress)
+) {
+  throw new Error(
+    `Environment ${envName} requested --reuse-payment-token but paymentTokenAddress is missing or invalid`,
   );
 }
 

@@ -230,7 +230,7 @@
       "placed": "Placed",
       "flow": "Flow",
       "live": "Live",
-      "note": "Pending members should be placed into an open LEFT or RIGHT slot inside the subtree.",
+      "note": "Team members are placed automatically by the system, and this subtree stays in sync with the latest team structure.",
       "syncing": "Refreshing team and subtree data..."
     },
     "legend": {
@@ -249,7 +249,7 @@
     },
     "tree": {
       "title": "Tree Snapshot",
-      "description": "Compact subtree view for placement decisions. Tap nodes for details, focus visible subtrees to go deeper, expand branches on demand, and place pending members into any open subtree slot.",
+      "description": "Compact subtree view of the team structure. Tap nodes for details, focus visible subtrees to go deeper, and expand branches on demand to inspect member relationships.",
       "depthDown": "Depth -1",
       "depthUp": "Depth +1",
       "depthBadge": "D{depth}",

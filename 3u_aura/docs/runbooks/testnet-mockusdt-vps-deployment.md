@@ -37,6 +37,14 @@ Before remote execution, prepare:
   - `referralSignerAddress`
   - admin allowlist wallets
 
+Current contract role review for the unlimited-NFT / dual-lane settlement version:
+
+- no new on-chain admin role was introduced
+- keep using the same role set already present in
+  [manifest.json](/Users/ygg/vs/ai/3U/3u_aura/config/promotion-envs/testnet-mockusdt/manifest.json)
+- if future versions add new role-bearing contracts, update this runbook before
+  deployment instead of inventing ad hoc wallets during rollout
+
 ## Funding Rules
 
 - Lottery / ranking funding source:
@@ -50,6 +58,7 @@ Before remote execution, prepare:
 2. Replace all `__UNSET__` role addresses
 3. Set final public domains under `infra`
 4. Keep `paymentTokenKind=mockusdt`
+5. Keep the existing `paymentTokenAddress` when rotating only the core contracts
 5. Run:
 
 ```bash
@@ -74,9 +83,22 @@ not on the Ubuntu VPS.
 From the repo root on the local operator machine:
 
 ```bash
-node scripts/promotion-env/deploy-contract-suite.mjs --env testnet-mockusdt --force
+node scripts/promotion-env/deploy-contract-suite.mjs \
+  --env testnet-mockusdt \
+  --force \
+  --reuse-payment-token
 pnpm promotion-env:sync
 ```
+
+Important:
+
+- `--reuse-payment-token` is required for this rollout because the live
+  `MockUSDT` for `testnet-mockusdt` must remain unchanged
+- this deploy mode only rotates:
+  - `FounderNFT`
+  - `NFTSale`
+  - `Settlement`
+  - `MerkleClaim`
 
 Verify:
 
@@ -186,6 +208,25 @@ Important:
 
 - the deploy script currently does **not** run `prisma migrate deploy`
 - on a fresh or stale VPS database, app services may start successfully while some API routes still fail at runtime because required tables / columns are missing
+
+For the current testnet reset rollout, if the server data must be fully cleared,
+use the dedicated reset script instead of ad hoc SQL:
+
+```bash
+bash scripts/deploy/reset-testnet-mockusdt-db.sh \
+  --env testnet-mockusdt \
+  --app-root /opt/3u-aura/current \
+  --env-dir /etc/3u-aura/testnet-mockusdt \
+  --confirm reset-testnet-mockusdt
+```
+
+This will:
+
+- drop the live schema for the disposable testnet database
+- reapply the baseline schema
+- run Prisma migrations
+- rerun Prisma seed
+- restart `server / dapp / admin`
 
 Before continuing to Nginx and smoke tests, run:
 

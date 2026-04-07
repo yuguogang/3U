@@ -230,7 +230,7 @@
       "placed": "Placed",
       "flow": "Flow",
       "live": "Live",
-      "note": "Pending members should be placed into an open LEFT or RIGHT slot inside the subtree."
+      "note": "Team members are placed automatically by the system, and this subtree stays in sync with the latest team structure."
     },
     "legend": {
       "title": "Placement Legend",

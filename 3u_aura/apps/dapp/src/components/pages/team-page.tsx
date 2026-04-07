@@ -45,6 +45,7 @@ import { buildTeamTree } from "@/lib/team-tree";
 import { buildTreeNodePath, getTreeNodeLabel } from "@/components/team/team-tree-utils";
 
 const EMPTY_PENDING_PLACEMENTS: ReferralPendingPlacementView[] = [];
+const SHOW_MANUAL_PLACEMENT_UI = false;
 
 export function TeamPage() {
   const t = useTranslations("Common");
@@ -52,7 +53,7 @@ export function TeamPage() {
   const { hasHydrated, isAuthenticated } = useAuthStore();
   const profileQuery = useUserProfileQuery(isAuthenticated && hasHydrated);
   const pendingPlacementQuery = usePendingPlacementsQuery(
-    isAuthenticated && hasHydrated,
+    SHOW_MANUAL_PLACEMENT_UI && isAuthenticated && hasHydrated,
   );
   const bindInviterMutation = useBindInviterMutation();
   const bindPlacementMutation = useBindPlacementMutation();
@@ -70,8 +71,9 @@ export function TeamPage() {
   
   const user = profileQuery.data;
   const profile = user?.profile;
-  const pendingPlacements =
-    pendingPlacementQuery.data ?? EMPTY_PENDING_PLACEMENTS;
+  const pendingPlacements = SHOW_MANUAL_PLACEMENT_UI
+    ? pendingPlacementQuery.data ?? EMPTY_PENDING_PLACEMENTS
+    : EMPTY_PENDING_PLACEMENTS;
   const referralCodeFromUrl = normalizeReferralCode(searchParams.get("ref"));
   const isRootUser = Boolean(
     user && !user.inviterId && !user.parentId && user.inviteCode,
@@ -339,7 +341,6 @@ export function TeamPage() {
         <section className="animate-fade-in">
           <div className="space-y-3">
             <TeamTreePendingSummary
-              pendingCount={pendingPlacements.length}
               placedCount={placedCount}
               rootLabel={currentTreeLabel}
             />
@@ -426,21 +427,13 @@ export function TeamPage() {
 
             <div className="space-y-3">
               <GlassCard className="p-4">
-              <div className="grid grid-cols-3 gap-3 border-b border-[var(--shell-border)] pb-4">
+              <div className="grid grid-cols-2 gap-3 border-b border-[var(--shell-border)] pb-4">
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--shell-text-soft)]">
                     {t("team.tree.visibleNodes")}
                   </p>
                   <p className="mt-2 text-xl font-semibold text-[var(--shell-title)] font-mono">
                     {treeSnapshotQuery.data?.nodes.length ?? 0}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--shell-text-soft)]">
-                    {t("team.tree.pending")}
-                  </p>
-                  <p className="mt-2 text-xl font-semibold text-[var(--shell-title)] font-mono">
-                    {pendingPlacements.length}
                   </p>
                 </div>
                 <div>
@@ -512,13 +505,11 @@ export function TeamPage() {
                       snapshot={treeSnapshot!}
                       anchorUserId={user?.id}
                       maxDepth={treeDepth}
-                      focusedUserId={selectedPlacementUserId ?? undefined}
-                      selectedPendingUserId={draggingPendingUserId ?? selectedPlacementUserId}
-                      selectedParentId={selectedSlot?.parentId}
-                      selectedPlacementKey={selectedSlotKey}
+                      focusedUserId={undefined}
+                      selectedPendingUserId={null}
+                      selectedParentId={undefined}
+                      selectedPlacementKey={null}
                       onFocusNode={handleFocusNode}
-                      onSelectOpenSlot={handleTreeSlotSelect}
-                      onDropPendingOnSlot={handleDropPendingOnSlot}
                     />
                   </div>
                 )}
@@ -720,57 +711,8 @@ export function TeamPage() {
           </section>
         )}
 
-        {/* Pending Placements */}
-        <section className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-medium text-[var(--shell-text-muted)]">{t("team.pending.title")}</h2>
-            <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold">
-              {t("team.pending.totalBadge", { count: pendingPlacements.length })}
-            </span>
-          </div>
-          
-          <div className="space-y-3">
-            {pendingPlacementQuery.isLoading ? (
-              <SectionCardSkeleton rows={2} />
-            ) : pendingPlacementQuery.error instanceof Error ? (
-              <SectionErrorState
-                title={t("team.pending.errorTitle")}
-                description={pendingPlacementQuery.error.message}
-              />
-            ) : pendingPlacements.length === 0 ? (
-              <SectionEmptyState
-                title={t("team.pending.emptyTitle")}
-                description={t("team.pending.emptyDescription")}
-              />
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                {pendingPlacements.map((p) => (
-                  <PendingMemberCard
-                    key={p.userId}
-                    userId={p.userId}
-                    walletAddress={p.walletAddress}
-                    registeredAt={p.registeredAt}
-                    dragging={draggingPendingUserId === p.userId}
-                    selected={selectedPlacementUserId === p.userId}
-                    onClick={() =>
-                      handlePendingMemberSelect(
-                        selectedPlacementUserId === p.userId ? null : p.userId,
-                      )
-                    }
-                    onDragStart={(userId) => {
-                      setDraggingPendingUserId(userId);
-                      setSelectedPlacementUserId(userId);
-                    }}
-                    onDragEnd={() => setDraggingPendingUserId(null)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-
         {/* Placement Confirmation */}
-        {selectedPlacementUserId && (
+        {SHOW_MANUAL_PLACEMENT_UI && selectedPlacementUserId && (
           <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
             <h2 className="text-sm font-medium text-[var(--shell-text-muted)] mb-3">{t("team.confirmation.title")}</h2>
             <GlassCard className="p-4">

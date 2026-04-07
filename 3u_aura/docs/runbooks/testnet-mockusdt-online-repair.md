@@ -185,6 +185,32 @@ docker exec 3u-aura-testnet-mockusdt-postgres \
   -c "ALTER USER postgres WITH PASSWORD 'change-me';"
 ```
 
+## Step 4.5B: Full Test Data Reset For Disposable Rollouts
+
+If the environment is disposable and the rollout requires clearing all old
+business data before rebuilding the schema, use the dedicated reset script
+instead of hand-written SQL:
+
+```bash
+cd /opt/3u-aura/current
+bash scripts/deploy/reset-testnet-mockusdt-db.sh \
+  --env testnet-mockusdt \
+  --app-root /opt/3u-aura/current \
+  --env-dir /etc/3u-aura/testnet-mockusdt \
+  --confirm reset-testnet-mockusdt
+```
+
+This will:
+
+- drop the target schema
+- reapply the baseline schema
+- run Prisma migrations
+- rerun seed
+- restart app services
+
+Use this only for disposable testnet rebuilds, not for environments where old
+data must be preserved.
+
 ## Step 4.6: Repair Purchased NFT Projection Gaps Before Subsidy Publish
 
 If users report:

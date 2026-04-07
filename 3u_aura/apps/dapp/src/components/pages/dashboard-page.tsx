@@ -27,7 +27,6 @@ import {
 import {
   useCurrentEligibilityQuery,
   useCurrentEpochQuery,
-  usePendingPlacementsQuery,
 } from "@/queries/promotion.query";
 import { useUserProfileQuery } from "@/queries/user.query";
 import { useAuthStore } from "@/store/auth.store";
@@ -44,10 +43,6 @@ export function DashboardPage() {
     address,
     Boolean(isAuthenticated && hasHydrated && address),
   );
-  const pendingPlacementQuery = usePendingPlacementsQuery(
-    isAuthenticated && hasHydrated,
-  );
-
   const profile = profileQuery.data?.profile;
   const epoch = epochQuery.data;
 
@@ -219,38 +214,6 @@ export function DashboardPage() {
             {t("dashboard.milestones.title")}
           </h2>
           <div className="grid grid-cols-1 gap-3">
-            {pendingPlacementQuery.data &&
-              pendingPlacementQuery.data.length > 0 && (
-                <GlassCard
-                  variant="elevated"
-                  className="goldmint-light-card goldmint-premium-tile goldmint-outline-card p-4"
-                  hoverEffect
-                >
-                  <Link href="/team">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="goldmint-coin flex h-10 w-10 items-center justify-center rounded-xl">
-                          <Users className="w-5 h-5 text-[#2d668f]" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[var(--shell-title)]">
-                            {t("dashboard.milestones.pendingPlacements.title")}
-                          </p>
-                          <p className="text-xs text-[var(--shell-text-soft)]">
-                            {t("dashboard.milestones.pendingPlacements.description", {
-                              count: pendingPlacementQuery.data.length,
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="text-xs font-medium text-[#2d668f]">
-                        {t("shared.buttons.view")}
-                      </span>
-                    </div>
-                  </Link>
-                </GlassCard>
-              )}
-
             <GlassCard variant="elevated" className="goldmint-bronze-panel goldmint-outline-card p-4" hoverEffect>
               <Link href="/nft">
                 <div className="flex items-center justify-between">

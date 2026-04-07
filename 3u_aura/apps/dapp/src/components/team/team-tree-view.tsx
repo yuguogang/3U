@@ -51,6 +51,10 @@ function SlotPlaceholder({
     pendingUserId: string,
   ) => void;
 }) {
+  if (!onSelectOpenSlot && !onDropPendingOnSlot) {
+    return null;
+  }
+
   const t = useTranslations("Common");
   const isSelected = selectedPlacementKey === `${node.userId}:${position}`;
   const isPlacementActive = Boolean(selectedPendingUserId);
@@ -136,7 +140,8 @@ function TreeBranch({
   const hasChildren = node.children.length > 0;
   const openLeft = node.openChildPositions.includes(TeamPosition.LEFT);
   const openRight = node.openChildPositions.includes(TeamPosition.RIGHT);
-  const canExpandBranch = hasChildren || openLeft || openRight;
+  const showManualPlacementUi = Boolean(onSelectOpenSlot || onDropPendingOnSlot);
+  const canExpandBranch = hasChildren || (showManualPlacementUi && (openLeft || openRight));
   const isExpanded = expandedNodeIds[node.userId] ?? false;
   const isFocused = focusedUserId === node.userId;
   const isSelected = selectedParentId === node.userId;
@@ -314,6 +319,7 @@ export function TeamTreeView({
   const t = useTranslations("Common");
   const [expansionOverrides, setExpansionOverrides] = useState<ExpandedTreeState>({});
   const [expandedDetailNodeId, setExpandedDetailNodeId] = useState<string | null>(null);
+  const showManualPlacementUi = Boolean(onSelectOpenSlot || onDropPendingOnSlot);
 
   const filteredNodes =
     typeof maxDepth === "number"
@@ -352,9 +358,11 @@ export function TeamTreeView({
           <span className="rounded-full border border-[var(--shell-border)] bg-[var(--shell-inset)] px-3 py-1.5">
             {t("team.tree.hints.expand")}
           </span>
-          <span className="rounded-full border border-[var(--shell-border)] bg-[var(--shell-inset)] px-3 py-1.5">
-            {t("team.tree.hints.drag")}
-          </span>
+          {showManualPlacementUi ? (
+            <span className="rounded-full border border-[var(--shell-border)] bg-[var(--shell-inset)] px-3 py-1.5">
+              {t("team.tree.hints.drag")}
+            </span>
+          ) : null}
         </div>
 
         <div className="flex min-w-max flex-col gap-4">

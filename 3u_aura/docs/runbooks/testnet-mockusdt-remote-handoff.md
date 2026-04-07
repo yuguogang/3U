@@ -16,6 +16,16 @@ It assumes:
 - app deployment is executed by a remote operator who has SSH access
 - this workstation does **not** SSH into the VPS directly
 
+For the current unlimited-NFT / dual-lane-settlement rollout:
+
+- keep the existing `MockUSDT` address
+- redeploy only:
+  - `FounderNFT`
+  - `NFTSale`
+  - `Settlement`
+  - `MerkleClaim`
+- reset the disposable testnet database before migration/seed
+
 ## Target Host
 
 - Public IP: `47.236.39.50`
@@ -75,6 +85,13 @@ These are already written into:
   - `0x951f5f74f8a5b480DC42aA41c04522C8eCED6d64`
   - `0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC`
   - `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
+
+## Role Change Note
+
+- no new contract management wallet is required for this version
+- reuse the existing role assignments from the manifest
+- if a future release introduces a new privileged role, update both the
+  manifest and this handoff doc before deployment
 
 ## Gas Status Confirmed On BSC Testnet
 
@@ -242,6 +259,18 @@ Before the remote operator continues, confirm locally that:
 - `node scripts/promotion-env/sync-public-envs.mjs` has been run after deployment
 - the updated repo content or deployment bundle has been transferred to the VPS
 
+For this rollout the contract deploy command should be:
+
+```bash
+node scripts/promotion-env/deploy-contract-suite.mjs \
+  --env testnet-mockusdt \
+  --force \
+  --reuse-payment-token
+pnpm promotion-env:sync
+```
+
+Do not rotate `MockUSDT` during this rollout.
+
 If `node scripts/promotion-env/sync-public-envs.mjs` fails with:
 
 - `SyntaxError: Unexpected identifier`
@@ -256,6 +285,17 @@ bash scripts/deploy/deploy-testnet-mockusdt.sh \
   --env testnet-mockusdt \
   --app-root /opt/3u-aura/current \
   --env-dir /etc/3u-aura/testnet-mockusdt
+```
+
+If the rollout requires clearing old test data first, run the dedicated reset
+script before app smoke testing:
+
+```bash
+bash scripts/deploy/reset-testnet-mockusdt-db.sh \
+  --env testnet-mockusdt \
+  --app-root /opt/3u-aura/current \
+  --env-dir /etc/3u-aura/testnet-mockusdt \
+  --confirm reset-testnet-mockusdt
 ```
 
 Notes:
