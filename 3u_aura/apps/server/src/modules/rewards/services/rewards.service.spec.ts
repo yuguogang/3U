@@ -51,7 +51,8 @@ describe('RewardsService', () => {
         id: 'epoch_2',
       }),
       findById: jest.fn(),
-      incrementPreparedPools: jest.fn().mockResolvedValue(undefined),
+      incrementRolloverPools: jest.fn().mockResolvedValue(undefined),
+      updateCalculationRemark: jest.fn().mockResolvedValue(undefined),
     };
     const lotterySettlementService = {
       materializeForEpoch: jest.fn().mockResolvedValue({
@@ -238,6 +239,8 @@ describe('RewardsService', () => {
       epochNo: 1,
       epochType: EpochType.WEEKLY_PROMOTION,
       id: 'epoch_1',
+      lotteryStatus: EpochStatus.CALCULATING,
+      rankingStatus: EpochStatus.CALCULATING,
       startAt: new Date('2026-03-08T16:00:00.000Z'),
       status: EpochStatus.CALCULATING,
     });
@@ -279,7 +282,9 @@ describe('RewardsService', () => {
       epochType: EpochType.WEEKLY_PROMOTION,
       id: 'epoch_1',
       lotteryPoolUsdt: new Prisma.Decimal(1000),
+      lotteryStatus: EpochStatus.CALCULATING,
       rankingPoolUsdt: new Prisma.Decimal(1000),
+      rankingStatus: EpochStatus.CALCULATING,
       startAt: new Date('2026-03-08T16:00:00.000Z'),
       status: EpochStatus.CALCULATING,
     });
@@ -333,11 +338,11 @@ describe('RewardsService', () => {
 
     const result = await service.publishEpochRewards('epoch_1');
 
-    expect(weeklyEpochRepository.incrementPreparedPools).toHaveBeenCalledWith(
+    expect(weeklyEpochRepository.incrementRolloverPools).toHaveBeenCalledWith(
       {
         epochId: 'epoch_2',
-        lotteryPoolUsdt: new Prisma.Decimal(400),
-        rankingPoolUsdt: new Prisma.Decimal(480),
+        lotteryRolloverUsdt: new Prisma.Decimal(400),
+        rankingRolloverUsdt: new Prisma.Decimal(480),
       },
       expect.any(Object),
     );
@@ -389,7 +394,9 @@ describe('RewardsService', () => {
       epochType: EpochType.WEEKLY_PROMOTION,
       id: 'epoch_1',
       lotteryPoolUsdt: new Prisma.Decimal(1000),
+      lotteryStatus: EpochStatus.CALCULATING,
       rankingPoolUsdt: new Prisma.Decimal(1000),
+      rankingStatus: EpochStatus.CALCULATING,
       startAt: new Date('2026-03-08T16:00:00.000Z'),
       status: EpochStatus.CALCULATING,
     });
@@ -449,7 +456,9 @@ describe('RewardsService', () => {
       epochType: EpochType.WEEKLY_PROMOTION,
       id: 'epoch_1',
       lotteryPoolUsdt: new Prisma.Decimal(1000),
+      lotteryStatus: EpochStatus.CALCULATING,
       rankingPoolUsdt: new Prisma.Decimal(1000),
+      rankingStatus: EpochStatus.CALCULATING,
       startAt: new Date('2026-03-08T16:00:00.000Z'),
       status: EpochStatus.CALCULATING,
     });

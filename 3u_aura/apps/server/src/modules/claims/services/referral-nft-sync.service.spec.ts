@@ -64,9 +64,12 @@ describe('ReferralNftSyncService', () => {
     referralNftChainRepository.getReferralMintByTxHash.mockResolvedValue({
       chainId: 97,
       contractAddress: '0x2222222222222222222222222222222222222222',
+      digest:
+        '0x1111111111111111111111111111111111111111111111111111111111111111',
       mintTxHash:
         '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
       mintedAt,
+      nonce: 7,
       tokenId: 5n,
     });
     nftHoldingRepository.upsertReferralHolding.mockResolvedValue({
@@ -78,9 +81,6 @@ describe('ReferralNftSyncService', () => {
     });
     nftEligibilityRepository.markMinted.mockResolvedValue({
       changed: true,
-      eligibility: {
-        id: 'eligibility_1',
-      },
     });
 
     const result = await service.syncMintForUser(
@@ -106,6 +106,9 @@ describe('ReferralNftSyncService', () => {
       expect.objectContaining({
         chainId: 97,
         mintedTokenId: 5n,
+        payloadHash:
+          '0x1111111111111111111111111111111111111111111111111111111111111111',
+        signedNonce: 7,
         userId: user.id,
       }),
       expect.any(Object),
@@ -139,9 +142,12 @@ describe('ReferralNftSyncService', () => {
     referralNftChainRepository.getReferralMintByTxHash.mockResolvedValue({
       chainId: 97,
       contractAddress: '0x2222222222222222222222222222222222222222',
+      digest:
+        '0x2222222222222222222222222222222222222222222222222222222222222222',
       mintTxHash:
         '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       mintedAt,
+      nonce: 8,
       tokenId: 9n,
     });
     nftHoldingRepository.upsertReferralHolding.mockResolvedValue({
@@ -153,9 +159,6 @@ describe('ReferralNftSyncService', () => {
     });
     nftEligibilityRepository.markMinted.mockResolvedValue({
       changed: false,
-      eligibility: {
-        id: 'eligibility_1',
-      },
     });
 
     const result = await service.syncMintForUser(

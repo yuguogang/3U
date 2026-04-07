@@ -28,6 +28,17 @@ export interface ClientUser {
     updatedAt: Date;
 
     profile?: ClientUserProfile;
+    recentPurchasedNftActivity?: ClientPurchasedNftActivity[];
+}
+
+export interface ClientPurchasedNftActivity {
+    paymentReceiptId: string;
+    amount: string; // atomic units as string
+    tokenId?: string;
+    txHash?: string;
+    status: PaymentStatus;
+    confirmedAt?: Date;
+    mintedAt?: Date;
 }
 
 export interface ClientUserProfile {

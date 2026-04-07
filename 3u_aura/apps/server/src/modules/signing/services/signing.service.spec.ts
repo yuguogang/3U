@@ -73,6 +73,8 @@ describe('SigningService', () => {
       signingNonceRepository,
     } = createService();
     nftEligibilityApplicationService.getCurrentEligibility.mockResolvedValue({
+      claimableMintCount: 1,
+      mintedReferralCount: 0,
       status: NftEligibilityStatus.APPROVED,
       userId: 'user_1',
     });
@@ -106,6 +108,8 @@ describe('SigningService', () => {
       service,
     } = createService();
     nftEligibilityApplicationService.getCurrentEligibility.mockResolvedValue({
+      claimableMintCount: 1,
+      mintedReferralCount: 0,
       status: NftEligibilityStatus.APPROVED,
       userId: 'user_1',
     });
@@ -141,6 +145,8 @@ describe('SigningService', () => {
       signingNonceRepository,
     } = createService();
     nftEligibilityApplicationService.getCurrentEligibility.mockResolvedValue({
+      claimableMintCount: 0,
+      mintedReferralCount: 0,
       status: NftEligibilityStatus.PENDING_APPROVAL,
       userId: 'user_1',
     });
@@ -158,6 +164,8 @@ describe('SigningService', () => {
       signingNonceRepository,
     } = createService();
     nftEligibilityApplicationService.getCurrentEligibility.mockResolvedValue({
+      claimableMintCount: 1,
+      mintedReferralCount: 0,
       status: NftEligibilityStatus.APPROVED,
       userId: 'user_1',
     });
@@ -183,6 +191,8 @@ describe('SigningService', () => {
       signingNonceRepository,
     } = createService();
     nftEligibilityApplicationService.getCurrentEligibility.mockResolvedValue({
+      claimableMintCount: 1,
+      mintedReferralCount: 0,
       status: NftEligibilityStatus.APPROVED,
       userId: 'user_1',
     });

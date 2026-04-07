@@ -82,6 +82,8 @@ export interface NftEligibilityView {
   smallLegVolumeUsdt: string; // atomic units as string
   requiredCheckinCount: number;
   requiredSmallLegUsdt: string; // atomic units as string
+  claimableMintCount: number;
+  mintedReferralCount: number;
   approvedAt?: Date;
   approvedByWallet?: string;
   decisionReason?: string;
@@ -129,6 +131,15 @@ export interface PromotionPurchasedNftSyncResult {
   publishedSubsidyEpochs: number;
   tokenId: string;
   txHash: string;
+}
+
+export interface PromotionPurchasedNftRefreshResult {
+  activePurchasedTokenIds: string[];
+  claimsCreated: number;
+  claimsUpdated: number;
+  hasPurchasedNft: boolean;
+  holdingsCreated: number;
+  publishedSubsidyEpochs: number;
 }
 
 export interface PromotionReferralNftSyncResult {

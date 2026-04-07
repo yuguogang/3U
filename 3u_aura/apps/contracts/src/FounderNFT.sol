@@ -7,9 +7,6 @@ import {Ownable} from "./access/Ownable.sol";
 /// @title FounderNFT
 /// @notice ERC721A founder NFT with separate purchased/referral supply accounting.
 contract FounderNFT is ERC721A, Ownable {
-    error ReferralAlreadyMinted(address recipient);
-    error ReferralSupplySoldOut();
-    error TotalSupplySoldOut();
     error UnauthorizedMinter(address caller);
     error ZeroAddress();
 
@@ -17,12 +14,6 @@ contract FounderNFT is ERC721A, Ownable {
     event PurchasedMinted(address indexed recipient, uint256 indexed tokenId);
     event ReferralMinted(address indexed recipient, uint256 indexed tokenId);
     event SaleContractUpdated(address indexed saleContract);
-
-    /// @notice Maximum founder NFT supply across purchased and referral mints.
-    uint256 public constant MAX_TOTAL_SUPPLY = 100;
-
-    /// @notice Maximum referral NFT supply.
-    uint256 public constant MAX_REFERRAL_SUPPLY = 70;
 
     /// @notice Authorized sale contract that can mint NFTs.
     address public saleContract;
@@ -35,9 +26,6 @@ contract FounderNFT is ERC721A, Ownable {
 
     /// @notice Token-level purchased marker required by the project spec.
     mapping(uint256 => bool) public isPurchasedNFT;
-
-    /// @notice One-per-address referral mint tracking.
-    mapping(address => bool) public hasReferralNFT;
 
     string private baseTokenURI;
 
@@ -81,9 +69,6 @@ contract FounderNFT is ERC721A, Ownable {
         if (recipient == address(0)) {
             revert ZeroAddress();
         }
-        if (totalSupply() >= MAX_TOTAL_SUPPLY) {
-            revert TotalSupplySoldOut();
-        }
 
         tokenId = _nextTokenId();
         purchasedMinted += 1;
@@ -100,37 +85,12 @@ contract FounderNFT is ERC721A, Ownable {
         if (recipient == address(0)) {
             revert ZeroAddress();
         }
-        if (hasReferralNFT[recipient]) {
-            revert ReferralAlreadyMinted(recipient);
-        }
-        if (referralMinted >= MAX_REFERRAL_SUPPLY) {
-            revert ReferralSupplySoldOut();
-        }
-        if (totalSupply() >= MAX_TOTAL_SUPPLY) {
-            revert TotalSupplySoldOut();
-        }
 
         tokenId = _nextTokenId();
         referralMinted += 1;
-        hasReferralNFT[recipient] = true;
         _safeMint(recipient, 1);
 
         emit ReferralMinted(recipient, tokenId);
-    }
-
-    /// @notice Remaining capacity available to purchased mints under the total supply cap.
-    function remainingPurchasedSupply() external view returns (uint256) {
-        return MAX_TOTAL_SUPPLY - totalSupply();
-    }
-
-    /// @notice Remaining referral NFT supply.
-    function remainingReferralSupply() external view returns (uint256) {
-        return MAX_REFERRAL_SUPPLY - referralMinted;
-    }
-
-    /// @notice Remaining total NFT supply.
-    function remainingTotalSupply() external view returns (uint256) {
-        return MAX_TOTAL_SUPPLY - totalSupply();
     }
 
     function _baseURI() internal view override returns (string memory) {

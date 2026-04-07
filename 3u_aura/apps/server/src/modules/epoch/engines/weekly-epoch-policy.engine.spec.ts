@@ -51,4 +51,13 @@ describe('WeeklyEpochPolicyEngine', () => {
     expect(engine.shouldRollover(11)).toBe(true);
     expect(engine.shouldRollover(12)).toBe(false);
   });
+
+  it('splits the promotion pool evenly between lottery and ranking', () => {
+    const engine = createEngine();
+
+    expect(engine.buildPoolSplit('100')).toEqual({
+      lotteryPoolAtomic: '50',
+      rankingPoolAtomic: '50',
+    });
+  });
 });

@@ -512,6 +512,7 @@
       "surfaceBadge": "金屬銘牌",
       "availability": "正在發售",
       "remaining": "可購庫存",
+      "minted": "已鑄造數量",
       "approvalHint": "需先授權",
       "approvalHelp": "當前售賣合約仍是 approve + buyNFT 模式，因此首次購買前仍需先完成一次授權交易。",
       "approvalReady": "已可直購",

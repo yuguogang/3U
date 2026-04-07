@@ -131,6 +131,10 @@ export class MerkleDraftService {
     merkleRoot: string;
   }> {
     const draft = await this.inspectDraftForEpoch(epochId, tx);
+    const epoch = await this.weeklyEpochRepository.findById(epochId, tx);
+    if (!epoch) {
+      throw new Error(`Weekly epoch not found: ${epochId}`);
+    }
 
     await this.claimPublicationService.markMerkleClaimsClaimable(
       epochId,
@@ -147,7 +151,15 @@ export class MerkleDraftService {
     await this.weeklyEpochRepository.publishMerkleRoot(
       {
         epochId,
+        lotteryStatus:
+          epoch.lotteryStatus === 'CALCULATING'
+            ? 'ROOT_POSTED'
+            : epoch.lotteryStatus,
         merkleRoot: draft.merkleRoot,
+        rankingStatus:
+          epoch.rankingStatus === 'CALCULATING'
+            ? 'ROOT_POSTED'
+            : epoch.rankingStatus,
         rewardJsonUri,
       },
       tx,

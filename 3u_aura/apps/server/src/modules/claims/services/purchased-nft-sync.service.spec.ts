@@ -258,7 +258,7 @@ describe('PurchasedNftSyncService', () => {
       holdingsCreated: 1,
       publishedSubsidyEpochs: 1,
     });
-    expect(result.activePurchasedTokenIds).toEqual([7n]);
+    expect(result.activePurchasedTokenIds).toEqual(['7']);
   });
 
   it('marks the profile as not holding purchased nft when chain state is empty', async () => {

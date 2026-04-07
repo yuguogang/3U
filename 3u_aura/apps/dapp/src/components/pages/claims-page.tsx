@@ -6,6 +6,7 @@ import {
   ShieldAlert,
   Gem,
   AlertCircle,
+  RefreshCcw,
   Trophy,
   InboxIcon,
 } from "lucide-react";
@@ -99,6 +100,13 @@ export function ClaimsPage() {
       totalClaimableFormatted: formatUsdtAtomic(totalClaimable),
     };
   }, [merkleClaims, nftSubsidyClaims]);
+  const isClaimsRefreshing =
+    claimsQuery.isFetching ||
+    claimSyncMutation.isPending ||
+    merkleWrite.isPending ||
+    subsidyWrite.isPending ||
+    merkleReceipt.isLoading ||
+    subsidyReceipt.isLoading;
 
   useEffect(() => {
     if (
@@ -219,6 +227,18 @@ export function ClaimsPage() {
             </div>
             <p className="mt-2 text-xs text-amber-100/60 leading-relaxed">
               {t("claims.wrongNetwork.description", { chainId: promotionChainId })}
+            </p>
+          </GlassCard>
+        )}
+
+        {isClaimsRefreshing && (
+          <GlassCard className="border border-aura-primary/20 bg-aura-primary/8 p-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-aura-primary">
+              <RefreshCcw className="h-4 w-4 animate-spin" />
+              <span>{t("claims.sync.refreshingTitle")}</span>
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-[var(--shell-text-soft)]">
+              {t("claims.sync.refreshingDescription")}
             </p>
           </GlassCard>
         )}

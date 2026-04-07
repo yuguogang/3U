@@ -139,7 +139,9 @@ export class RewardPublicationService {
     const dbActivated =
       prepared.epoch.status === EpochStatus.ROOT_POSTED ||
       prepared.epoch.status === EpochStatus.SETTLED ||
-      prepared.epoch.status === EpochStatus.CANCELLED;
+      (prepared.epoch.status === EpochStatus.CANCELLED &&
+        prepared.epoch.lotteryStatus === EpochStatus.CANCELLED &&
+        prepared.epoch.rankingStatus === EpochStatus.CANCELLED);
     const normalizedDraftRoot = prepared.draftMerkleRoot.toLowerCase();
     const normalizedOnChainRoot = onChainMerkleRoot?.toLowerCase();
     const rootPublished =

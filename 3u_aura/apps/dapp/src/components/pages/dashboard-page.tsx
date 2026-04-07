@@ -67,10 +67,9 @@ export function DashboardPage() {
   const eligibilityStatusLabel = eligibilityQuery.data?.status
     ? t(`shared.promotion.eligibilityStatus.${eligibilityQuery.data.status}`)
     : t("shared.status.checking");
-  const canMintReferralNft =
-    eligibilityQuery.data?.status === "APPROVED" ||
-    eligibilityQuery.data?.status === "EXPIRED" ||
-    eligibilityQuery.data?.status === "SIGNED";
+  const claimableReferralMintCount =
+    eligibilityQuery.data?.claimableMintCount ?? 0;
+  const canMintReferralNft = claimableReferralMintCount > 0;
   const featureCards = [
     {
       href: "/checkin",
@@ -203,7 +202,7 @@ export function DashboardPage() {
           <div className="grid grid-cols-2 gap-3">
             <StatCard
               label={t("dashboard.milestones.nftEligibility.title")}
-              value={canMintReferralNft ? "1" : "0"}
+              value={claimableReferralMintCount.toString()}
               subValue={eligibilityStatusLabel}
               icon={<Gem className="w-5 h-5" />}
               className="col-span-2"

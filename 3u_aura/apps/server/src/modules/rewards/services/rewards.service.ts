@@ -163,13 +163,17 @@ export class RewardsService {
       );
 
       const lotteryRolloverUsdt = this.calculateRolloverUsdt(
-        epoch.lotteryPoolUsdt.toFixed(0),
-        rewards
-          .filter((reward) => reward.rewardType === 'LOTTERY_USDT')
-          .reduce(
-            (sum, reward) => sum + BigInt(reward.amountUsdt.toFixed(0)),
-            0n,
-          ),
+        epoch.lotteryStatus === EpochStatus.CANCELLED
+          ? '0'
+          : epoch.lotteryPoolUsdt.toFixed(0),
+        epoch.lotteryStatus === EpochStatus.CANCELLED
+          ? 0n
+          : rewards
+              .filter((reward) => reward.rewardType === 'LOTTERY_USDT')
+              .reduce(
+                (sum, reward) => sum + BigInt(reward.amountUsdt.toFixed(0)),
+                0n,
+              ),
       );
       const rankingRolloverUsdt = this.calculateRolloverUsdt(
         epoch.rankingPoolUsdt.toFixed(0),
@@ -186,14 +190,14 @@ export class RewardsService {
           : null;
 
       if (nextEpoch) {
-        await this.weeklyEpochRepository.incrementPreparedPools(
+        await this.weeklyEpochRepository.incrementRolloverPools(
           {
             epochId: nextEpoch.id,
-            lotteryPoolUsdt:
+            lotteryRolloverUsdt:
               BigInt(lotteryRolloverUsdt) > 0n
                 ? new Prisma.Decimal(lotteryRolloverUsdt)
                 : undefined,
-            rankingPoolUsdt:
+            rankingRolloverUsdt:
               BigInt(rankingRolloverUsdt) > 0n
                 ? new Prisma.Decimal(rankingRolloverUsdt)
                 : undefined,
@@ -539,6 +543,14 @@ export class RewardsService {
         `Weekly epoch ${epochId} must be CALCULATING before settlement, got ${epoch.status}`,
       );
     }
+    if (
+      epoch.lotteryStatus !== EpochStatus.CALCULATING &&
+      epoch.rankingStatus !== EpochStatus.CALCULATING
+    ) {
+      throw new Error(
+        `Weekly epoch ${epochId} has no settlement lane in CALCULATING state`,
+      );
+    }
 
     return epoch;
   }
@@ -582,6 +594,16 @@ export class RewardsService {
       throw new Error(
         `Weekly epoch ${epochId} must be CALCULATING or ROOT_POSTED before activation`,
       );
+    }
+    if (
+      epoch.lotteryStatus !== EpochStatus.CALCULATING &&
+      epoch.lotteryStatus !== EpochStatus.ROOT_POSTED &&
+      epoch.lotteryStatus !== EpochStatus.CANCELLED &&
+      epoch.rankingStatus !== EpochStatus.CALCULATING &&
+      epoch.rankingStatus !== EpochStatus.ROOT_POSTED &&
+      epoch.rankingStatus !== EpochStatus.CANCELLED
+    ) {
+      throw new Error(`Weekly epoch ${epochId} has no activatable settlement lane`);
     }
 
     return epoch;

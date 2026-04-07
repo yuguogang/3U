@@ -14,6 +14,7 @@ import {
 import {
   getAccessToken,
   getMyClaims,
+  previewSubsidyPublish,
   syncClaim,
   syncPurchasedNft,
 } from '../lib/server.mjs';
@@ -52,7 +53,10 @@ async function run() {
   console.log(`   Settlement owner: ${admin.address}`);
 
   console.log('4. Logging in buyer...');
-  const loginResult = await getAccessToken(userB.address, userB.privateKey, ENV);
+  const [adminLogin, loginResult] = await Promise.all([
+    getAccessToken(admin.address, admin.privateKey, ENV),
+    getAccessToken(userB.address, userB.privateKey, ENV),
+  ]);
   console.log(`   Logged in, userId: ${loginResult.user?.id ?? 'unknown'}`);
 
   console.log('5. Funding buyer and owner with MockUSDT...');
@@ -67,20 +71,63 @@ async function run() {
   const purchaseTx = await buyNft(userB, 1, ENV);
   console.log(`   Purchase tx: ${purchaseTx}`);
 
-  console.log('8. Syncing purchased NFT before subsidy epoch publish...');
+  console.log('8. Verifying admin subsidy preview blocks while purchased projection is missing...');
+  const latestBlock = await publicClient.getBlock();
+  const claimDeadline = new Date(
+    Number(latestBlock.timestamp + 7n * 24n * 60n * 60n) * 1000,
+  ).toISOString();
+  const previewBeforeSync = await previewSubsidyPublish(
+    adminLogin.accessToken,
+    {
+      claimDeadline,
+      epochNo: SUBSIDY_EPOCH_ID,
+      subsidyAmountAtomic: parseUnits(SUBSIDY_AMOUNT_USDT, 6).toString(),
+    },
+    ENV,
+  );
+  console.log(`   Preview before sync: ${JSON.stringify(previewBeforeSync)}`);
+  if (previewBeforeSync.result.canPublish) {
+    throw new Error('Expected subsidy preview to be blocked before purchased NFT sync');
+  }
+  if (
+    !previewBeforeSync.result.blockers.some((item) =>
+      item.includes('DB purchased NFT projection is behind chain supply'),
+    )
+  ) {
+    throw new Error(
+      `Expected projection gap blocker before sync, got ${JSON.stringify(previewBeforeSync.result.blockers)}`,
+    );
+  }
+
+  console.log('9. Syncing purchased NFT before subsidy epoch publish...');
   const initialPurchaseSync = await syncPurchasedNft(loginResult.accessToken, purchaseTx, ENV);
   console.log(`   Initial purchased sync: ${JSON.stringify(initialPurchaseSync)}`);
   if (initialPurchaseSync.holdingsCreated !== 1) {
     throw new Error(`Expected first purchased sync to create 1 holding, got ${initialPurchaseSync.holdingsCreated}`);
   }
 
-  console.log('9. Publishing subsidy epoch on-chain...');
-  const latestBlock = await publicClient.getBlock();
-  const claimDeadline = Number(latestBlock.timestamp) + 7 * 24 * 60 * 60;
+  console.log('10. Verifying admin subsidy preview clears once projection catches up...');
+  const previewAfterSync = await previewSubsidyPublish(
+    adminLogin.accessToken,
+    {
+      claimDeadline,
+      epochNo: SUBSIDY_EPOCH_ID,
+      subsidyAmountAtomic: parseUnits(SUBSIDY_AMOUNT_USDT, 6).toString(),
+    },
+    ENV,
+  );
+  console.log(`   Preview after sync: ${JSON.stringify(previewAfterSync)}`);
+  if (!previewAfterSync.result.canPublish) {
+    throw new Error(
+      `Expected subsidy preview to be publishable after sync, got blockers ${JSON.stringify(previewAfterSync.result.blockers)}`,
+    );
+  }
+
+  console.log('11. Publishing subsidy epoch on-chain...');
   const publishTx = await publishSubsidyEpoch(
     admin,
     {
-      claimDeadline,
+      claimDeadline: Math.floor(new Date(claimDeadline).getTime() / 1000),
       epochId: SUBSIDY_EPOCH_ID,
       subsidyAmount: parseUnits(SUBSIDY_AMOUNT_USDT, 6),
     },
@@ -103,14 +150,14 @@ async function run() {
     throw new Error('Expected subsidy epoch to be published on-chain');
   }
 
-  console.log('10. Re-syncing purchased NFT to project subsidy claim...');
+  console.log('12. Re-syncing purchased NFT to project subsidy claim...');
   const subsidyProjectionSync = await syncPurchasedNft(loginResult.accessToken, purchaseTx, ENV);
   console.log(`   Projection sync: ${JSON.stringify(subsidyProjectionSync)}`);
   if (subsidyProjectionSync.claimsCreated !== 1) {
     throw new Error(`Expected re-sync to create 1 subsidy claim, got ${subsidyProjectionSync.claimsCreated}`);
   }
 
-  console.log('11. Reading projected subsidy claim from server...');
+  console.log('13. Reading projected subsidy claim from server...');
   const claimsBefore = await getMyClaims(loginResult.accessToken, ENV);
   const pendingClaim = normalizeClaim(claimsBefore);
   console.log(`   Pending claim: ${JSON.stringify(pendingClaim)}`);
@@ -121,7 +168,7 @@ async function run() {
     throw new Error(`Expected subsidy claim epochNo ${SUBSIDY_EPOCH_ID}, got ${pendingClaim.epochNo}`);
   }
 
-  console.log('12. Claiming subsidy on-chain...');
+  console.log('14. Claiming subsidy on-chain...');
   const claimTx = await claimSubsidy(userB, pendingClaim.epochNo, pendingClaim.tokenId, ENV);
   await testClient.mine({ blocks: 1 });
   console.log(`   Claim tx: ${claimTx}`);
@@ -131,7 +178,7 @@ async function run() {
     throw new Error('Expected subsidy claim to be marked claimed on-chain');
   }
 
-  console.log('12b. Verifying duplicate on-chain subsidy claim is rejected...');
+  console.log('14b. Verifying duplicate on-chain subsidy claim is rejected...');
   let duplicateClaimRejected = false;
   try {
     await claimSubsidy(userB, pendingClaim.epochNo, pendingClaim.tokenId, ENV);
@@ -143,7 +190,7 @@ async function run() {
     throw new Error('Expected duplicate on-chain subsidy claim to be rejected');
   }
 
-  console.log('13. Syncing subsidy claim back to server...');
+  console.log('15. Syncing subsidy claim back to server...');
   const claimSyncResult = await syncClaim(
     loginResult.accessToken,
     {
@@ -157,7 +204,7 @@ async function run() {
     throw new Error(`Expected claim sync status CLAIMED, got ${claimSyncResult.status}`);
   }
 
-  console.log('14. Verifying duplicate claim sync is idempotent...');
+  console.log('16. Verifying duplicate claim sync is idempotent...');
   const duplicateSyncResult = await syncClaim(
     loginResult.accessToken,
     {
@@ -171,7 +218,7 @@ async function run() {
     throw new Error('Expected duplicate subsidy sync to preserve the original txHash');
   }
 
-  console.log('15. Verifying claim becomes CLAIMED in claims view...');
+  console.log('17. Verifying claim becomes CLAIMED in claims view...');
   const claimsAfter = await getMyClaims(loginResult.accessToken, ENV);
   const claimedClaim = normalizeClaim(claimsAfter);
   console.log(`   Claimed claim: ${JSON.stringify(claimedClaim)}`);
@@ -182,7 +229,7 @@ async function run() {
     throw new Error('Expected claimed subsidy row to persist claim txHash');
   }
 
-  console.log('\n16. Cleaning up harness...');
+  console.log('\n18. Cleaning up harness...');
   await cleanupHarness({
     envName: ENV,
     stopServices: ['server'],

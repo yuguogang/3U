@@ -105,6 +105,7 @@ export class RewardsReadService {
         epochId: epoch.id,
         epochNo: epoch.epochNo,
         epochStatus: epoch.status as any,
+        lotteryStatus: epoch.lotteryStatus as any,
         lotteryRewards: myLotteryRewards,
         ticket,
       }),
@@ -138,6 +139,7 @@ export class RewardsReadService {
     epochId: string;
     epochNo: number;
     epochStatus: PromotionWeeklyResultsView['epochStatus'];
+    lotteryStatus: PromotionWeeklyResultsView['epochStatus'];
     lotteryRewards: Awaited<
       ReturnType<WeeklyRewardRepository['listUserRewardsByEpochAndTypes']>
     >;
@@ -145,7 +147,15 @@ export class RewardsReadService {
       | Awaited<ReturnType<LotteryTicketRepository['findByEpochAndUser']>>
       | null;
   }): PromotionWeeklyResultsView['myLottery'] {
-    const { consolationRewards, epochId, epochNo, epochStatus, lotteryRewards, ticket } =
+    const {
+      consolationRewards,
+      epochId,
+      epochNo,
+      epochStatus,
+      lotteryRewards,
+      lotteryStatus,
+      ticket,
+    } =
       params;
 
     if (!ticket?.isParticipating) {
@@ -162,22 +172,7 @@ export class RewardsReadService {
       };
     }
 
-    if (!ticket.isResultRevealed) {
-      return {
-        canReveal: true,
-        epochId,
-        epochNo,
-        epochStatus,
-        isEligible: ticket.isEligible,
-        isParticipating: true,
-        isRevealed: false,
-        participatedAt: ticket.participatedAt ?? undefined,
-        resultStatus: 'PENDING',
-        ticketCount: ticket.ticketCount,
-      };
-    }
-
-    if (epochStatus === 'CANCELLED') {
+    if (lotteryStatus === 'CANCELLED') {
       return {
         canReveal: false,
         epochId,
@@ -189,6 +184,21 @@ export class RewardsReadService {
         participatedAt: ticket.participatedAt ?? undefined,
         resultStatus: 'ROLLED_OVER',
         revealedAt: ticket.revealedAt ?? undefined,
+        ticketCount: ticket.ticketCount,
+      };
+    }
+
+    if (!ticket.isResultRevealed) {
+      return {
+        canReveal: true,
+        epochId,
+        epochNo,
+        epochStatus,
+        isEligible: ticket.isEligible,
+        isParticipating: true,
+        isRevealed: false,
+        participatedAt: ticket.participatedAt ?? undefined,
+        resultStatus: 'PENDING',
         ticketCount: ticket.ticketCount,
       };
     }

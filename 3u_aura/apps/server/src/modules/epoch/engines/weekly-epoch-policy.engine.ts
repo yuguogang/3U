@@ -125,7 +125,7 @@ export class WeeklyEpochPolicyEngine {
     rankingPoolAtomic: string;
   } {
     const total = BigInt(totalPromotionPoolAtomic);
-    const lotteryPoolAtomic = ((total * 70n) / 100n).toString();
+    const lotteryPoolAtomic = ((total * 50n) / 100n).toString();
     const rankingPoolAtomic = (total - BigInt(lotteryPoolAtomic)).toString();
 
     return {

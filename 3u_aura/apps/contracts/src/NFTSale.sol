@@ -145,15 +145,15 @@ contract NFTSale is Ownable, ReentrancyGuard {
         emit ReferralNFTMinted(msg.sender, tokenId, nonce, digest);
     }
 
-    /// @notice Returns current remaining purchased/referral/total supply.
-    function getRemainingNFT()
+    /// @notice Returns current purchased/referral/total minted supply.
+    function getNFTMintStats()
         external
         view
-        returns (uint256 purchasedRemaining, uint256 referralRemaining, uint256 totalRemaining)
+        returns (uint256 purchasedMinted, uint256 referralMinted, uint256 totalMinted)
     {
-        purchasedRemaining = founderNFT.remainingPurchasedSupply();
-        referralRemaining = FounderNFT(address(founderNFT)).MAX_REFERRAL_SUPPLY() - founderNFT.referralMinted();
-        totalRemaining = FounderNFT(address(founderNFT)).MAX_TOTAL_SUPPLY() - founderNFT.totalSupply();
+        purchasedMinted = founderNFT.purchasedMinted();
+        referralMinted = founderNFT.referralMinted();
+        totalMinted = founderNFT.totalSupply();
     }
 
     /// @notice Computes the current EIP712 domain separator.

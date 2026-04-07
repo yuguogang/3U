@@ -9,6 +9,34 @@ const START_TIMEOUT_MS = 120_000;
 const STOP_TIMEOUT_MS = 10_000;
 const POLL_INTERVAL_MS = 500;
 
+function resolvePnpmBinary() {
+  const candidates = [
+    process.env.PNPM_BIN,
+    '/usr/local/bin/pnpm',
+    '/opt/homebrew/bin/pnpm',
+    'pnpm',
+  ].filter(Boolean);
+
+  return candidates.find((value) => {
+    if (value === 'pnpm') {
+      return true;
+    }
+
+    return fs.existsSync(value);
+  });
+}
+
+const PNPM_BIN = resolvePnpmBinary();
+const NODE_BIN_DIR = path.dirname(process.execPath);
+
+function buildProcessEnv(extra = {}) {
+  return {
+    ...process.env,
+    PATH: [NODE_BIN_DIR, process.env.PATH].filter(Boolean).join(path.delimiter),
+    ...extra,
+  };
+}
+
 function parseUrlPort(rawUrl) {
   const parsed = new URL(rawUrl);
   if (parsed.port) {
@@ -56,7 +84,7 @@ function resolveServiceSpec(envName, manifest, serviceName) {
     case 'server':
       return {
         appDir: 'apps/server',
-        command: ['pnpm', '--dir', 'apps/server', 'exec', 'node', 'dist/src/main.js'],
+        command: [PNPM_BIN, '--dir', 'apps/server', 'exec', 'node', 'dist/src/main.js'],
         envMarkers: [
           `PROMOTION_ENV=${envName}`,
           'PNPM_PACKAGE_NAME=3u-aura-server',
@@ -71,7 +99,7 @@ function resolveServiceSpec(envName, manifest, serviceName) {
       return {
         appDir: 'apps/dapp',
         command: [
-          'pnpm',
+          PNPM_BIN,
           '--dir',
           'apps/dapp',
           'exec',
@@ -96,7 +124,7 @@ function resolveServiceSpec(envName, manifest, serviceName) {
       return {
         appDir: 'apps/admin',
         command: [
-          'pnpm',
+          PNPM_BIN,
           '--dir',
           'apps/admin',
           'exec',
@@ -127,14 +155,10 @@ function ensureServerBuildArtifact(spec) {
     return;
   }
 
-  const entryPath = path.join(REPO_ROOT, spec.appDir, 'dist', 'src', 'main.js');
-  if (fs.existsSync(entryPath)) {
-    return;
-  }
-
-  const result = spawnSync('pnpm', ['--dir', path.join(REPO_ROOT, spec.appDir), 'run', 'build'], {
+  const result = spawnSync(PNPM_BIN, ['--dir', path.join(REPO_ROOT, spec.appDir), 'run', 'build'], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
+    env: buildProcessEnv(),
   });
 
   if (result.status !== 0) {
@@ -255,7 +279,7 @@ function startManagedProcess(spec, envName, envOverrides = {}) {
       cwd: REPO_ROOT,
       detached: true,
       env: {
-        ...process.env,
+        ...buildProcessEnv(),
         ...envOverrides,
       },
       stdio: ['ignore', logFd, logFd],

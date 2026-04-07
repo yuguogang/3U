@@ -26,11 +26,11 @@ const nftSaleAbi = [
   },
   {
     inputs: [],
-    name: "getRemainingNFT",
+    name: "getNFTMintStats",
     outputs: [
-      { name: "purchasedRemaining", type: "uint256" },
-      { name: "referralRemaining", type: "uint256" },
-      { name: "totalRemaining", type: "uint256" },
+      { name: "purchasedMinted", type: "uint256" },
+      { name: "referralMinted", type: "uint256" },
+      { name: "totalMinted", type: "uint256" },
     ],
     stateMutability: "view",
     type: "function",
@@ -54,10 +54,10 @@ const founderNftAbi = [
   },
 ] as const;
 
-type RemainingSupply = {
-  purchasedRemaining: bigint;
-  referralRemaining: bigint;
-  totalRemaining: bigint;
+type MintedSupply = {
+  purchasedMinted: bigint;
+  referralMinted: bigint;
+  totalMinted: bigint;
 };
 
 export type PurchasedNftResult = {
@@ -70,17 +70,17 @@ export type PurchasedNftResult = {
   price: bigint;
   purchasedMintedAfter: bigint;
   purchasedMintedBefore: bigint;
-  remainingAfter: RemainingSupply;
-  remainingBefore: RemainingSupply;
+  mintedAfter: MintedSupply;
+  mintedBefore: MintedSupply;
 };
 
-function toRemainingSupply(
+function toMintedSupply(
   value: readonly [bigint, bigint, bigint],
-): RemainingSupply {
+): MintedSupply {
   return {
-    purchasedRemaining: value[0],
-    referralRemaining: value[1],
-    totalRemaining: value[2],
+    purchasedMinted: value[0],
+    referralMinted: value[1],
+    totalMinted: value[2],
   };
 }
 
@@ -118,11 +118,11 @@ export async function buyPurchasedNft(
     args: [account.address],
     functionName: "balanceOf",
   });
-  const remainingBefore = toRemainingSupply(
+  const mintedBefore = toMintedSupply(
     await publicClient.readContract({
       abi: nftSaleAbi,
       address: nftSaleAddress,
-      functionName: "getRemainingNFT",
+      functionName: "getNFTMintStats",
     }),
   );
   const nftBalanceBefore = await publicClient.readContract({
@@ -169,11 +169,11 @@ export async function buyPurchasedNft(
     args: [account.address],
     functionName: "balanceOf",
   });
-  const remainingAfter = toRemainingSupply(
+  const mintedAfter = toMintedSupply(
     await publicClient.readContract({
       abi: nftSaleAbi,
       address: nftSaleAddress,
-      functionName: "getRemainingNFT",
+      functionName: "getNFTMintStats",
     }),
   );
   const nftBalanceAfter = await publicClient.readContract({
@@ -198,7 +198,7 @@ export async function buyPurchasedNft(
     price,
     purchasedMintedAfter,
     purchasedMintedBefore,
-    remainingAfter,
-    remainingBefore,
+    mintedAfter,
+    mintedBefore,
   };
 }

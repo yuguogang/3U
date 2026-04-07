@@ -19,6 +19,9 @@ import {
   useAuthSigninBySignatureMutation,
 } from "@/queries/auth.query";
 import {
+  useRefreshMyPurchasedNftMutation,
+} from "@/queries/claims.query";
+import {
   useUserProfileQuery,
   userProfileQueryFn,
 } from "@/queries/user.query";
@@ -74,10 +77,12 @@ export function WalletButton() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const autoLoginAttemptedForAddressRef = useRef<string | null>(null);
+  const purchasedRefreshAttemptedForAddressRef = useRef<string | null>(null);
   const wasConnectedRef = useRef(false);
 
   const signatureMessageMutation = useAuthSignatureMessageMutation();
   const signinMutation = useAuthSigninBySignatureMutation();
+  const refreshPurchasedNftMutation = useRefreshMyPurchasedNftMutation();
   const injectedConnector =
     connectors.find((connector) => connector.type === "injected") ??
     connectors[0] ??
@@ -125,6 +130,7 @@ export function WalletButton() {
       logout();
       setIsMenuOpen(false);
       autoLoginAttemptedForAddressRef.current = null;
+      purchasedRefreshAttemptedForAddressRef.current = null;
       wasConnectedRef.current = false;
       queryClient.removeQueries({ queryKey: ["profile"] });
     }
@@ -142,6 +148,7 @@ export function WalletButton() {
     logout();
     setIsMenuOpen(false);
     autoLoginAttemptedForAddressRef.current = null;
+    purchasedRefreshAttemptedForAddressRef.current = null;
     queryClient.removeQueries({ queryKey: ["profile"] });
   }, [address, authAddress, hasHydrated, isAuthenticated, isConnected, logout]);
 
@@ -149,6 +156,7 @@ export function WalletButton() {
     if (!hasHydrated) return;
     if (!isConnected || !address) {
       autoLoginAttemptedForAddressRef.current = null;
+      purchasedRefreshAttemptedForAddressRef.current = null;
       return;
     }
     if (isAuthenticated || isSigning) return;
@@ -157,6 +165,28 @@ export function WalletButton() {
     autoLoginAttemptedForAddressRef.current = address;
     void handleLogin();
   }, [address, hasHydrated, isAuthenticated, isConnected, isSigning]);
+
+  useEffect(() => {
+    if (!hasHydrated || !isAuthenticated || !address) {
+      return;
+    }
+
+    if (purchasedRefreshAttemptedForAddressRef.current === address) {
+      return;
+    }
+
+    purchasedRefreshAttemptedForAddressRef.current = address;
+    refreshPurchasedNftMutation.mutate(undefined, {
+      onError: (error) => {
+        console.warn("Background purchased NFT refresh failed:", error);
+      },
+    });
+  }, [
+    address,
+    hasHydrated,
+    isAuthenticated,
+    refreshPurchasedNftMutation,
+  ]);
 
   async function handleConnect() {
     if (!injectedConnector) {

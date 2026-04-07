@@ -8,6 +8,7 @@ import type {
 } from "3u-aura-common";
 import {
   apiGetMyClaims,
+  apiRefreshMyPurchasedNft,
   apiSyncMyClaim,
   apiSyncMyPurchasedNft,
   apiSyncMyReferralNft,
@@ -52,6 +53,17 @@ export function useSyncMyPurchasedNftMutation() {
   return useMutation({
     mutationFn: (input: PromotionPurchasedNftSyncRequest) =>
       apiSyncMyPurchasedNft(input),
+    onSuccess: async () => {
+      await invalidateClaimDependentQueries(queryClient);
+    },
+  });
+}
+
+export function useRefreshMyPurchasedNftMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => apiRefreshMyPurchasedNft(),
     onSuccess: async () => {
       await invalidateClaimDependentQueries(queryClient);
     },

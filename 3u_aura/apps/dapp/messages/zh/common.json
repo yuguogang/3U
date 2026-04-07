@@ -230,7 +230,8 @@
       "placed": "已安置",
       "flow": "状态",
       "live": "实时",
-      "note": "待安置成员需要放入当前子树内任意一个可用的 LEFT 或 RIGHT 空位。"
+      "note": "待安置成员需要放入当前子树内任意一个可用的 LEFT 或 RIGHT 空位。",
+      "syncing": "正在刷新团队与子树数据..."
     },
     "legend": {
       "title": "安置图例",
@@ -385,7 +386,8 @@
     "summary": {
       "totalAura": "累计获得 $GM",
       "fromCheckin": "签到获得",
-      "fromReferrals": "推荐获得"
+      "fromReferrals": "推荐获得",
+      "syncing": "正在刷新奖励、周结算与领取状态..."
     },
     "stats": {
       "currentEpoch": {
@@ -460,6 +462,8 @@
     },
     "sync": {
       "title": "同步错误",
+      "refreshingTitle": "正在刷新领取状态",
+      "refreshingDescription": "系统正在同步奖励、补贴和链上领取状态。若刚完成交易，请稍等片刻。",
       "merkleFallbackError": "同步 Merkle 领取结果失败",
       "subsidyFallbackError": "同步补贴领取结果失败"
     },
@@ -488,8 +492,8 @@
     "eyebrow": "Goldmint / 创始卡",
     "title": "Goldmint 创始卡",
     "stats": {
-      "purchasedMinted": "购买库存",
-      "referralMinted": "已发推荐 NFT"
+      "purchasedMinted": "购买已铸造",
+      "referralMinted": "推荐已铸造"
     },
     "summary": {
       "owned": "已持有",
@@ -508,10 +512,13 @@
       "approveButton": "授权 USDT",
       "purchasing": "购买中...",
       "buyButton": "立即购买",
-      "success": "购买成功，请到钱包中查看。",
+      "success": "购买成功，系统正在同步卡牌与购买记录。",
+      "refreshingTitle": "正在同步链上卡牌与补贴数据",
+      "refreshingDescription": "购买后会自动刷新持仓、补贴资格和最近购买记录。若刚完成交易，请稍等几秒。",
       "surfaceBadge": "金属铭牌",
       "availability": "正在发售",
       "remaining": "可购库存",
+      "minted": "已铸造数量",
       "approvalHint": "需先授权",
       "approvalHelp": "当前售卖合约仍是 approve + buyNFT 模式，因此首次购买前仍需先完成一次授权交易。",
       "approvalReady": "已可直购",
@@ -550,7 +557,18 @@
       "detailArchiveLabel": "规格档案",
       "footerFront": "金盾徽记、核心盾章与创始封印。",
       "footerBack": "编号蚀刻、等级铭牌与权益账本。",
-      "footerDetail": "材质层次、配额拆分与每周领取规格。"
+      "footerDetail": "材质层次、配额拆分与每周领取规格。",
+      "activityTitle": "最近购买记录",
+      "activityDescription": "这里会显示 DApp 已确认的购买扣款与卡牌同步结果，方便核对 1000 USDT 扣款记录。",
+      "activityBadge": "{count} 条",
+      "activityEmpty": "暂时还没有已确认的购买记录。",
+      "activityAmount": "支付 {amount} USDT",
+      "activityTokenId": "已同步卡牌 Token #{tokenId}",
+      "activityTokenPending": "卡牌正在同步到系统记录",
+      "activityTxHash": "交易哈希：{txHash}",
+      "activityConfirmedAt": "确认时间：{date}",
+      "activityStatusConfirmed": "已确认",
+      "activityStatusPending": "同步中"
     },
     "referral": {
       "sectionTitle": "推荐里程碑卡",

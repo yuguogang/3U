@@ -29,8 +29,10 @@ const NFT_SALE_REFERRAL_READ_ABI = [
 export type ReferralMintOnChain = {
   chainId: number;
   contractAddress: string;
+  digest?: string;
   mintTxHash: string;
   mintedAt: Date;
+  nonce?: number;
   tokenId: bigint;
 };
 
@@ -111,8 +113,13 @@ export class ReferralNftChainRepository {
     return {
       chainId: runtime.chainId,
       contractAddress: founderNftAddress,
+      digest: matchingLog.args.digest,
       mintTxHash: normalizedTxHash,
       mintedAt: new Date(Number(block.timestamp) * 1000),
+      nonce:
+        matchingLog.args.nonce !== undefined
+          ? Number(matchingLog.args.nonce)
+          : undefined,
       tokenId: matchingLog.args.tokenId,
     };
   }

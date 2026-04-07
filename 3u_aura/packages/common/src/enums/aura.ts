@@ -124,6 +124,20 @@ export enum NftEligibilityStatus {
     REVOKED = 'REVOKED',
 }
 
+export enum NftReferralGrantSource {
+    QUALIFIED_APPROVAL = 'QUALIFIED_APPROVAL',
+    MANUAL_GIFT = 'MANUAL_GIFT',
+}
+
+export enum NftReferralGrantStatus {
+    APPROVED = 'APPROVED',
+    SIGNED = 'SIGNED',
+    MINTED = 'MINTED',
+    REJECTED = 'REJECTED',
+    EXPIRED = 'EXPIRED',
+    REVOKED = 'REVOKED',
+}
+
 export enum SignatureScenarios {
     SIGNIN = 'SIGNIN',
     BIND_INVITER = 'BIND_INVITER',

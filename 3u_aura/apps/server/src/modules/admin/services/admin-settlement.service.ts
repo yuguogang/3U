@@ -25,6 +25,8 @@ import {
   type PublishedSubsidyEpochOnChain,
   PurchasedNftChainRepository,
 } from '../../claims/repositories/purchased-nft-chain.repository';
+import { NftHoldingRepository } from '../../claims/repositories/nft-holding.repository';
+import { NftSubsidyClaimRepository } from '../../claims/repositories/nft-subsidy-claim.repository';
 import { WeeklyEpochPolicyEngine } from '../../epoch/engines/weekly-epoch-policy.engine';
 import { WeeklyEpochApplicationService } from '../../epoch/services/weekly-epoch-application.service';
 import { WeeklyEpochRepository } from '../../epoch/repositories/weekly-epoch.repository';
@@ -67,6 +69,8 @@ export class AdminSettlementService {
     private readonly auditTrailService: AuditTrailService,
     private readonly promotionChainClientService: PromotionChainClientService,
     private readonly purchasedNftChainRepository: PurchasedNftChainRepository,
+    private readonly nftHoldingRepository: NftHoldingRepository,
+    private readonly nftSubsidyClaimRepository: NftSubsidyClaimRepository,
     private readonly rewardPublicationService: RewardPublicationService,
     private readonly rewardsService: RewardsService,
     private readonly weeklyEpochApplicationService: WeeklyEpochApplicationService,
@@ -230,19 +234,37 @@ export class AdminSettlementService {
     void query;
 
     const runtime = this.promotionChainClientService.getRuntimeConfig();
-    const [currentChainTime, publishedEpochs] = await Promise.all([
+    const [currentChainTime, publishedEpochs, dbActivePurchasedSupply, preview] =
+      await Promise.all([
       this.purchasedNftChainRepository.getCurrentChainTimestamp(),
       this.purchasedNftChainRepository.listPublishedSubsidyEpochs(),
+      this.nftHoldingRepository.countActivePurchasedHoldings(),
+      runtime.settlementAddress
+        ? this.purchasedNftChainRepository
+            .previewSubsidyEpochPublication(1)
+            .catch(() => undefined)
+        : Promise.resolve(undefined),
     ]);
+    const chainPurchasedSupply = preview?.purchasedSupply ?? 0;
+    const dbProjectionGapCount = Math.max(
+      chainPurchasedSupply - dbActivePurchasedSupply,
+      0,
+    );
+    const publishedEpochViews = await Promise.all(
+      publishedEpochs.map((epoch) =>
+        this.toPurchasedNftSubsidyEpochViewWithProjection(epoch),
+      ),
+    );
 
     return {
       chainId: runtime.chainId,
+      chainPurchasedSupply,
       currentChainTime,
+      dbActivePurchasedSupply,
+      dbProjectionGapCount,
       operatorWallet: operator.walletAddress,
       paymentTokenAddress: runtime.paymentTokenAddress,
-      publishedEpochs: publishedEpochs.map((epoch) =>
-        this.toPurchasedNftSubsidyEpochView(epoch),
-      ),
+      publishedEpochs: publishedEpochViews,
       roles: this.buildRoleViews(operator.walletAddress, runtime),
       settlementAddress: runtime.settlementAddress,
     };
@@ -277,6 +299,8 @@ export class AdminSettlementService {
           .previewSubsidyEpochPublication(command.epochNo)
           .catch(() => undefined)
       : undefined;
+    const dbActivePurchasedSupply =
+      await this.nftHoldingRepository.countActivePurchasedHoldings();
     if (preview) {
       if (command.epochNo > preview.maxSubsidyEpochs) {
         blockers.push(
@@ -288,6 +312,11 @@ export class AdminSettlementService {
       }
       if (preview.purchasedSupply <= 0) {
         blockers.push('no purchased NFT supply exists for subsidy publication');
+      }
+      if (dbActivePurchasedSupply < preview.purchasedSupply) {
+        blockers.push(
+          `DB purchased NFT projection is behind chain supply (${dbActivePurchasedSupply}/${preview.purchasedSupply})`,
+        );
       }
     }
 
@@ -355,8 +384,13 @@ export class AdminSettlementService {
         blockers,
         canPublish: blockers.length === 0,
         chainId: runtime.chainId,
+        chainPurchasedSupply: preview?.purchasedSupply ?? 0,
         claimDeadline,
         currentChainTime,
+        dbActivePurchasedSupply,
+        dbProjectionGapCount: preview
+          ? Math.max(preview.purchasedSupply - dbActivePurchasedSupply, 0)
+          : 0,
         estimatedFundingAmountAtomic,
         financeWalletAddress: runtime.financeWalletAddress,
         operatorAllowanceAtomic,
@@ -496,7 +530,7 @@ export class AdminSettlementService {
     checks.push({
       blockers: participantBlockers,
       description:
-        'If participants stay below the minimum threshold, this epoch will roll over instead of producing a normal weekly reward set.',
+        'This gate now applies to the lottery lane only. Ranking rewards can still settle on the same epoch even if lottery participants are below the threshold.',
       key: 'MINIMUM_PARTICIPANTS',
       label: 'Minimum participants',
       status: participantBlockers.length ? 'BLOCKED' : 'COMPLETED',
@@ -754,15 +788,42 @@ export class AdminSettlementService {
     };
   }
 
+  private async toPurchasedNftSubsidyEpochViewWithProjection(
+    epoch: PublishedSubsidyEpochOnChain,
+  ): Promise<AdminPurchasedNftSubsidyEpochView> {
+    const dbEpoch = await this.weeklyEpochRepository.findByEpochNo(
+      DbEpochType.NFT_SUBSIDY,
+      epoch.epochNo,
+    );
+    const projectedClaimCount = dbEpoch
+      ? await this.nftSubsidyClaimRepository.countProjectedClaimsForEpoch(
+          dbEpoch.id,
+        )
+      : 0;
+
+    return {
+      ...this.toPurchasedNftSubsidyEpochView(epoch),
+      projectedClaimCount,
+      projectionGapCount: Math.max(
+        epoch.eligiblePurchasedSupply - projectedClaimCount,
+        0,
+      ),
+    };
+  }
+
   private toWeeklySettlementEpochView(epoch: {
     endAt: Date;
     epochNo: number;
     id: string;
     lotteryPoolUsdt: { toFixed: (digits?: number) => string };
+    lotteryRolloverUsdt?: { toFixed: (digits?: number) => string };
+    lotteryStatus?: string;
     merkleRoot: string | null;
     participantCount: number;
     qualifiedTicketCount: number;
     rankingPoolUsdt: { toFixed: (digits?: number) => string };
+    rankingRolloverUsdt?: { toFixed: (digits?: number) => string };
+    rankingStatus?: string;
     rewardJsonUri: string | null;
     rolloverUsdt: { toFixed: (digits?: number) => string };
     snapshotAt: Date | null;
@@ -774,10 +835,14 @@ export class AdminSettlementService {
       epochId: epoch.id,
       epochNo: epoch.epochNo,
       lotteryPoolUsdt: epoch.lotteryPoolUsdt.toFixed(0),
+      lotteryRolloverUsdt: epoch.lotteryRolloverUsdt?.toFixed(0) ?? '0',
+      lotteryStatus: toCommonEpochStatus(epoch.lotteryStatus ?? epoch.status),
       merkleRoot: epoch.merkleRoot ?? undefined,
       participantCount: epoch.participantCount,
       qualifiedTicketCount: epoch.qualifiedTicketCount,
       rankingPoolUsdt: epoch.rankingPoolUsdt.toFixed(0),
+      rankingRolloverUsdt: epoch.rankingRolloverUsdt?.toFixed(0) ?? '0',
+      rankingStatus: toCommonEpochStatus(epoch.rankingStatus ?? epoch.status),
       rewardJsonUri: epoch.rewardJsonUri ?? undefined,
       rolloverUsdt: epoch.rolloverUsdt.toFixed(0),
       snapshotAt: epoch.snapshotAt ?? undefined,

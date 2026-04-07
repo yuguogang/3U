@@ -113,10 +113,14 @@ export interface AdminWeeklySettlementEpochView {
   epochId: string;
   epochNo: number;
   lotteryPoolUsdt: string;
+  lotteryRolloverUsdt?: string;
+  lotteryStatus?: EpochStatus;
   merkleRoot?: string;
   participantCount: number;
   qualifiedTicketCount: number;
   rankingPoolUsdt: string;
+  rankingRolloverUsdt?: string;
+  rankingStatus?: EpochStatus;
   rewardJsonUri?: string;
   rolloverUsdt: string;
   snapshotAt?: Date;
@@ -158,6 +162,8 @@ export interface AdminPurchasedNftSubsidyEpochView {
   eligiblePurchasedSupply: number;
   epochNo: number;
   maxEligibleTokenId: string;
+  projectedClaimCount?: number;
+  projectionGapCount?: number;
   publishedAt: Date;
   publishedFundingAmountAtomic: string;
   remainingBudgetAtomic: string;
@@ -168,7 +174,10 @@ export interface AdminPurchasedNftSubsidyEpochView {
 
 export interface AdminPurchasedNftSubsidyCenterView {
   chainId: number;
+  chainPurchasedSupply: number;
   currentChainTime: Date;
+  dbActivePurchasedSupply: number;
+  dbProjectionGapCount: number;
   operatorWallet: string;
   paymentTokenAddress?: string;
   publishedEpochs: AdminPurchasedNftSubsidyEpochView[];
@@ -180,8 +189,11 @@ export interface AdminSubsidyPublicationPreviewView {
   blockers: string[];
   canPublish: boolean;
   chainId: number;
+  chainPurchasedSupply: number;
   claimDeadline: Date;
   currentChainTime: Date;
+  dbActivePurchasedSupply: number;
+  dbProjectionGapCount: number;
   estimatedFundingAmountAtomic: string;
   financeWalletAddress?: string;
   operatorAllowanceAtomic: string;
@@ -252,10 +264,12 @@ export interface AdminClaimIssueView {
 export interface AdminNftEligibilityListItemView {
   approvedAt?: Date;
   approvedByWallet?: string;
+  claimableMintCount?: number;
   createdAt: Date;
   decisionReason?: string;
   expiresAt?: Date;
   mintedAt?: Date;
+  mintedReferralCount?: number;
   personalCheckinCount: number;
   rejectedAt?: Date;
   rejectedByWallet?: string;

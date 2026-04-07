@@ -512,6 +512,7 @@
       "surfaceBadge": "Bullion grade",
       "availability": "Live offer",
       "remaining": "Available stock",
+      "minted": "Minted on-chain",
       "approvalHint": "Approval needed",
       "approvalHelp": "The current sale contract still uses approve + buyNFT. First purchase needs one approval transaction before payment.",
       "approvalReady": "Approval ready",

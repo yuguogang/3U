@@ -77,6 +77,8 @@ describe('RewardPublicationService', () => {
     weeklyEpochRepository.findByEpochNo.mockResolvedValue({
       epochNo: 3,
       id: 'epoch_3',
+      lotteryStatus: DbEpochStatus.CALCULATING,
+      rankingStatus: DbEpochStatus.CALCULATING,
       status: DbEpochStatus.CALCULATING,
     });
     weeklyRewardRepository.listRewardsByTypes.mockResolvedValue([
@@ -117,6 +119,8 @@ describe('RewardPublicationService', () => {
     weeklyEpochRepository.findByEpochNo.mockResolvedValue({
       epochNo: 3,
       id: 'epoch_3',
+      lotteryStatus: DbEpochStatus.CALCULATING,
+      rankingStatus: DbEpochStatus.CALCULATING,
       status: DbEpochStatus.CALCULATING,
     });
     weeklyRewardRepository.listRewardsByTypes.mockResolvedValue([

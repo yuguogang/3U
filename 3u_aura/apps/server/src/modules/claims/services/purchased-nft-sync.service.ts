@@ -9,6 +9,7 @@ import { Injectable } from '@nestjs/common';
 import {
   EpochStatus,
   EpochType,
+  PromotionPurchasedNftRefreshResult,
   PromotionPurchasedNftSyncResult,
 } from '3u-aura-common';
 import { WeeklyEpochPolicyEngine } from '../../epoch/engines/weekly-epoch-policy.engine';
@@ -51,14 +52,29 @@ export class PurchasedNftSyncService {
 
   async syncStateForUser(
     user: SyncActor,
-  ): Promise<PurchasedNftSyncResult> {
+  ): Promise<PromotionPurchasedNftRefreshResult> {
     const [purchasedMints, publishedEpochs] = await Promise.all([
       this.purchasedNftChainRepository.listPurchasedMintsForOwner(
         user.walletAddress,
       ),
       this.purchasedNftChainRepository.listPublishedSubsidyEpochs(),
     ]);
-    return this.projectPurchasedState(user, purchasedMints, publishedEpochs);
+    const result = await this.projectPurchasedState(
+      user,
+      purchasedMints,
+      publishedEpochs,
+    );
+
+    return {
+      activePurchasedTokenIds: result.activePurchasedTokenIds.map((tokenId) =>
+        tokenId.toString(),
+      ),
+      claimsCreated: result.claimsCreated,
+      claimsUpdated: result.claimsUpdated,
+      hasPurchasedNft: result.hasPurchasedNft,
+      holdingsCreated: result.holdingsCreated,
+      publishedSubsidyEpochs: result.publishedSubsidyEpochs,
+    };
   }
 
   async syncPurchaseForUser(

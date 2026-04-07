@@ -55,7 +55,6 @@ contract NFTSignatureTest is Test {
 
         assertEq(tokenId, 1);
         assertEq(founderNFT.ownerOf(tokenId), minter);
-        assertTrue(founderNFT.hasReferralNFT(minter));
         assertEq(sale.referralNonces(minter), 1);
     }
 
@@ -130,21 +129,33 @@ contract NFTSignatureTest is Test {
         assertEq(founderNFT.ownerOf(referralTokenId), minter);
     }
 
-    function testReferralSupplyCapIsEnforced() public {
+    function testSameAddressCanMintMultipleReferralNFTsWithSequentialNonces() public {
+        uint256 expiry = block.timestamp + 1 days;
+        bytes memory firstSignature = _signReferral(referralSignerPrivateKey, minter, 0, expiry);
+        bytes memory secondSignature = _signReferral(referralSignerPrivateKey, minter, 1, expiry);
+
+        vm.startPrank(minter);
+        uint256 firstTokenId = sale.mintNFTByReferral(0, expiry, firstSignature);
+        uint256 secondTokenId = sale.mintNFTByReferral(1, expiry, secondSignature);
+        vm.stopPrank();
+
+        assertEq(firstTokenId, 1);
+        assertEq(secondTokenId, 2);
+        assertEq(founderNFT.referralMinted(), 2);
+        assertEq(sale.referralNonces(minter), 2);
+    }
+
+    function testReferralMintHasNoFormerSeventyCap() public {
         uint256 expiry = block.timestamp + 1 days;
 
-        for (uint256 index = 0; index < founderNFT.MAX_REFERRAL_SUPPLY(); index++) {
+        for (uint256 index = 0; index < 71; index++) {
             address currentRecipient = address(uint160(index + 0x2000));
             bytes memory signature = _signReferral(referralSignerPrivateKey, currentRecipient, 0, expiry);
-
             vm.prank(currentRecipient);
             sale.mintNFTByReferral(0, expiry, signature);
         }
 
-        bytes memory overflowSignature = _signReferral(referralSignerPrivateKey, anotherMinter, 0, expiry);
-        vm.expectRevert(FounderNFT.ReferralSupplySoldOut.selector);
-        vm.prank(anotherMinter);
-        sale.mintNFTByReferral(0, expiry, overflowSignature);
+        assertEq(founderNFT.referralMinted(), 71);
     }
 
     function _signReferral(uint256 signerPrivateKey, address recipient, uint256 nonce, uint256 expiry)

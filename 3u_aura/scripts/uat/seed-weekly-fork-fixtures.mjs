@@ -208,14 +208,16 @@ async function upsertDailyStat(client, schema, data) {
         "id",
         "userId",
         "dateKey",
+        "checkinTimes",
         "countedCheckinDays",
         "smallLegVolumeUsdt",
         "createdAt",
         "updatedAt"
       )
-      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
       ON CONFLICT ("userId", "dateKey")
       DO UPDATE SET
+        "checkinTimes" = EXCLUDED."checkinTimes",
         "countedCheckinDays" = EXCLUDED."countedCheckinDays",
         "smallLegVolumeUsdt" = EXCLUDED."smallLegVolumeUsdt",
         "updatedAt" = NOW()
@@ -224,6 +226,7 @@ async function upsertDailyStat(client, schema, data) {
       data.id,
       data.userId,
       data.dateKey,
+      data.checkinTimes,
       data.countedCheckinDays,
       data.smallLegVolumeUsdt,
     ],
@@ -408,6 +411,7 @@ export async function seedWeeklyForkFixtures(params) {
 
       for (let dayIndex = 0; dayIndex < dateKeys.length; dayIndex += 1) {
         await upsertDailyStat(client, schema, {
+          checkinTimes: 1,
           countedCheckinDays: 1,
           dateKey: dateKeys[dayIndex],
           id: `${syntheticId}_stat_${dayIndex + 1}`,

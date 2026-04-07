@@ -13,6 +13,17 @@ type DbExecutor = DbService | Prisma.TransactionClient;
 export class NftHoldingRepository {
   constructor(private readonly db: DbService) {}
 
+  async countActivePurchasedHoldings(
+    executor: DbExecutor = this.db,
+  ): Promise<number> {
+    return executor.nftHolding.count({
+      where: {
+        nftType: NftType.PURCHASED,
+        status: NftStatus.ACTIVE,
+      },
+    });
+  }
+
   async upsertPurchasedHolding(
     data: {
       chainId: number;

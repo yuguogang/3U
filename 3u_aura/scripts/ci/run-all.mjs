@@ -1,9 +1,8 @@
 const GROUPS = {
-  payment: ['checkin', 'nft-purchase'],
-  topology: ['login', 'inviter-bind', 'tree-placement'],
-  referral: ['referral-approval', 'referral-derived'],
-  claims: ['subsidy-claim'],
-  weekly: ['merkle-claim', 'merkle-lottery-claim'],
+  nft: ['nft-purchase'],
+  referral: ['referral-gift', 'referral-derived'],
+  weekly: ['weekly-settlement'],
+  claims: ['subsidy-claim', 'merkle-claim', 'merkle-lottery-claim'],
 };
 
 async function execFlow(flow) {

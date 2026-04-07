@@ -100,11 +100,11 @@ export const nftSaleAbi = [
   },
   {
     inputs: [],
-    name: "getRemainingNFT",
+    name: "getNFTMintStats",
     outputs: [
-      { name: "purchasedRemaining", type: "uint256" },
-      { name: "referralRemaining", type: "uint256" },
-      { name: "totalRemaining", type: "uint256" },
+      { name: "purchasedMinted", type: "uint256" },
+      { name: "referralMinted", type: "uint256" },
+      { name: "totalMinted", type: "uint256" },
     ],
     stateMutability: "view",
     type: "function",

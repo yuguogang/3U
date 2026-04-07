@@ -74,6 +74,84 @@ export async function syncPurchasedNft(accessToken, txHash, envName) {
   });
 }
 
+export async function refreshPurchasedNft(accessToken, envName) {
+  return apiRequest('/api/v1/claims/purchased-nft/refresh', {
+    method: 'POST',
+    body: {},
+    accessToken,
+    envName,
+  });
+}
+
+export async function getCurrentEligibility(accessToken, envName) {
+  return apiRequest('/api/v1/nft-eligibility/current', {
+    method: 'GET',
+    accessToken,
+    envName,
+  });
+}
+
+export async function issueReferralMintSignature(
+  accessToken,
+  recipient,
+  envName,
+  options = {},
+) {
+  return apiRequest('/api/v1/signing/referral-mint-signature', {
+    method: 'POST',
+    body: {
+      chainId: 97,
+      recipient,
+      ...options,
+    },
+    accessToken,
+    envName,
+  });
+}
+
+export async function syncReferralNft(accessToken, txHash, envName) {
+  return apiRequest('/api/v1/claims/referral-nft/sync', {
+    method: 'POST',
+    body: { txHash },
+    accessToken,
+    envName,
+  });
+}
+
+export async function approveReferralNft(
+  accessToken,
+  userId,
+  envName,
+  decisionReason = 'CI referral approval verification',
+) {
+  return apiRequest('/api/v1/admin/ops/nft-eligibility/approve', {
+    method: 'POST',
+    body: {
+      decisionReason,
+      userId,
+    },
+    accessToken,
+    envName,
+  });
+}
+
+export async function giftReferralNft(
+  accessToken,
+  userId,
+  envName,
+  decisionReason = 'CI referral gift verification',
+) {
+  return apiRequest('/api/v1/admin/ops/nft-eligibility/gift', {
+    method: 'POST',
+    body: {
+      decisionReason,
+      userId,
+    },
+    accessToken,
+    envName,
+  });
+}
+
 export async function getMyClaims(accessToken, envName) {
   return apiRequest('/api/v1/claims/me', { accessToken, envName });
 }
@@ -82,6 +160,15 @@ export async function syncClaim(accessToken, params, envName) {
   return apiRequest('/api/v1/claims/sync', {
     method: 'POST',
     body: params,
+    accessToken,
+    envName,
+  });
+}
+
+export async function revealLotteryResult(accessToken, epochId, envName) {
+  return apiRequest('/api/v1/lottery/reveal', {
+    method: 'POST',
+    body: { epochId },
     accessToken,
     envName,
   });
@@ -100,6 +187,88 @@ export async function previewEpochSync(accessToken, referenceAt, envName) {
   return apiRequest('/api/v1/admin/ops/epochs/sync/preview', {
     method: 'POST',
     body: { referenceAt },
+    accessToken,
+    envName,
+  });
+}
+
+export async function getWeeklySettlement(accessToken, query, envName) {
+  return apiRequest('/api/v1/admin/settlement/weekly', {
+    method: 'GET',
+    query,
+    accessToken,
+    envName,
+  });
+}
+
+export async function executeWeeklySettlementDraft(
+  accessToken,
+  epochNo,
+  envName,
+) {
+  return apiRequest('/api/v1/admin/ops/settlement/weekly/draft', {
+    method: 'POST',
+    body: { epochNo },
+    accessToken,
+    envName,
+  });
+}
+
+export async function executeWeeklySettlementPublish(
+  accessToken,
+  epochNo,
+  envName,
+) {
+  return apiRequest('/api/v1/admin/ops/settlement/weekly/publish', {
+    method: 'POST',
+    body: { epochNo },
+    accessToken,
+    envName,
+  });
+}
+
+export async function previewRewardPublication(accessToken, epochNo, envName) {
+  return apiRequest('/api/v1/admin/ops/rewards/publish/preview', {
+    method: 'POST',
+    body: { epochNo },
+    accessToken,
+    envName,
+  });
+}
+
+export async function executeRewardPublication(
+  accessToken,
+  epochNo,
+  rewardJsonUri,
+  envName,
+) {
+  return apiRequest('/api/v1/admin/ops/rewards/publish', {
+    method: 'POST',
+    body: {
+      epochNo,
+      rewardJsonUri,
+    },
+    accessToken,
+    envName,
+  });
+}
+
+export async function getSubsidyOverview(accessToken, envName) {
+  return apiRequest('/api/v1/admin/subsidy', {
+    method: 'GET',
+    accessToken,
+    envName,
+  });
+}
+
+export async function previewSubsidyPublish(
+  accessToken,
+  payload,
+  envName,
+) {
+  return apiRequest('/api/v1/admin/ops/subsidy/publish/preview', {
+    method: 'POST',
+    body: payload,
     accessToken,
     envName,
   });

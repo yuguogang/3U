@@ -69,6 +69,20 @@ function toneForStatus(status: "BLOCKED" | "COMPLETED" | "FAILED" | "READY") {
   return "danger" as const;
 }
 
+function toneForEpochStatus(
+  status?: string,
+): "default" | "accent" | "warning" {
+  if (status === "ROOT_POSTED" || status === "SETTLED") {
+    return "accent";
+  }
+
+  if (status === "CANCELLED") {
+    return "warning";
+  }
+
+  return "default";
+}
+
 function hasRole(
   roles: Array<{ key: AdminPromotionRoleKey; matchesOperator: boolean }>,
   ...keys: AdminPromotionRoleKey[]
@@ -178,6 +192,8 @@ export function WeeklySettlementPage() {
   );
   const selectedEpochStatus =
     overview.selectedEpoch?.status ?? overview.currentBoundary.status ?? "-";
+  const lotteryLaneStatus = overview.selectedEpoch?.lotteryStatus ?? "-";
+  const rankingLaneStatus = overview.selectedEpoch?.rankingStatus ?? "-";
 
   const latestEpochText = overview.latestEpochs.length
     ? overview.latestEpochs
@@ -277,6 +293,23 @@ export function WeeklySettlementPage() {
         />
         <MetricCard label="Epoch Status" tone="accent" value={selectedEpochStatus} />
         <MetricCard
+          label="Lottery Lane"
+          tone={toneForEpochStatus(lotteryLaneStatus)}
+          value={lotteryLaneStatus}
+        />
+        <MetricCard
+          label="Ranking Lane"
+          tone={toneForEpochStatus(rankingLaneStatus)}
+          value={rankingLaneStatus}
+        />
+        <MetricCard
+          label="Weekly Reward"
+          value={formatAtomic(overview.totalRewardAmountAtomic, 6, "USDT")}
+        />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+        <MetricCard
           label="Participants"
           value={formatCount(overview.selectedEpoch?.participantCount)}
         />
@@ -285,8 +318,40 @@ export function WeeklySettlementPage() {
           value={formatCount(overview.selectedEpoch?.qualifiedTicketCount)}
         />
         <MetricCard
-          label="Weekly Reward"
-          value={formatAtomic(overview.totalRewardAmountAtomic, 6, "USDT")}
+          label="Lottery Pool"
+          value={formatAtomic(overview.selectedEpoch?.lotteryPoolUsdt ?? "0", 6, "USDT")}
+        />
+        <MetricCard
+          label="Lottery Rollover"
+          tone={
+            BigInt(overview.selectedEpoch?.lotteryRolloverUsdt ?? "0") >
+            BigInt(0)
+              ? "warning"
+              : "default"
+          }
+          value={formatAtomic(
+            overview.selectedEpoch?.lotteryRolloverUsdt ?? "0",
+            6,
+            "USDT",
+          )}
+        />
+        <MetricCard
+          label="Ranking Pool"
+          value={formatAtomic(overview.selectedEpoch?.rankingPoolUsdt ?? "0", 6, "USDT")}
+        />
+        <MetricCard
+          label="Ranking Rollover"
+          tone={
+            BigInt(overview.selectedEpoch?.rankingRolloverUsdt ?? "0") >
+            BigInt(0)
+              ? "warning"
+              : "default"
+          }
+          value={formatAtomic(
+            overview.selectedEpoch?.rankingRolloverUsdt ?? "0",
+            6,
+            "USDT",
+          )}
         />
       </div>
 
@@ -338,6 +403,62 @@ export function WeeklySettlementPage() {
               >
                 {executeEpochSyncMutation.isPending ? "Syncing..." : "Execute epoch sync"}
               </ActionButton>
+            </div>
+          </div>
+        </Panel>
+
+        <Panel>
+          <PanelTitle
+            description="抽奖与业绩奖现在按同一 epoch 的双 lane 展示。抽奖参与不足时，只会让 lottery lane rollover，不再默认把 ranking lane 一起取消。"
+            title="Lane Outcome"
+          />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium text-white">Lottery lane</div>
+                  <p className="mt-2 text-sm leading-7 text-slate-400">
+                    受最低参与人数门槛约束；不足时可以单独 rollover。
+                  </p>
+                </div>
+                <StatusPill tone={toneForEpochStatus(lotteryLaneStatus) === "accent" ? "success" : toneForEpochStatus(lotteryLaneStatus) === "warning" ? "warning" : "default"}>
+                  {lotteryLaneStatus}
+                </StatusPill>
+              </div>
+              <div className="mt-4 space-y-2 text-sm text-slate-300">
+                <div className="flex items-center justify-between">
+                  <span>Pool</span>
+                  <span>{formatAtomic(overview.selectedEpoch?.lotteryPoolUsdt ?? "0", 6, "USDT")}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Rollover</span>
+                  <span>{formatAtomic(overview.selectedEpoch?.lotteryRolloverUsdt ?? "0", 6, "USDT")}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium text-white">Ranking lane</div>
+                  <p className="mt-2 text-sm leading-7 text-slate-400">
+                    继续按当期小区业绩增量结算，不受 lottery minimum participants gate 连带影响。
+                  </p>
+                </div>
+                <StatusPill tone={toneForEpochStatus(rankingLaneStatus) === "accent" ? "success" : toneForEpochStatus(rankingLaneStatus) === "warning" ? "warning" : "default"}>
+                  {rankingLaneStatus}
+                </StatusPill>
+              </div>
+              <div className="mt-4 space-y-2 text-sm text-slate-300">
+                <div className="flex items-center justify-between">
+                  <span>Pool</span>
+                  <span>{formatAtomic(overview.selectedEpoch?.rankingPoolUsdt ?? "0", 6, "USDT")}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Rollover</span>
+                  <span>{formatAtomic(overview.selectedEpoch?.rankingRolloverUsdt ?? "0", 6, "USDT")}</span>
+                </div>
+              </div>
             </div>
           </div>
         </Panel>

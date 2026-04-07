@@ -1,213 +1,82 @@
-import { loadWalletFixture, loadManifest } from '../lib/manifest.mjs';
-import { createWalletClientForFixture, createPublicClientForFork, createTestClientForFork, parseUnits } from '../lib/contracts.mjs';
-import { getAccessToken, getMyProfile } from '../lib/server.mjs';
+import { loadManifest, loadWalletFixture } from '../lib/manifest.mjs';
+import {
+  createPublicClientForFork,
+  createTestClientForFork,
+  createWalletClientForFixture,
+} from '../lib/contracts.mjs';
+import {
+  getAccessToken,
+  getCurrentEligibility,
+  getMyProfile,
+  giftReferralNft,
+  issueReferralMintSignature,
+  syncReferralNft,
+} from '../lib/server.mjs';
 import { cleanupHarness, prepareHarness } from '../lib/harness.mjs';
 
 const ENV = 'fork-anvil';
 
-async function setEligibilityInDb(userId, envName, manifest) {
-  if (!userId) {
-    console.log(`   Skipping DB eligibility set - no userId`);
-    return;
-  }
-  
-  console.log(`   Setting eligibility for user: ${userId}`);
-  
-  const { execSync } = await import('node:child_process');
-  const { writeFileSync, unlinkSync } = await import('node:fs');
-  const schema = manifest.infra.database.schema;
-  const databaseName = manifest.infra.database.name;
-  const databaseHost = manifest.infra.database.host;
-  const databasePort = manifest.infra.database.port;
-  
-  const scriptCjs = `
-const { Pool } = require('pg');
+const nftSaleAbi = [
+  {
+    inputs: [
+      { name: 'nonce', type: 'uint256' },
+      { name: 'expiry', type: 'uint256' },
+      { name: 'signature', type: 'bytes' },
+    ],
+    name: 'mintNFTByReferral',
+    outputs: [{ name: 'tokenId', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+];
 
-async function main() {
-  const pool = new Pool({
-    connectionString: 'postgresql://postgres:password@${databaseHost}:${databasePort}/${databaseName}',
-  });
-  
-  // Check if user exists first
-  const userCheck = await pool.query(\`SELECT id FROM "${schema}"."User" WHERE id = $1\`, ['${userId}']);
-  console.log('User exists:', userCheck.rows.length > 0, 'userId:', '${userId}');
-  
-  if (userCheck.rows.length === 0) {
-    console.log('User not found, skipping eligibility set');
-    await pool.end();
-    return;
-  }
-  
-  await pool.query(\`
-    INSERT INTO "${schema}"."NftReferralEligibility" (id, "userId", status, "personalCheckinCount", "smallLegVolumeUsdt", "requiredCheckinCount", "requiredSmallLegUsdt", "approvedAt", "createdAt", "updatedAt")
-    VALUES (gen_random_uuid(), $1, 'APPROVED', 30, 6000000000, 30, 6000000000, NOW(), NOW(), NOW())
-    ON CONFLICT ("userId") DO UPDATE SET
-      status = 'APPROVED',
-      "personalCheckinCount" = 30,
-      "smallLegVolumeUsdt" = 6000000000,
-      "approvedAt" = NOW(),
-      "updatedAt" = NOW()
-  \`, ['${userId}']);
+const founderNftAbi = [
+  {
+    inputs: [{ name: 'account', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+];
 
-  await pool.query(\`
-    INSERT INTO "${schema}"."UserProfile" (
-      id,
-      "userId",
-      "totalCheckinDays",
-      "currentStreakDays",
-      "maxStreakDays",
-      "totalCheckinCount",
-      "totalCheckinUsdt",
-      "totalAuraFromCheckin",
-      "totalAuraFromDirect",
-      "totalAuraFromIndirect",
-      "totalAuraFromConsolation",
-      "leftTeamVolume",
-      "rightTeamVolume",
-      "smallLegVolume",
-      "hasPurchasedNft",
-      "hasReferralNft",
-      "createdAt",
-      "updatedAt"
-    )
-    VALUES (
-      gen_random_uuid(),
-      $1,
-      30,
-      30,
-      30,
-      30,
-      90000000,
-      0,
-      0,
-      0,
-      0,
-      6000000000,
-      6000000000,
-      6000000000,
-      false,
-      false,
-      NOW(),
-      NOW()
-    )
-    ON CONFLICT ("userId") DO UPDATE SET
-      "totalCheckinDays" = 30,
-      "currentStreakDays" = 30,
-      "maxStreakDays" = 30,
-      "totalCheckinCount" = 30,
-      "totalCheckinUsdt" = 90000000,
-      "smallLegVolume" = 6000000000,
-      "leftTeamVolume" = 6000000000,
-      "rightTeamVolume" = 6000000000,
-      "hasReferralNft" = false,
-      "updatedAt" = NOW()
-  \`, ['${userId}']);
-  
-  console.log('Eligibility set successfully');
-  await pool.end();
-}
-
-main().catch(console.error);
-`;
-  
-  const scriptPath = '/Users/ygg/vs/ai/3U/3u_aura/apps/server/set_eligibility.cjs';
-  writeFileSync(scriptPath, scriptCjs);
-  
-  try {
-    // Run from server directory where @prisma/client is available
-    execSync(`node set_eligibility.cjs`, { 
-      cwd: '/Users/ygg/vs/ai/3U/3u_aura/apps/server',
-      stdio: 'inherit',
-      env: { 
-        ...process.env,
-        NODE_PATH: '/Users/ygg/vs/ai/3U/3u_aura/apps/server/node_modules'
-      }
-    });
-    console.log(`   Eligibility set in DB for user ${userId}`);
-  } catch (e) {
-    console.log(`   DB update warning: ${e.message}`);
-  } finally {
-    try { unlinkSync(scriptPath); } catch {}
-  }
-}
-
-async function run() {
-  console.log('\n========== Referral Mint Flow Test ==========\n');
-
-  await prepareHarness({
-    deployFreshContracts: true,
-    envName: ENV,
-    resetDb: true,
-    startServices: ['server'],
-  });
-
-  const userC = loadWalletFixture('userC', ENV);
+async function mintReferralNft({
+  fixture,
+  signatureResult,
+}) {
   const manifest = loadManifest(ENV);
   const publicClient = createPublicClientForFork(ENV);
-  const walletClient = createWalletClientForFixture(userC, ENV);
-  const testClient = createTestClientForFork(ENV);
+  const walletClient = createWalletClientForFixture(fixture, ENV);
 
-  console.log(`4. UserC: ${userC.address}`);
-
-  // Login to get userId
-  console.log('5. Logging in as userC...');
-  const loginResult = await getAccessToken(userC.address, userC.privateKey, ENV);
-  console.log('   Login result:', JSON.stringify(loginResult));
-  const userCProfile = await getMyProfile(loginResult.accessToken, ENV);
-  console.log(`   UserC profile:`, JSON.stringify(userCProfile));
-  console.log(`   UserC logged in, userId: ${userCProfile.id}`);
-
-  // Set eligibility in DB using prisma
-  console.log('6. Setting eligibility in DB...');
-  await setEligibilityInDb(userCProfile.id, ENV, manifest);
-
-  // Get nonce and expiry from backend
-  console.log('7. Getting referral mint signature from backend...');
-  
-  const serverUrl = manifest.infra.server.publicApiBaseUrl;
-  
-  const signatureResponse = await fetch(`${serverUrl}/api/v1/signing/referral-mint-signature`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${loginResult.accessToken}`,
-    },
-    body: JSON.stringify({
-      recipient: userC.address,
-      chainId: 97,
-    }),
+  const hash = await walletClient.writeContract({
+    abi: nftSaleAbi,
+    address: manifest.contracts.nftSaleAddress,
+    args: [
+      BigInt(signatureResult.nonce),
+      BigInt(signatureResult.expiry),
+      signatureResult.signature,
+    ],
+    functionName: 'mintNFTByReferral',
   });
 
-  if (!signatureResponse.ok) {
-    const error = await signatureResponse.text();
-    console.log(`   Signature request failed: ${error}`);
-    throw new Error(`Signature request failed: ${error}`);
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  if (receipt.status !== 'success') {
+    throw new Error(`Expected referral mint tx success, got ${receipt.status}`);
   }
 
-  const signatureResult = await signatureResponse.json();
-  console.log(`   Signature result: ${JSON.stringify(signatureResult)}`);
+  return hash;
+}
 
-  // Call contract to mint
-  console.log('8. Minting NFT via contract...');
-  
-  const nftSaleAbi = [
-    {
-      inputs: [
-        { name: 'nonce', type: 'uint256' },
-        { name: 'expiry', type: 'uint256' },
-        { name: 'signature', type: 'bytes' },
-      ],
-      name: 'mintNFTByReferral',
-      outputs: [{ name: 'tokenId', type: 'uint256' }],
-      stateMutability: 'nonpayable',
-      type: 'function',
-    },
-  ];
+async function expectReplayRejected({
+  fixture,
+  signatureResult,
+}) {
+  const manifest = loadManifest(ENV);
+  const walletClient = createWalletClientForFixture(fixture, ENV);
 
-  await testClient.mine({ blocks: 3 });
-
+  let rejected = false;
   try {
-    const hash = await walletClient.writeContract({
+    await walletClient.writeContract({
       abi: nftSaleAbi,
       address: manifest.contracts.nftSaleAddress,
       args: [
@@ -217,148 +86,252 @@ async function run() {
       ],
       functionName: 'mintNFTByReferral',
     });
+  } catch (error) {
+    rejected = true;
+    console.log(`   Replay mint rejected as expected: ${error.message}`);
+  }
 
-    const receipt = await publicClient.waitForTransactionReceipt({ hash });
-    console.log(`   Mint tx: ${hash}`);
-    console.log(`   Receipt status: ${receipt.status}`);
-    console.log(`   Logs: ${receipt.logs.length}`);
+  if (!rejected) {
+    throw new Error(
+      'Expected replay mint with identical nonce/signature to fail, but it succeeded',
+    );
+  }
+}
 
-    if (receipt.status === 'success' && receipt.logs.length > 0) {
-      console.log('\n   ✅ Referral NFT minted on-chain successfully!');
+async function readReferralBalance(address) {
+  const manifest = loadManifest(ENV);
+  const publicClient = createPublicClientForFork(ENV);
 
-      console.log('9. Verifying replay mint with same signed payload fails...');
-      let replayRejected = false;
-      try {
-        await walletClient.writeContract({
-          abi: nftSaleAbi,
-          address: manifest.contracts.nftSaleAddress,
-          args: [
-            BigInt(signatureResult.nonce),
-            BigInt(signatureResult.expiry),
-            signatureResult.signature,
-          ],
-          functionName: 'mintNFTByReferral',
-        });
-      } catch (replayError) {
-        replayRejected = true;
-        console.log(`   Replay mint rejected as expected: ${replayError.message}`);
-      }
+  return publicClient.readContract({
+    abi: founderNftAbi,
+    address: manifest.contracts.founderNftAddress,
+    args: [address],
+    functionName: 'balanceOf',
+  });
+}
 
-      if (!replayRejected) {
-        throw new Error('Expected replay mint with identical nonce/signature to fail, but it succeeded');
-      }
-      
-      console.log('10. Syncing to backend...');
-      const syncResponse = await fetch(`${serverUrl}/api/v1/claims/referral-nft/sync`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${loginResult.accessToken}`,
-        },
-        body: JSON.stringify({ txHash: hash }),
-      });
+async function run() {
+  console.log('\n========== Referral Gift + Multi-Mint Flow Test ==========\n');
 
-      if (!syncResponse.ok) {
-        const error = await syncResponse.text();
-        throw new Error(`Referral NFT sync failed: ${error}`);
-      }
+  await prepareHarness({
+    deployFreshContracts: true,
+    envName: ENV,
+    resetDb: true,
+    startServices: ['server'],
+  });
 
-      const syncResult = await syncResponse.json();
-      console.log(`   Sync result: ${JSON.stringify(syncResult)}`);
+  const admin = loadWalletFixture('admin', ENV);
+  const userC = loadWalletFixture('userC', ENV);
+  const testClient = createTestClientForFork(ENV);
 
-      if (syncResult.txHash.toLowerCase() !== hash.toLowerCase()) {
-        throw new Error(
-          `Expected referral sync txHash ${hash} but received ${syncResult.txHash}`,
-        );
-      }
-      if (!/^\d+$/.test(String(syncResult.tokenId))) {
-        throw new Error(`Expected referral sync tokenId to be an integer string but received ${syncResult.tokenId}`);
-      }
-      if (!syncResult.hasReferralNft) {
-        throw new Error('Expected referral sync to mark hasReferralNft=true');
-      }
-      if (syncResult.holdingsCreated !== 1) {
-        throw new Error(
-          `Expected first referral sync to create 1 holding but received ${syncResult.holdingsCreated}`,
-        );
-      }
+  try {
+    console.log(`3. Admin: ${admin.address}`);
+    console.log(`   Target wallet: ${userC.address}`);
 
-      console.log('11. Verifying duplicate sync is idempotent...');
-      const duplicateSyncResponse = await fetch(`${serverUrl}/api/v1/claims/referral-nft/sync`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${loginResult.accessToken}`,
-        },
-        body: JSON.stringify({ txHash: hash }),
-      });
+    console.log('4. Logging in admin and target user...');
+    const [adminLogin, userLogin] = await Promise.all([
+      getAccessToken(admin.address, admin.privateKey, ENV),
+      getAccessToken(userC.address, userC.privateKey, ENV),
+    ]);
+    const userProfile = await getMyProfile(userLogin.accessToken, ENV);
+    console.log(`   User profile: ${JSON.stringify(userProfile)}`);
 
-      if (!duplicateSyncResponse.ok) {
-        const error = await duplicateSyncResponse.text();
-        throw new Error(`Duplicate referral sync failed: ${error}`);
-      }
-
-      const duplicateSyncResult = await duplicateSyncResponse.json();
-      console.log(`   Duplicate sync result: ${JSON.stringify(duplicateSyncResult)}`);
-
-      if (duplicateSyncResult.txHash.toLowerCase() !== hash.toLowerCase()) {
-        throw new Error(
-          `Expected duplicate referral sync txHash ${hash} but received ${duplicateSyncResult.txHash}`,
-        );
-      }
-      if (duplicateSyncResult.tokenId !== syncResult.tokenId) {
-        throw new Error(
-          `Expected duplicate referral sync tokenId ${syncResult.tokenId} but received ${duplicateSyncResult.tokenId}`,
-        );
-      }
-      if (duplicateSyncResult.holdingsCreated !== 0) {
-        throw new Error(
-          `Expected duplicate referral sync to create 0 holdings but received ${duplicateSyncResult.holdingsCreated}`,
-        );
-      }
-
-      // Verify NFT balance
-      console.log('12. Verifying NFT balance...');
-      const nftAbi = [
-        {
-          inputs: [{ name: 'account', type: 'address' }],
-          name: 'balanceOf',
-          outputs: [{ name: '', type: 'uint256' }],
-          stateMutability: 'view',
-          type: 'function',
-        },
-      ];
-      
-      const nftBalance = await publicClient.readContract({
-        abi: nftAbi,
-        address: manifest.contracts.founderNftAddress,
-        args: [userC.address],
-        functionName: 'balanceOf',
-      });
-      console.log(`    NFT balance: ${nftBalance}`);
+    console.log('5. Verifying initial referral eligibility view...');
+    const initialEligibility = await getCurrentEligibility(
+      userLogin.accessToken,
+      ENV,
+    );
+    console.log(`   Initial eligibility: ${JSON.stringify(initialEligibility)}`);
+    if ((initialEligibility.claimableMintCount ?? 0) !== 0) {
+      throw new Error(
+        `Expected initial claimableMintCount 0, got ${initialEligibility.claimableMintCount}`,
+      );
     }
 
-    // Cleanup
-    console.log('\n13. Cleaning up harness...');
+    console.log('6. Granting first referral NFT via admin gift...');
+    const firstGiftResult = await giftReferralNft(
+      adminLogin.accessToken,
+      userProfile.id,
+      ENV,
+      'CI first gift flow',
+    );
+    console.log(`   First gift result: ${JSON.stringify(firstGiftResult)}`);
+
+    const eligibilityAfterFirstGift = await getCurrentEligibility(
+      userLogin.accessToken,
+      ENV,
+    );
+    console.log(
+      `   Eligibility after first gift: ${JSON.stringify(eligibilityAfterFirstGift)}`,
+    );
+    if (eligibilityAfterFirstGift.claimableMintCount !== 1) {
+      throw new Error(
+        `Expected claimableMintCount 1 after first gift, got ${eligibilityAfterFirstGift.claimableMintCount}`,
+      );
+    }
+
+    console.log('7. Issuing first referral mint signature...');
+    const firstSignature = await issueReferralMintSignature(
+      userLogin.accessToken,
+      userC.address,
+      ENV,
+    );
+    console.log(`   First signature: ${JSON.stringify(firstSignature)}`);
+
+    console.log('8. Minting first referral NFT...');
+    const firstMintTx = await mintReferralNft({
+      fixture: userC,
+      signatureResult: firstSignature,
+    });
+    console.log(`   First mint tx: ${firstMintTx}`);
+    await testClient.mine({ blocks: 1 });
+
+    console.log('9. Syncing first referral NFT...');
+    const firstSync = await syncReferralNft(userLogin.accessToken, firstMintTx, ENV);
+    console.log(`   First sync result: ${JSON.stringify(firstSync)}`);
+    if (firstSync.holdingsCreated !== 1) {
+      throw new Error(
+        `Expected first sync to create 1 holding, got ${firstSync.holdingsCreated}`,
+      );
+    }
+
+    console.log('10. Verifying duplicate sync remains idempotent...');
+    const duplicateFirstSync = await syncReferralNft(
+      userLogin.accessToken,
+      firstMintTx,
+      ENV,
+    );
+    console.log(`   Duplicate first sync: ${JSON.stringify(duplicateFirstSync)}`);
+    if (duplicateFirstSync.holdingsCreated !== 0) {
+      throw new Error(
+        `Expected duplicate first sync to create 0 holdings, got ${duplicateFirstSync.holdingsCreated}`,
+      );
+    }
+
+    console.log('11. Verifying first signed payload cannot be replayed...');
+    await expectReplayRejected({
+      fixture: userC,
+      signatureResult: firstSignature,
+    });
+
+    const eligibilityAfterFirstMint = await getCurrentEligibility(
+      userLogin.accessToken,
+      ENV,
+    );
+    console.log(
+      `   Eligibility after first mint: ${JSON.stringify(eligibilityAfterFirstMint)}`,
+    );
+    if (eligibilityAfterFirstMint.mintedReferralCount !== 1) {
+      throw new Error(
+        `Expected mintedReferralCount 1 after first mint, got ${eligibilityAfterFirstMint.mintedReferralCount}`,
+      );
+    }
+    if (eligibilityAfterFirstMint.claimableMintCount !== 0) {
+      throw new Error(
+        `Expected claimableMintCount 0 after first mint, got ${eligibilityAfterFirstMint.claimableMintCount}`,
+      );
+    }
+
+    console.log('12. Granting second referral NFT via admin gift...');
+    const giftResult = await giftReferralNft(
+      adminLogin.accessToken,
+      userProfile.id,
+      ENV,
+      'CI gift flow',
+    );
+    console.log(`   Gift result: ${JSON.stringify(giftResult)}`);
+
+    const eligibilityAfterGift = await getCurrentEligibility(
+      userLogin.accessToken,
+      ENV,
+    );
+    console.log(`   Eligibility after gift: ${JSON.stringify(eligibilityAfterGift)}`);
+    if (eligibilityAfterGift.claimableMintCount !== 1) {
+      throw new Error(
+        `Expected claimableMintCount 1 after gift, got ${eligibilityAfterGift.claimableMintCount}`,
+      );
+    }
+    if (eligibilityAfterGift.mintedReferralCount !== 1) {
+      throw new Error(
+        `Expected mintedReferralCount to remain 1 after gift, got ${eligibilityAfterGift.mintedReferralCount}`,
+      );
+    }
+
+    console.log('13. Issuing second referral mint signature...');
+    const secondSignature = await issueReferralMintSignature(
+      userLogin.accessToken,
+      userC.address,
+      ENV,
+    );
+    console.log(`   Second signature: ${JSON.stringify(secondSignature)}`);
+
+    console.log('14. Minting second referral NFT...');
+    const secondMintTx = await mintReferralNft({
+      fixture: userC,
+      signatureResult: secondSignature,
+    });
+    console.log(`   Second mint tx: ${secondMintTx}`);
+    await testClient.mine({ blocks: 1 });
+
+    console.log('15. Syncing second referral NFT...');
+    const secondSync = await syncReferralNft(
+      userLogin.accessToken,
+      secondMintTx,
+      ENV,
+    );
+    console.log(`   Second sync result: ${JSON.stringify(secondSync)}`);
+    if (secondSync.holdingsCreated !== 1) {
+      throw new Error(
+        `Expected second sync to create 1 holding, got ${secondSync.holdingsCreated}`,
+      );
+    }
+
+    const finalEligibility = await getCurrentEligibility(
+      userLogin.accessToken,
+      ENV,
+    );
+    console.log(`   Final eligibility: ${JSON.stringify(finalEligibility)}`);
+    if (finalEligibility.mintedReferralCount !== 2) {
+      throw new Error(
+        `Expected mintedReferralCount 2 after second mint, got ${finalEligibility.mintedReferralCount}`,
+      );
+    }
+    if (finalEligibility.claimableMintCount !== 0) {
+      throw new Error(
+        `Expected final claimableMintCount 0, got ${finalEligibility.claimableMintCount}`,
+      );
+    }
+
+    console.log('16. Verifying on-chain referral NFT balance is 2...');
+    const nftBalance = await readReferralBalance(userC.address);
+    console.log(`   NFT balance: ${nftBalance}`);
+    if (nftBalance !== 2n) {
+      throw new Error(`Expected referral NFT balance 2, got ${nftBalance}`);
+    }
+
+    console.log('\n17. Cleaning up harness...');
     await cleanupHarness({
       envName: ENV,
       stopServices: ['server'],
+      stopAnvil: false,
     });
 
-    console.log('\n✅ Referral Mint flow completed successfully!\n');
+    console.log('\n✅ Referral gift + multi-mint flow completed successfully!\n');
     return { success: true };
   } catch (error) {
-    console.error(`   Mint failed: ${error.message}`);
+    console.error(`   Referral gift + multi-mint flow failed: ${error.message}`);
     throw error;
   }
 }
 
 run().catch(async (error) => {
-  console.error('\n❌ Error:', error.message);
+  console.error('\n❌ Referral gift + multi-mint flow failed:', error.message);
+  console.error(error.stack);
   try {
     await cleanupHarness({
       envName: ENV,
       stopServices: ['server'],
+      stopAnvil: false,
     });
   } catch {}
   process.exit(1);

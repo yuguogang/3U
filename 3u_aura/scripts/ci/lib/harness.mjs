@@ -24,6 +24,10 @@ export async function prepareHarness({
   resetDb = true,
   startServices = ['server'],
 } = {}) {
+  if (deployFreshContracts) {
+    await Anvil.stopAnvil(envName);
+  }
+
   await Anvil.startAnvil(envName);
 
   if (deployFreshContracts && startServices.length > 0) {

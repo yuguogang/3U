@@ -2,25 +2,22 @@ import {
   NftEligibilityQuery,
   NftEligibilityStatus,
   NftEligibilityView,
+  NftReferralGrantSource,
   NftReferralSignatureRequest,
 } from '3u-aura-common';
 import { Prisma } from '@/db';
 import { Injectable } from '@nestjs/common';
-import { NftEligibilityPolicyEngine } from '../engines/nft-eligibility-policy.engine';
-import { NftEligibilityRepository } from '../repositories/nft-eligibility.repository';
+import {
+  NftEligibilityPolicyEngine,
+} from '../engines/nft-eligibility-policy.engine';
+import {
+  NftEligibilityRepository,
+  ReferralGrantSummary,
+} from '../repositories/nft-eligibility.repository';
 
-type EligibilityRecord = {
-  approvedAt: Date | null;
-  approvedByWallet: string | null;
-  decisionReason: string | null;
-  expiresAt: Date | null;
-  mintedTokenId: bigint | null;
-  rejectedAt: Date | null;
-  rejectedByWallet: string | null;
-  signedAt: Date | null;
-  status: string;
-  userId: string;
-};
+type EligibilitySnapshotRecord = Awaited<
+  ReturnType<NftEligibilityRepository['upsertEligibilitySnapshot']>
+>;
 
 @Injectable()
 export class NftEligibilityApplicationService {
@@ -43,43 +40,40 @@ export class NftEligibilityApplicationService {
     const personalCheckinCount = snapshot.profile?.totalCheckinCount ?? 0;
     const smallLegVolumeAtomic =
       snapshot.profile?.smallLegVolume?.toFixed(0) ?? '0';
-    const status = this.nftEligibilityPolicyEngine.deriveStatus({
+    const previousStatus = this.toCommonStatus(snapshot.nftEligibility?.status);
+    const grantSummary =
+      await this.nftEligibilityRepository.summarizeGrantsForUser(snapshot.id);
+    const baseStatus = this.nftEligibilityPolicyEngine.deriveBaseStatus({
       expiresAt: snapshot.nftEligibility?.expiresAt,
-      hasReferralNft: snapshot.profile?.hasReferralNft ?? false,
-      mintedTokenId: snapshot.nftEligibility?.mintedTokenId,
       personalCheckinCount,
-      previousStatus: this.toCommonStatus(snapshot.nftEligibility?.status),
+      previousStatus,
       smallLegVolumeAtomic,
     });
+    const summaryStatus = this.nftEligibilityPolicyEngine.deriveSummaryStatus({
+      baseStatus,
+      grantSummary,
+    });
     const persisted =
-      (await this.nftEligibilityRepository.upsertEligibilitySnapshot({
+      await this.nftEligibilityRepository.upsertEligibilitySnapshot({
+        ...this.toSnapshotMetadata(grantSummary),
         personalCheckinCount,
         smallLegVolumeUsdt: new Prisma.Decimal(smallLegVolumeAtomic),
-        status,
+        status: summaryStatus,
         userId: snapshot.id,
-      })) as EligibilityRecord;
+      });
 
-    return this.nftEligibilityPolicyEngine.toView({
-      approvedAt: persisted.approvedAt,
-      approvedByWallet: persisted.approvedByWallet,
-      decisionReason: persisted.decisionReason,
-      expiresAt: persisted.expiresAt,
-      mintedTokenId: persisted.mintedTokenId,
+    return this.toView({
+      grantSummary,
+      persisted,
       personalCheckinCount,
-      rejectedAt: persisted.rejectedAt,
-      rejectedByWallet: persisted.rejectedByWallet,
-      signedAt: persisted.signedAt,
       smallLegVolumeAtomic,
-      status,
-      userId: snapshot.id,
+      status: summaryStatus,
     });
   }
 
   async prepareReferralMint(
     request: NftReferralSignatureRequest,
   ): Promise<NftEligibilityView> {
-    this.nftEligibilityPolicyEngine.assertSignatureRequest(request);
-
     return this.getCurrentEligibility({ walletAddress: request.recipient });
   }
 
@@ -91,24 +85,12 @@ export class NftEligibilityApplicationService {
     const current = await this.getCurrentEligibility({ userId: input.userId });
     this.nftEligibilityPolicyEngine.assertApprovable(current);
 
-    const updated = (await this.nftEligibilityRepository.markApproved(
-      input,
-    )) as EligibilityRecord;
-
-    return this.nftEligibilityPolicyEngine.toView({
-      approvedAt: updated.approvedAt,
-      approvedByWallet: updated.approvedByWallet,
-      decisionReason: updated.decisionReason,
-      expiresAt: updated.expiresAt,
-      mintedTokenId: updated.mintedTokenId,
-      personalCheckinCount: current.personalCheckinCount,
-      rejectedAt: updated.rejectedAt,
-      rejectedByWallet: updated.rejectedByWallet,
-      signedAt: updated.signedAt,
-      smallLegVolumeAtomic: current.smallLegVolumeUsdt,
-      status: updated.status as unknown as NftEligibilityStatus,
-      userId: updated.userId,
+    await this.nftEligibilityRepository.markApproved({
+      ...input,
+      source: NftReferralGrantSource.QUALIFIED_APPROVAL,
     });
+
+    return this.getCurrentEligibility({ userId: input.userId });
   }
 
   async giftReferralMintEligibility(input: {
@@ -119,24 +101,12 @@ export class NftEligibilityApplicationService {
     const current = await this.getCurrentEligibility({ userId: input.userId });
     this.nftEligibilityPolicyEngine.assertGiftable(current);
 
-    const updated = (await this.nftEligibilityRepository.markApproved(
-      input,
-    )) as EligibilityRecord;
-
-    return this.nftEligibilityPolicyEngine.toView({
-      approvedAt: updated.approvedAt,
-      approvedByWallet: updated.approvedByWallet,
-      decisionReason: updated.decisionReason,
-      expiresAt: updated.expiresAt,
-      mintedTokenId: updated.mintedTokenId,
-      personalCheckinCount: current.personalCheckinCount,
-      rejectedAt: updated.rejectedAt,
-      rejectedByWallet: updated.rejectedByWallet,
-      signedAt: updated.signedAt,
-      smallLegVolumeAtomic: current.smallLegVolumeUsdt,
-      status: updated.status as unknown as NftEligibilityStatus,
-      userId: updated.userId,
+    await this.nftEligibilityRepository.markApproved({
+      ...input,
+      source: NftReferralGrantSource.MANUAL_GIFT,
     });
+
+    return this.getCurrentEligibility({ userId: input.userId });
   }
 
   async rejectReferralMintEligibility(input: {
@@ -147,23 +117,53 @@ export class NftEligibilityApplicationService {
     const current = await this.getCurrentEligibility({ userId: input.userId });
     this.nftEligibilityPolicyEngine.assertRejectable(current);
 
-    const updated = (await this.nftEligibilityRepository.markRejected(
-      input,
-    )) as EligibilityRecord;
+    await this.nftEligibilityRepository.markRejected(input);
 
+    return this.getCurrentEligibility({ userId: input.userId });
+  }
+
+  private toSnapshotMetadata(grantSummary: ReferralGrantSummary) {
+    const referenceGrant =
+      grantSummary.latestActiveGrant ??
+      grantSummary.latestRejectedGrant ??
+      grantSummary.latestMintedGrant ??
+      grantSummary.latestGrant;
+
+    return {
+      approvedAt: referenceGrant?.approvedAt ?? null,
+      approvedByWallet: referenceGrant?.approvedByWallet ?? null,
+      decisionReason: referenceGrant?.decisionReason ?? null,
+      expiresAt: grantSummary.latestActiveGrant?.expiresAt ?? null,
+      mintedAt: grantSummary.latestMintedGrant?.mintedAt ?? null,
+      mintedTokenId: grantSummary.latestMintedGrant?.mintedTokenId ?? null,
+      rejectedAt: grantSummary.latestRejectedGrant?.rejectedAt ?? null,
+      rejectedByWallet: grantSummary.latestRejectedGrant?.rejectedByWallet ?? null,
+      signedAt: grantSummary.latestActiveGrant?.signedAt ?? null,
+    };
+  }
+
+  private toView(params: {
+    grantSummary: ReferralGrantSummary;
+    persisted: EligibilitySnapshotRecord;
+    personalCheckinCount: number;
+    smallLegVolumeAtomic: string;
+    status: NftEligibilityStatus;
+  }): NftEligibilityView {
     return this.nftEligibilityPolicyEngine.toView({
-      approvedAt: updated.approvedAt,
-      approvedByWallet: updated.approvedByWallet,
-      decisionReason: updated.decisionReason,
-      expiresAt: updated.expiresAt,
-      mintedTokenId: updated.mintedTokenId,
-      personalCheckinCount: current.personalCheckinCount,
-      rejectedAt: updated.rejectedAt,
-      rejectedByWallet: updated.rejectedByWallet,
-      signedAt: updated.signedAt,
-      smallLegVolumeAtomic: current.smallLegVolumeUsdt,
-      status: updated.status as unknown as NftEligibilityStatus,
-      userId: updated.userId,
+      approvedAt: params.persisted.approvedAt,
+      approvedByWallet: params.persisted.approvedByWallet,
+      claimableMintCount: params.grantSummary.claimableMintCount,
+      decisionReason: params.persisted.decisionReason,
+      expiresAt: params.persisted.expiresAt,
+      mintedReferralCount: params.grantSummary.mintedReferralCount,
+      mintedTokenId: params.persisted.mintedTokenId,
+      personalCheckinCount: params.personalCheckinCount,
+      rejectedAt: params.persisted.rejectedAt,
+      rejectedByWallet: params.persisted.rejectedByWallet,
+      signedAt: params.persisted.signedAt,
+      smallLegVolumeAtomic: params.smallLegVolumeAtomic,
+      status: params.status,
+      userId: params.persisted.userId,
     });
   }
 

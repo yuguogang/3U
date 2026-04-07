@@ -7,8 +7,8 @@ import {
   NftEligibilityQuery,
   NftEligibilityStatus,
   NftEligibilityView,
-  NftReferralSignatureRequest,
 } from '3u-aura-common';
+import { ReferralGrantSummary } from '../repositories/nft-eligibility.repository';
 
 const REQUIRED_CHECKIN_COUNT = 30;
 const REQUIRED_SMALL_LEG_USDT_ATOMIC = '6000000000';
@@ -19,11 +19,6 @@ export class NftEligibilityPolicyEngine {
     return query;
   }
 
-  assertSignatureRequest(request: NftReferralSignatureRequest): void {
-    void request;
-    // Placeholder for Phase 4 signature gating.
-  }
-
   assertEligibilitySourceExists<T>(snapshot: T | null): asserts snapshot is T {
     if (!snapshot) {
       throw new NotFoundException('Eligibility source not found');
@@ -31,26 +26,15 @@ export class NftEligibilityPolicyEngine {
   }
 
   assertEligibleForSigning(view: NftEligibilityView): void {
-    if (
-      view.status !== NftEligibilityStatus.APPROVED &&
-      view.status !== NftEligibilityStatus.EXPIRED &&
-      view.status !== NftEligibilityStatus.SIGNED
-    ) {
+    if (view.claimableMintCount <= 0) {
       throw new ConflictException(
         'NFT referral mint is not currently eligible',
       );
     }
   }
 
-  assertGiftable(view: NftEligibilityView): void {
-    if (
-      view.status === NftEligibilityStatus.SIGNED ||
-      view.status === NftEligibilityStatus.MINTED
-    ) {
-      throw new ConflictException(
-        'NFT referral gift is not allowed for the current eligibility state',
-      );
-    }
+  assertGiftable(_view: NftEligibilityView): void {
+    // Gift flow now permits issuing additional referral grants to the same wallet.
   }
 
   assertApprovable(view: NftEligibilityView): void {
@@ -58,7 +42,8 @@ export class NftEligibilityPolicyEngine {
       view.status !== NftEligibilityStatus.PENDING_APPROVAL &&
       view.status !== NftEligibilityStatus.REJECTED &&
       view.status !== NftEligibilityStatus.APPROVED &&
-      view.status !== NftEligibilityStatus.EXPIRED
+      view.status !== NftEligibilityStatus.EXPIRED &&
+      view.status !== NftEligibilityStatus.MINTED
     ) {
       throw new ConflictException(
         'NFT referral approval is not allowed for the current eligibility state',
@@ -68,6 +53,7 @@ export class NftEligibilityPolicyEngine {
 
   assertRejectable(view: NftEligibilityView): void {
     if (
+      view.claimableMintCount <= 0 &&
       view.status !== NftEligibilityStatus.PENDING_APPROVAL &&
       view.status !== NftEligibilityStatus.REJECTED &&
       view.status !== NftEligibilityStatus.APPROVED &&
@@ -79,19 +65,13 @@ export class NftEligibilityPolicyEngine {
     }
   }
 
-  deriveStatus(params: {
+  deriveBaseStatus(params: {
     expiresAt?: Date | null;
-    hasReferralNft: boolean;
-    mintedTokenId?: bigint | null;
     personalCheckinCount: number;
     previousStatus?: NftEligibilityStatus | null;
     smallLegVolumeAtomic: string;
   }): NftEligibilityStatus {
     const previousStatus = params.previousStatus?.toString();
-
-    if (params.hasReferralNft || params.mintedTokenId) {
-      return NftEligibilityStatus.MINTED;
-    }
 
     if (previousStatus === NftEligibilityStatus.APPROVED) {
       return NftEligibilityStatus.APPROVED;
@@ -137,11 +117,45 @@ export class NftEligibilityPolicyEngine {
     return NftEligibilityStatus.PENDING_APPROVAL;
   }
 
+  deriveSummaryStatus(params: {
+    baseStatus: NftEligibilityStatus;
+    grantSummary: ReferralGrantSummary;
+  }): NftEligibilityStatus {
+    if (params.grantSummary.signedGrantCount > 0) {
+      return NftEligibilityStatus.SIGNED;
+    }
+
+    if (params.grantSummary.approvedGrantCount > 0) {
+      return NftEligibilityStatus.APPROVED;
+    }
+
+    if (params.grantSummary.expiredGrantCount > 0) {
+      return NftEligibilityStatus.EXPIRED;
+    }
+
+    if (params.grantSummary.mintedReferralCount > 0) {
+      return NftEligibilityStatus.MINTED;
+    }
+
+    if (
+      params.baseStatus === NftEligibilityStatus.REJECTED ||
+      params.baseStatus === NftEligibilityStatus.REVOKED ||
+      params.baseStatus === NftEligibilityStatus.INELIGIBLE ||
+      params.baseStatus === NftEligibilityStatus.PENDING_APPROVAL
+    ) {
+      return params.baseStatus;
+    }
+
+    return params.baseStatus;
+  }
+
   toView(params: {
     approvedAt?: Date | null;
     approvedByWallet?: string | null;
+    claimableMintCount: number;
     decisionReason?: string | null;
     expiresAt?: Date | null;
+    mintedReferralCount: number;
     mintedTokenId?: bigint | null;
     personalCheckinCount: number;
     rejectedAt?: Date | null;
@@ -154,8 +168,10 @@ export class NftEligibilityPolicyEngine {
     return {
       approvedAt: params.approvedAt ?? undefined,
       approvedByWallet: params.approvedByWallet ?? undefined,
+      claimableMintCount: params.claimableMintCount,
       decisionReason: params.decisionReason ?? undefined,
       expiresAt: params.expiresAt ?? undefined,
+      mintedReferralCount: params.mintedReferralCount,
       mintedTokenId: params.mintedTokenId?.toString(),
       personalCheckinCount: params.personalCheckinCount,
       rejectedAt: params.rejectedAt ?? undefined,

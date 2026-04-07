@@ -9,6 +9,7 @@ import {
   Coins,
   Dice5,
   Gift,
+  RefreshCcw,
   Sparkles,
   Trophy,
   Zap,
@@ -55,27 +56,6 @@ export function RewardsPage() {
   const profile = profileQuery.data?.profile;
   const [revealingEpochId, setRevealingEpochId] = useState<string | null>(null);
 
-  useMemo(() => {
-    const rewards = rewardsQuery.data ?? [];
-
-    return rewards.reduce(
-      (accumulator, reward) => {
-        accumulator.usdt += BigInt(reward.amountUsdt);
-        accumulator.aura += BigInt(reward.amountAura);
-        if (reward.claimStatus === "CLAIMABLE") {
-          accumulator.claimable += 1;
-        }
-
-        return accumulator;
-      },
-      {
-        aura: BigInt(0),
-        claimable: 0,
-        usdt: BigInt(0),
-      },
-    );
-  }, [rewardsQuery.data]);
-
   const totalAuraFromProfile = useMemo(() => {
     if (!profile) return BigInt(0);
     return (
@@ -92,6 +72,12 @@ export function RewardsPage() {
   const isRevealingCurrentEpoch =
     latestWeeklyResults?.epochId !== undefined &&
     revealingEpochId === latestWeeklyResults.epochId;
+  const isRewardsRefreshing =
+    profileQuery.isFetching ||
+    rewardsQuery.isFetching ||
+    claimsQuery.isFetching ||
+    latestWeeklyResultsQuery.isFetching ||
+    epochQuery.isFetching;
 
   async function handleRevealLottery() {
     if (!latestWeeklyResults?.myLottery.canReveal) {
@@ -158,6 +144,17 @@ export function RewardsPage() {
             </div>
           </GlassCard>
         </section>
+
+        {isRewardsRefreshing ? (
+          <section className="animate-slide-up" style={{ animationDelay: "0.05s" }}>
+            <GlassCard className="border border-aura-primary/20 bg-aura-primary/8 p-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-aura-primary">
+                <RefreshCcw className="h-4 w-4 animate-spin" />
+                <span>{t("rewards.summary.syncing")}</span>
+              </div>
+            </GlassCard>
+          </section>
+        ) : null}
 
         {/* Stats Grid */}
         <section className="animate-slide-up" style={{ animationDelay: "0.1s" }}>

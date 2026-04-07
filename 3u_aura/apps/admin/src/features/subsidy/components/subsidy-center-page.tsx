@@ -212,6 +212,23 @@ export function SubsidyCenterPage() {
           tone="accent"
           value={`#${nextSuggestedEpochNo}`}
         />
+        <MetricCard
+          label="Chain Purchased Supply"
+          value={formatCount(overview.chainPurchasedSupply)}
+        />
+        <MetricCard
+          label="DB Active Purchased"
+          tone={overview.dbProjectionGapCount === 0 ? "accent" : "warning"}
+          value={formatCount(overview.dbActivePurchasedSupply)}
+        />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <MetricCard
+          label="Projection Gap"
+          tone={overview.dbProjectionGapCount === 0 ? "accent" : "warning"}
+          value={formatCount(overview.dbProjectionGapCount)}
+        />
         <MetricCard label="Current Chain" value={String(chainId ?? "-")} />
         <MetricCard
           label="Current Chain Time"
@@ -376,6 +393,22 @@ export function SubsidyCenterPage() {
                 </StatusPill>
               </div>
               <div className="flex items-center justify-between">
+                <span>Chain purchased supply</span>
+                <span>{formatCount(preview.chainPurchasedSupply)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>DB active purchased</span>
+                <span>{formatCount(preview.dbActivePurchasedSupply)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Projection gap</span>
+                <StatusPill
+                  tone={preview.dbProjectionGapCount === 0 ? "success" : "warning"}
+                >
+                  {formatCount(preview.dbProjectionGapCount)}
+                </StatusPill>
+              </div>
+              <div className="flex items-center justify-between">
                 <span>Current chain time</span>
                 <span>{formatDateTime(preview.currentChainTime)}</span>
               </div>
@@ -450,6 +483,18 @@ export function SubsidyCenterPage() {
                     <div className="flex items-center justify-between">
                       <span>Eligible supply</span>
                       <span>{formatCount(epoch.eligiblePurchasedSupply)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Projected claims</span>
+                      <span>{formatCount(epoch.projectedClaimCount ?? 0)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Projection gap</span>
+                      <StatusPill
+                        tone={(epoch.projectionGapCount ?? 0) === 0 ? "success" : "warning"}
+                      >
+                        {formatCount(epoch.projectionGapCount ?? 0)}
+                      </StatusPill>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Claimed supply</span>

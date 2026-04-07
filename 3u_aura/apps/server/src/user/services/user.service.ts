@@ -1,4 +1,10 @@
-import { Prisma, DbService, type User } from '@/db';
+import {
+  Prisma,
+  DbService,
+  NftType,
+  PaymentPurpose,
+  type User,
+} from '@/db';
 import type { ClientUser } from '3u-aura-common';
 
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
@@ -47,6 +53,42 @@ export class UserService {
     const user = await this.db.user.findUnique({
       where: { id },
       include: {
+        nftHoldings: {
+          orderBy: {
+            mintedAt: 'desc',
+          },
+          select: {
+            mintTxHashKey: true,
+            mintedAt: true,
+            nftType: true,
+            tokenId: true,
+          },
+          where: {
+            nftType: NftType.PURCHASED,
+          },
+        },
+        paymentReceipts: {
+          orderBy: [
+            {
+              confirmedAt: 'desc',
+            },
+            {
+              createdAt: 'desc',
+            },
+          ],
+          select: {
+            amount: true,
+            confirmedAt: true,
+            id: true,
+            status: true,
+            txHash: true,
+            txHashKey: true,
+          },
+          take: 6,
+          where: {
+            purpose: PaymentPurpose.NFT_PURCHASE,
+          },
+        },
         profile: true,
       },
     });
@@ -55,7 +97,31 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    return user as unknown as ClientUser;
+    const { nftHoldings, paymentReceipts, ...clientUser } = user;
+    const purchasedHoldingByTxHashKey = new Map(
+      nftHoldings
+        .filter((holding) => holding.mintTxHashKey)
+        .map((holding) => [holding.mintTxHashKey!, holding]),
+    );
+
+    return {
+      ...clientUser,
+      recentPurchasedNftActivity: paymentReceipts.map((receipt) => {
+        const holding = receipt.txHashKey
+          ? purchasedHoldingByTxHashKey.get(receipt.txHashKey)
+          : undefined;
+
+        return {
+          amount: receipt.amount.toFixed(0),
+          confirmedAt: receipt.confirmedAt ?? undefined,
+          mintedAt: holding?.mintedAt ?? undefined,
+          paymentReceiptId: receipt.id,
+          status: receipt.status,
+          tokenId: holding?.tokenId?.toString(),
+          txHash: receipt.txHash ?? undefined,
+        };
+      }),
+    } as unknown as ClientUser;
   }
 
   async update(args: Prisma.UserUpdateArgs) {

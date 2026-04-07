@@ -37,53 +37,43 @@ contract FounderNFTTest is Test {
         assertEq(referralTokenId, 2);
         assertTrue(founderNFT.isPurchasedNFT(purchasedTokenId));
         assertFalse(founderNFT.isPurchasedNFT(referralTokenId));
-        assertTrue(founderNFT.hasReferralNFT(buyer));
         assertEq(founderNFT.purchasedMinted(), 1);
         assertEq(founderNFT.referralMinted(), 1);
         assertEq(founderNFT.ownerOf(purchasedTokenId), buyer);
         assertEq(founderNFT.ownerOf(referralTokenId), buyer);
     }
 
-    function testReferralMintIsOnePerAddress() public {
+    function testReferralMintAllowsMultipleTokensPerAddress() public {
         vm.prank(sale);
-        founderNFT.mintReferral(buyer);
+        uint256 firstTokenId = founderNFT.mintReferral(buyer);
+        vm.prank(sale);
+        uint256 secondTokenId = founderNFT.mintReferral(buyer);
 
-        vm.expectRevert(abi.encodeWithSelector(FounderNFT.ReferralAlreadyMinted.selector, buyer));
-        vm.prank(sale);
-        founderNFT.mintReferral(buyer);
+        assertEq(firstTokenId, 1);
+        assertEq(secondTokenId, 2);
+        assertEq(founderNFT.referralMinted(), 2);
+        assertEq(founderNFT.ownerOf(firstTokenId), buyer);
+        assertEq(founderNFT.ownerOf(secondTokenId), buyer);
     }
 
-    function testPurchasedMintCanExceedFormerThirtyCap() public {
-        for (uint256 index = 0; index < 31; index++) {
+    function testPurchasedMintHasNoFormerThirtyOrHundredCap() public {
+        for (uint256 index = 0; index < 101; index++) {
             vm.prank(sale);
             uint256 tokenId = founderNFT.mintPurchased(address(uint160(index + 10)));
             assertEq(tokenId, index + 1);
         }
 
-        assertEq(founderNFT.purchasedMinted(), 31);
-        assertEq(founderNFT.remainingPurchasedSupply(), 69);
-        assertEq(founderNFT.remainingTotalSupply(), 69);
+        assertEq(founderNFT.purchasedMinted(), 101);
+        assertEq(founderNFT.totalSupply(), 101);
     }
 
-    function testPurchasedMintRevertsWhenTotalSupplyIsExhausted() public {
-        for (uint256 index = 0; index < founderNFT.MAX_TOTAL_SUPPLY(); index++) {
-            vm.prank(sale);
-            founderNFT.mintPurchased(address(uint160(index + 10)));
-        }
-
-        vm.expectRevert(FounderNFT.TotalSupplySoldOut.selector);
-        vm.prank(sale);
-        founderNFT.mintPurchased(makeAddr("overflow"));
-    }
-
-    function testReferralSupplyCapIsEnforced() public {
-        for (uint256 index = 0; index < founderNFT.MAX_REFERRAL_SUPPLY(); index++) {
+    function testReferralMintHasNoFormerSeventyCap() public {
+        for (uint256 index = 0; index < 71; index++) {
             vm.prank(sale);
             founderNFT.mintReferral(address(uint160(index + 100)));
         }
 
-        vm.expectRevert(FounderNFT.ReferralSupplySoldOut.selector);
-        vm.prank(sale);
-        founderNFT.mintReferral(makeAddr("overflow"));
+        assertEq(founderNFT.referralMinted(), 71);
+        assertEq(founderNFT.totalSupply(), 71);
     }
 }

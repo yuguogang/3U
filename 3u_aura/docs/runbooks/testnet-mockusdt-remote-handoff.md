@@ -104,6 +104,41 @@ Otherwise:
 - Manual verification uses `apps/e2e/phase94` and `scripts/uat/*`.
 - If you need a quick local or VPS smoke, run the opt-in operator commands from those tools directly rather than reintroducing them into a default CI lane.
 
+## Purchased NFT Projection Safety Check
+
+Before:
+
+- publishing NFT subsidy
+- sending subsidy claim notifications
+- investigating “wallet has 12 cards but only 8 subsidy claims” type reports
+
+run the purchased reconcile helper against the target environment:
+
+```bash
+cd /opt/3u-aura/current
+node scripts/uat/reconcile-weekly-fork-purchased-nft-state.mjs \
+  --env testnet-mockusdt \
+  --purchase-receipt-users
+```
+
+Use wallet-scoped repair when you only need to fix one account:
+
+```bash
+cd /opt/3u-aura/current
+node scripts/uat/reconcile-weekly-fork-purchased-nft-state.mjs \
+  --env testnet-mockusdt \
+  --wallet <wallet-address>
+```
+
+Then verify in admin subsidy center:
+
+- `Chain Purchased Supply`
+- `DB Active Purchased`
+- `Projection Gap`
+
+Do not publish new subsidy epochs or send broad claim notifications while the
+projection gap is still clearly behind chain supply.
+
 ## Secrets The Remote Operator Must Supply
 
 These must **not** be committed into the repo:

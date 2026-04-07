@@ -63,6 +63,8 @@ export class ReferralNftSyncService {
           mintedAt: referralMint.mintedAt,
           mintedTokenId: referralMint.tokenId,
           mintedTxHash: referralMint.mintTxHash,
+          payloadHash: referralMint.digest,
+          signedNonce: referralMint.nonce,
           userId: user.id,
         },
         tx,

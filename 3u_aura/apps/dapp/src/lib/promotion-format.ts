@@ -121,6 +121,14 @@ export function formatWalletAddress(address?: string | null) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
+export function formatTxHash(hash?: string | null) {
+  if (!hash) {
+    return "-";
+  }
+
+  return `${hash.slice(0, 10)}...${hash.slice(-6)}`;
+}
+
 export function formatDateTime(
   value?: Date | string | null,
   locale: string = "en-US",

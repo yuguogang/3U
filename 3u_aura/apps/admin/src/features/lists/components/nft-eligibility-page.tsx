@@ -123,7 +123,7 @@ export function NftEligibilityPage() {
               />
             </div>
             <p className="text-xs leading-6 text-slate-400">
-              Gifted referral eligibility should still route through the existing mint/signature path and keep the one-wallet-one-referral rule.
+              Gifted referral eligibility still routes through the existing mint/signature path, but the same wallet can now accumulate multiple referral grants over time.
             </p>
             <div className="flex flex-wrap gap-2">
               <ActionButton

@@ -154,6 +154,20 @@ enum NftEligibilityStatus {
   REVOKED
 }
 
+enum NftReferralGrantSource {
+  QUALIFIED_APPROVAL
+  MANUAL_GIFT
+}
+
+enum NftReferralGrantStatus {
+  APPROVED
+  SIGNED
+  MINTED
+  REJECTED
+  EXPIRED
+  REVOKED
+}
+
 /// 站内通知分类：项目活动、团队活动、预备上线等
 enum NotificationCategory {
   PROJECT_ACTIVITY
@@ -213,6 +227,7 @@ model User {
   claims             ClaimRecord[]
   nftHoldings        NftHolding[]
   nftEligibility     NftReferralEligibility?
+  nftReferralGrants  NftReferralGrant[]
   merkleLeaves       MerkleLeaf[]
   paymentReceipts    PaymentReceipt[]
   poolSplitFacts     PoolSplitFact[]
@@ -462,6 +477,8 @@ model WeeklyEpoch {
   epochNo   Int
   epochType EpochType   @default(WEEKLY_PROMOTION)
   status    EpochStatus @default(PENDING)
+  lotteryStatus EpochStatus @default(PENDING)
+  rankingStatus EpochStatus @default(PENDING)
 
   startAt    DateTime
   endAt      DateTime
@@ -476,6 +493,8 @@ model WeeklyEpoch {
   nftSubsidyPoolUsdt  Decimal @default(0) @db.Decimal(78, 0)
   dividendPoolUsdt    Decimal @default(0) @db.Decimal(78, 0)
   rolloverUsdt        Decimal @default(0) @db.Decimal(78, 0)
+  lotteryRolloverUsdt Decimal @default(0) @db.Decimal(78, 0)
+  rankingRolloverUsdt Decimal @default(0) @db.Decimal(78, 0)
 
   merkleRoot    String? @db.VarChar(128)
   merkleTreeUri String?
@@ -681,9 +700,52 @@ model NftReferralEligibility {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  grants NftReferralGrant[]
+
   @@unique([userId])
   @@index([userId, status])
   @@index([snapshotEpochId])
+}
+
+/// 推广型 NFT grant 表
+/// 作用：记录每一张可领取 referral NFT 的审批/赠送/签名/铸造生命周期，允许同钱包多次发放
+model NftReferralGrant {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  eligibilityId String?
+  eligibility   NftReferralEligibility? @relation(fields: [eligibilityId], references: [id], onDelete: SetNull)
+
+  source NftReferralGrantSource
+  status NftReferralGrantStatus @default(APPROVED)
+
+  approvedAt       DateTime  @default(now())
+  approvedByWallet String?   @db.VarChar(64)
+  decisionReason   String?
+  rejectedAt       DateTime?
+  rejectedByWallet String?   @db.VarChar(64)
+
+  signedNonce       Int?
+  signedPayloadHash String?   @db.VarChar(128)
+  signedAt          DateTime?
+  expiresAt         DateTime?
+
+  mintedTokenId   BigInt?
+  mintedTxHash    String?   @db.VarChar(128)
+  mintedTxHashKey String?   @unique @db.VarChar(160)
+  mintedAt        DateTime?
+
+  remark    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([eligibilityId])
+  @@index([signedNonce])
+  @@index([signedPayloadHash])
+  @@index([createdAt])
 }
 
 /// Merkle 叶子表

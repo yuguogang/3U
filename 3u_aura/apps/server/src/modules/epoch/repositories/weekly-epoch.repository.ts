@@ -52,6 +52,8 @@ export class WeeklyEpochRepository {
         endAt: data.endAt,
         epochNo: data.epochNo,
         epochType: data.epochType,
+        lotteryStatus: data.status,
+        rankingStatus: data.status,
         startAt: data.startAt,
         status: data.status,
       },
@@ -69,7 +71,11 @@ export class WeeklyEpochRepository {
   ): Promise<WeeklyEpoch> {
     return executor.weeklyEpoch.update({
       where: { id: epochId },
-      data: { status },
+      data: {
+        lotteryStatus: status,
+        rankingStatus: status,
+        status,
+      },
     });
   }
 
@@ -95,7 +101,9 @@ export class WeeklyEpochRepository {
       calculationRemark?: string;
       epochId: string;
       lotteryPoolUsdt: Prisma.Decimal;
+      lotteryStatus: EpochStatus;
       rankingPoolUsdt: Prisma.Decimal;
+      rankingStatus: EpochStatus;
       settledAt?: Date | null;
       snapshotAt: Date;
       status: EpochStatus;
@@ -107,7 +115,9 @@ export class WeeklyEpochRepository {
       data: {
         calculationRemark: data.calculationRemark,
         lotteryPoolUsdt: data.lotteryPoolUsdt,
+        lotteryStatus: data.lotteryStatus,
         rankingPoolUsdt: data.rankingPoolUsdt,
+        rankingStatus: data.rankingStatus,
         settledAt: data.settledAt ?? undefined,
         snapshotAt: data.snapshotAt,
         status: data.status,
@@ -115,38 +125,28 @@ export class WeeklyEpochRepository {
     });
   }
 
-  async incrementRolloverPool(
-    epochId: string,
-    amount: Prisma.Decimal,
-    executor: DbExecutor = this.db,
-  ): Promise<WeeklyEpoch> {
-    return executor.weeklyEpoch.update({
-      where: { id: epochId },
-      data: {
-        rolloverUsdt: {
-          increment: amount,
-        },
-      },
-    });
-  }
-
-  async incrementPreparedPools(
+  async incrementRolloverPools(
     data: {
       epochId: string;
-      lotteryPoolUsdt?: Prisma.Decimal;
-      rankingPoolUsdt?: Prisma.Decimal;
+      lotteryRolloverUsdt?: Prisma.Decimal;
+      rankingRolloverUsdt?: Prisma.Decimal;
     },
     executor: DbExecutor = this.db,
   ): Promise<WeeklyEpoch> {
     return executor.weeklyEpoch.update({
       where: { id: data.epochId },
       data: {
-        lotteryPoolUsdt: data.lotteryPoolUsdt
-          ? { increment: data.lotteryPoolUsdt }
+        lotteryRolloverUsdt: data.lotteryRolloverUsdt
+          ? { increment: data.lotteryRolloverUsdt }
           : undefined,
-        rankingPoolUsdt: data.rankingPoolUsdt
-          ? { increment: data.rankingPoolUsdt }
+        rankingRolloverUsdt: data.rankingRolloverUsdt
+          ? { increment: data.rankingRolloverUsdt }
           : undefined,
+        rolloverUsdt: {
+          increment: new Prisma.Decimal(0)
+            .plus(data.lotteryRolloverUsdt ?? 0)
+            .plus(data.rankingRolloverUsdt ?? 0),
+        },
       },
     });
   }
@@ -154,17 +154,22 @@ export class WeeklyEpochRepository {
   async publishMerkleRoot(
     data: {
       epochId: string;
+      lotteryStatus: EpochStatus;
       merkleRoot: string;
+      rankingStatus: EpochStatus;
       rewardJsonUri?: string;
+      status?: EpochStatus;
     },
     executor: DbExecutor = this.db,
   ): Promise<WeeklyEpoch> {
     return executor.weeklyEpoch.update({
       where: { id: data.epochId },
       data: {
+        lotteryStatus: data.lotteryStatus,
         merkleRoot: data.merkleRoot,
+        rankingStatus: data.rankingStatus,
         rewardJsonUri: data.rewardJsonUri,
-        status: EpochStatus.ROOT_POSTED,
+        status: data.status ?? EpochStatus.ROOT_POSTED,
       },
     });
   }

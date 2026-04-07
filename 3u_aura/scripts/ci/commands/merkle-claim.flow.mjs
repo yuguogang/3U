@@ -1,6 +1,8 @@
 import { cleanupHarness } from '../lib/harness.mjs';
 import { runWeeklyMerkleClaimFlow } from '../lib/weekly-merkle-claim-flow.mjs';
 
+const ENV = 'fork-anvil';
+
 runWeeklyMerkleClaimFlow({
   claimType: 'MERKLE_RANKING',
   label: 'Weekly Merkle Ranking Claim',

@@ -37,7 +37,7 @@ describe('WeeklyEpochApplicationService', () => {
       finalizeEpochPreparation: jest.fn(),
       findByEpochNo: jest.fn(),
       findById: jest.fn(),
-      incrementRolloverPool: jest.fn(),
+      incrementRolloverPools: jest.fn(),
       updateStatus: jest.fn(),
     };
 
@@ -152,8 +152,12 @@ describe('WeeklyEpochApplicationService', () => {
       endAt: new Date('2026-03-08T16:00:00.000Z'),
       epochNo: 1,
       id: 'epoch_1',
+      lotteryRolloverUsdt: new Prisma.Decimal(0),
+      lotteryStatus: 'CALCULATING',
       participantCount: 8,
       rankingPoolUsdt: new Prisma.Decimal(0),
+      rankingRolloverUsdt: new Prisma.Decimal(0),
+      rankingStatus: 'CALCULATING',
       rolloverUsdt: new Prisma.Decimal(100),
       lotteryPoolUsdt: new Prisma.Decimal(0),
       status: 'CALCULATING',
@@ -181,19 +185,24 @@ describe('WeeklyEpochApplicationService', () => {
     weeklyEpochRepository.ensureEpoch.mockResolvedValue({
       id: 'epoch_2',
     });
-    weeklyEpochRepository.incrementRolloverPool.mockResolvedValue(undefined);
+    weeklyEpochRepository.incrementRolloverPools.mockResolvedValue(undefined);
     weeklyEpochRepository.finalizeEpochPreparation.mockResolvedValue(undefined);
 
     const result = await service.prepareRolloverForEpoch('epoch_1');
 
-    expect(weeklyEpochRepository.incrementRolloverPool).toHaveBeenCalledWith(
-      'epoch_2',
-      expect.any(Prisma.Decimal),
+    expect(weeklyEpochRepository.incrementRolloverPools).toHaveBeenCalledWith(
+      {
+        epochId: 'epoch_2',
+        lotteryRolloverUsdt: new Prisma.Decimal(280),
+        rankingRolloverUsdt: undefined,
+      },
       expect.any(Object),
     );
     expect(result).toEqual({
       epochId: 'epoch_1',
+      lotteryRolledOver: true,
       nextEpochId: 'epoch_2',
+      rankingRolledOver: false,
       rolledOver: true,
       totalPromotionPoolUsdt: '400',
     });

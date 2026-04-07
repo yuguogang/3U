@@ -22,6 +22,22 @@ export class LotterySettlementService {
     epoch: WeeklyEpoch,
     tx: Prisma.TransactionClient,
   ): Promise<LotterySettlementResult> {
+    if (epoch.lotteryStatus === 'CANCELLED') {
+      await this.weeklyRewardRepository.deleteDraftRewardsByTypes(
+        {
+          epochId: epoch.id,
+          rewardTypes: ['LOTTERY_USDT', 'CONSOLATION_AURA'],
+        },
+        tx,
+      );
+
+      return {
+        consolationCount: 0,
+        draftRewardCount: 0,
+        lotteryRolloverUsdt: epoch.lotteryPoolUsdt.toFixed(0),
+      };
+    }
+
     const participants =
       await this.lotteryTicketRepository.listEligibleTicketsForSettlement(
         epoch.id,

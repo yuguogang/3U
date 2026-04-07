@@ -31,6 +31,12 @@ describe('AdminSettlementService', () => {
       listPublishedSubsidyEpochs: jest.fn(),
       previewSubsidyEpochPublication: jest.fn(),
     };
+    const nftHoldingRepository = {
+      countActivePurchasedHoldings: jest.fn(),
+    };
+    const nftSubsidyClaimRepository = {
+      countProjectedClaimsForEpoch: jest.fn(),
+    };
     const rewardPublicationService = {
       previewEpochRewardPublication: jest.fn(),
     };
@@ -53,6 +59,8 @@ describe('AdminSettlementService', () => {
       auditTrailService as never,
       promotionChainClientService as never,
       purchasedNftChainRepository as never,
+      nftHoldingRepository as never,
+      nftSubsidyClaimRepository as never,
       rewardPublicationService as never,
       rewardsService as never,
       weeklyEpochApplicationService as never,
@@ -62,6 +70,8 @@ describe('AdminSettlementService', () => {
 
     return {
       adminConsoleRepository,
+      nftHoldingRepository,
+      nftSubsidyClaimRepository,
       publicClient,
       promotionChainClientService,
       purchasedNftChainRepository,
@@ -194,6 +204,71 @@ describe('AdminSettlementService', () => {
 
   it('previews subsidy publication with chain action args when operator is eligible', async () => {
     const {
+      nftHoldingRepository,
+      publicClient,
+      promotionChainClientService,
+      purchasedNftChainRepository,
+      service,
+    } = createService();
+
+    promotionChainClientService.getRuntimeConfig.mockReturnValue({
+      adminAllowlistWallets: [operator.walletAddress],
+      chainId: 97,
+      financeWalletAddress: '0x1212121212121212121212121212121212121212',
+      ownerAddress: operator.walletAddress,
+      paymentTokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+      rewardFunderAddress: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      rootPublisherAddress: '0x1313131313131313131313131313131313131313',
+      rpcUrl: 'http://127.0.0.1:8545',
+      settlementAddress: '0xffffffffffffffffffffffffffffffffffffffff',
+      settlementPublisherAddress: '0x1414141414141414141414141414141414141414',
+      startAt: '2026-03-27T00:00:00.000Z',
+    });
+    purchasedNftChainRepository.getCurrentChainTimestamp.mockResolvedValue(
+      new Date('2026-04-02T00:00:00.000Z'),
+    );
+    nftHoldingRepository.countActivePurchasedHoldings.mockResolvedValue(3);
+    purchasedNftChainRepository.previewSubsidyEpochPublication.mockResolvedValue(
+      {
+        contractAddress: '0xffffffffffffffffffffffffffffffffffffffff',
+        founderNftAddress: '0x1515151515151515151515151515151515151515',
+        maxSubsidyEpochs: 24,
+        purchasedSupply: 3,
+      },
+    );
+    publicClient.readContract
+      .mockResolvedValueOnce(90_000_000n)
+      .mockResolvedValueOnce(90_000_000n);
+
+    const result = await service.previewSubsidyPublication(operator, {
+      claimDeadline: '2026-04-10T00:00:00.000Z',
+      epochNo: 2,
+      subsidyAmountAtomic: '30000000',
+    });
+
+    expect(result.action).toBe('admin.ops.subsidy.publish.preview');
+    expect(result.dryRun).toBe(true);
+    expect(result.result.canPublish).toBe(true);
+    expect(result.result.chainPurchasedSupply).toBe(3);
+    expect(result.result.dbActivePurchasedSupply).toBe(3);
+    expect(result.result.dbProjectionGapCount).toBe(0);
+    expect(result.result.estimatedFundingAmountAtomic).toBe('90000000');
+    expect(result.result.walletAction).toMatchObject({
+      args: ['2', '30000000', '1775779200'],
+      contractAddress: '0xffffffffffffffffffffffffffffffffffffffff',
+      enabled: true,
+      functionName: 'publishSubsidyEpoch',
+    });
+    expect(result.result.roles.find((role) => role.key === 'OWNER')).toEqual(
+      expect.objectContaining({
+        matchesOperator: true,
+      }),
+    );
+  });
+
+  it('blocks subsidy publication when db purchased holdings lag behind chain supply', async () => {
+    const {
+      nftHoldingRepository,
       publicClient,
       promotionChainClientService,
       purchasedNftChainRepository,
@@ -221,12 +296,13 @@ describe('AdminSettlementService', () => {
         contractAddress: '0xffffffffffffffffffffffffffffffffffffffff',
         founderNftAddress: '0x1515151515151515151515151515151515151515',
         maxSubsidyEpochs: 24,
-        purchasedSupply: 3,
+        purchasedSupply: 12,
       },
     );
+    nftHoldingRepository.countActivePurchasedHoldings.mockResolvedValue(8);
     publicClient.readContract
-      .mockResolvedValueOnce(90_000_000n)
-      .mockResolvedValueOnce(90_000_000n);
+      .mockResolvedValueOnce(360_000_000n)
+      .mockResolvedValueOnce(360_000_000n);
 
     const result = await service.previewSubsidyPublication(operator, {
       claimDeadline: '2026-04-10T00:00:00.000Z',
@@ -234,20 +310,10 @@ describe('AdminSettlementService', () => {
       subsidyAmountAtomic: '30000000',
     });
 
-    expect(result.action).toBe('admin.ops.subsidy.publish.preview');
-    expect(result.dryRun).toBe(true);
-    expect(result.result.canPublish).toBe(true);
-    expect(result.result.estimatedFundingAmountAtomic).toBe('90000000');
-    expect(result.result.walletAction).toMatchObject({
-      args: ['2', '30000000', '1775779200'],
-      contractAddress: '0xffffffffffffffffffffffffffffffffffffffff',
-      enabled: true,
-      functionName: 'publishSubsidyEpoch',
-    });
-    expect(result.result.roles.find((role) => role.key === 'OWNER')).toEqual(
-      expect.objectContaining({
-        matchesOperator: true,
-      }),
+    expect(result.result.canPublish).toBe(false);
+    expect(result.result.dbProjectionGapCount).toBe(4);
+    expect(result.result.blockers).toContain(
+      'DB purchased NFT projection is behind chain supply (8/12)',
     );
   });
 });

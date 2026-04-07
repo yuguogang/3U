@@ -22,7 +22,9 @@ export interface WeeklyEpochLifecycleSyncResult {
 
 export interface WeeklyEpochRolloverPreparationResult {
   epochId: string;
+  lotteryRolledOver?: boolean;
   nextEpochId?: string;
+  rankingRolledOver?: boolean;
   rolledOver: boolean;
   totalPromotionPoolUsdt: string;
 }
@@ -182,7 +184,14 @@ export class WeeklyEpochApplicationService {
       if (epoch.status === DbEpochStatus.CANCELLED) {
         return {
           epochId: epoch.id,
-          nextEpochId: this.readRolloverTarget(epoch.calculationRemark),
+          lotteryRolledOver: true,
+          nextEpochId: this.readLaneRolloverTarget(
+            epoch.calculationRemark,
+            'LOTTERY',
+          ),
+          rankingRolledOver:
+            this.readLaneRolloverTarget(epoch.calculationRemark, 'RANKING') !==
+            undefined,
           rolledOver: true,
           totalPromotionPoolUsdt: epoch.rolloverUsdt.toFixed(0),
         };
@@ -217,84 +226,133 @@ export class WeeklyEpochApplicationService {
           },
           tx,
         );
-      const totalPromotionPool = new Prisma.Decimal(epoch.rolloverUsdt).plus(
-        currentWeekPool,
+      const legacyCombinedRollover =
+        new Prisma.Decimal(epoch.lotteryRolloverUsdt).plus(
+          epoch.rankingRolloverUsdt,
+        ).equals(0)
+          ? new Prisma.Decimal(epoch.rolloverUsdt)
+          : new Prisma.Decimal(0);
+      const currentWeekSplit = this.weeklyEpochPolicyEngine.buildPoolSplit(
+        currentWeekPool.toFixed(0),
       );
-      const poolSplit = this.weeklyEpochPolicyEngine.buildPoolSplit(
-        totalPromotionPool.toFixed(0),
+      const legacyTotalSplit = this.weeklyEpochPolicyEngine.buildPoolSplit(
+        legacyCombinedRollover.plus(currentWeekPool).toFixed(0),
+      );
+      const preparedLotteryPool = legacyCombinedRollover.equals(0)
+        ? new Prisma.Decimal(epoch.lotteryRolloverUsdt).plus(
+            currentWeekSplit.lotteryPoolAtomic,
+          )
+        : new Prisma.Decimal(legacyTotalSplit.lotteryPoolAtomic);
+      const preparedRankingPool = legacyCombinedRollover.equals(0)
+        ? new Prisma.Decimal(epoch.rankingRolloverUsdt).plus(
+            currentWeekSplit.rankingPoolAtomic,
+          )
+        : new Prisma.Decimal(legacyTotalSplit.rankingPoolAtomic);
+      const totalPromotionPool = new Prisma.Decimal(preparedLotteryPool).plus(
+        preparedRankingPool,
+      );
+      const lotteryShouldRollover = this.weeklyEpochPolicyEngine.shouldRollover(
+        epoch.participantCount,
+      );
+      const rankingShouldRollover = false;
+      const nextProjection =
+        lotteryShouldRollover || rankingShouldRollover
+          ? this.weeklyEpochPolicyEngine.projectEpochByNo(
+              epoch.epochNo + 1,
+              EpochType.WEEKLY_PROMOTION,
+              epoch.endAt,
+            )
+          : null;
+      const nextEpoch = nextProjection
+        ? await this.weeklyEpochRepository.ensureEpoch(
+            {
+              endAt: nextProjection.endAt,
+              epochNo: nextProjection.epochNo,
+              epochType: DbEpochType.WEEKLY_PROMOTION,
+              startAt: nextProjection.startAt,
+              status: this.toDbEpochStatus(nextProjection.status),
+            },
+            tx,
+          )
+        : null;
+
+      if (nextEpoch && (lotteryShouldRollover || rankingShouldRollover)) {
+        await this.weeklyEpochRepository.incrementRolloverPools(
+          {
+            epochId: nextEpoch.id,
+            lotteryRolloverUsdt: lotteryShouldRollover
+              ? preparedLotteryPool
+              : undefined,
+            rankingRolloverUsdt: rankingShouldRollover
+              ? preparedRankingPool
+              : undefined,
+          },
+          tx,
+        );
+      }
+
+      const lotteryStatus = lotteryShouldRollover
+        ? DbEpochStatus.CANCELLED
+        : DbEpochStatus.CALCULATING;
+      const rankingStatus = rankingShouldRollover
+        ? DbEpochStatus.CANCELLED
+        : DbEpochStatus.CALCULATING;
+      const aggregateStatus =
+        lotteryStatus === DbEpochStatus.CANCELLED &&
+        rankingStatus === DbEpochStatus.CANCELLED
+          ? DbEpochStatus.CANCELLED
+          : DbEpochStatus.CALCULATING;
+      const calculationRemark = [
+        lotteryShouldRollover && nextEpoch
+          ? `LOTTERY_ROLLOVER_TO:${nextEpoch.id}`
+          : `LOTTERY_READY:${epoch.participantCount}`,
+        rankingShouldRollover && nextEpoch
+          ? `RANKING_ROLLOVER_TO:${nextEpoch.id}`
+          : 'RANKING_READY',
+      ]
+        .filter(Boolean)
+        .join('|');
+
+      await this.weeklyEpochRepository.finalizeEpochPreparation(
+        {
+          calculationRemark,
+          epochId: epoch.id,
+          lotteryPoolUsdt: preparedLotteryPool,
+          lotteryStatus,
+          rankingPoolUsdt: preparedRankingPool,
+          rankingStatus,
+          settledAt:
+            aggregateStatus === DbEpochStatus.CANCELLED ? new Date() : null,
+          snapshotAt: new Date(),
+          status: aggregateStatus,
+        },
+        tx,
       );
 
-      if (this.weeklyEpochPolicyEngine.shouldRollover(epoch.participantCount)) {
-        const nextProjection = this.weeklyEpochPolicyEngine.projectEpochByNo(
-          epoch.epochNo + 1,
-          EpochType.WEEKLY_PROMOTION,
-          epoch.endAt,
-        );
-        const nextEpoch = await this.weeklyEpochRepository.ensureEpoch(
-          {
-            endAt: nextProjection.endAt,
-            epochNo: nextProjection.epochNo,
-            epochType: DbEpochType.WEEKLY_PROMOTION,
-            startAt: nextProjection.startAt,
-            status: this.toDbEpochStatus(nextProjection.status),
-          },
-          tx,
-        );
-        await this.weeklyEpochRepository.incrementRolloverPool(
-          nextEpoch.id,
-          totalPromotionPool,
-          tx,
-        );
-        await this.weeklyEpochRepository.finalizeEpochPreparation(
-          {
-            calculationRemark: `ROLLOVER_TO:${nextEpoch.id}`,
-            epochId: epoch.id,
-            lotteryPoolUsdt: new Prisma.Decimal(epoch.lotteryPoolUsdt).plus(
-              poolSplit.lotteryPoolAtomic,
-            ),
-            rankingPoolUsdt: new Prisma.Decimal(epoch.rankingPoolUsdt).plus(
-              poolSplit.rankingPoolAtomic,
-            ),
-            settledAt: new Date(),
-            snapshotAt: new Date(),
-            status: DbEpochStatus.CANCELLED,
-          },
-          tx,
-        );
+      if (lotteryShouldRollover || rankingShouldRollover) {
         await this.auditSeam.record({
           action: 'epoch.weekly.rollover-prepared',
           targetId: epoch.id,
           targetType: 'WeeklyEpoch',
           payload: {
-            nextEpochId: nextEpoch.id,
+            lotteryRolledOver: lotteryShouldRollover,
+            nextEpochId: nextEpoch?.id,
             participantCount: epoch.participantCount,
+            rankingRolledOver: rankingShouldRollover,
             totalPromotionPoolUsdt: totalPromotionPool.toFixed(0),
           },
         });
 
         return {
           epochId: epoch.id,
-          nextEpochId: nextEpoch.id,
-          rolledOver: true,
+          lotteryRolledOver: lotteryShouldRollover,
+          nextEpochId: nextEpoch?.id,
+          rankingRolledOver: rankingShouldRollover,
+          rolledOver: lotteryShouldRollover || rankingShouldRollover,
           totalPromotionPoolUsdt: totalPromotionPool.toFixed(0),
         };
       }
 
-      await this.weeklyEpochRepository.finalizeEpochPreparation(
-        {
-          calculationRemark: `READY_FOR_PHASE6:${epoch.participantCount}`,
-          epochId: epoch.id,
-          lotteryPoolUsdt: new Prisma.Decimal(epoch.lotteryPoolUsdt).plus(
-            poolSplit.lotteryPoolAtomic,
-          ),
-          rankingPoolUsdt: new Prisma.Decimal(epoch.rankingPoolUsdt).plus(
-            poolSplit.rankingPoolAtomic,
-          ),
-          snapshotAt: new Date(),
-          status: DbEpochStatus.CALCULATING,
-        },
-        tx,
-      );
       await this.auditSeam.record({
         action: 'epoch.weekly.ready-for-draw',
         targetId: epoch.id,
@@ -307,7 +365,9 @@ export class WeeklyEpochApplicationService {
 
       return {
         epochId: epoch.id,
+        lotteryRolledOver: false,
         rolledOver: false,
+        rankingRolledOver: false,
         totalPromotionPoolUsdt: totalPromotionPool.toFixed(0),
       };
     });
@@ -393,11 +453,16 @@ export class WeeklyEpochApplicationService {
     }
   }
 
-  private readRolloverTarget(remark?: string | null): string | undefined {
-    if (!remark?.startsWith('ROLLOVER_TO:')) {
-      return undefined;
-    }
+  private readLaneRolloverTarget(
+    remark: string | null | undefined,
+    lane: 'LOTTERY' | 'RANKING',
+  ): string | undefined {
+    const marker = `${lane}_ROLLOVER_TO:`;
+    const match = (remark ?? '')
+      .split('|')
+      .map((item) => item.trim())
+      .find((item) => item.startsWith(marker));
 
-    return remark.replace('ROLLOVER_TO:', '');
+    return match ? match.replace(marker, '') : undefined;
   }
 }

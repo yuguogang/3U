@@ -230,7 +230,8 @@
       "placed": "Placed",
       "flow": "Flow",
       "live": "Live",
-      "note": "Pending members should be placed into an open LEFT or RIGHT slot inside the subtree."
+      "note": "Pending members should be placed into an open LEFT or RIGHT slot inside the subtree.",
+      "syncing": "Refreshing team and subtree data..."
     },
     "legend": {
       "title": "Placement Legend",
@@ -385,7 +386,8 @@
     "summary": {
       "totalAura": "Total Accumulated $GM",
       "fromCheckin": "From Check-In",
-      "fromReferrals": "From Referrals"
+      "fromReferrals": "From Referrals",
+      "syncing": "Refreshing rewards, weekly settlement, and claim status..."
     },
     "stats": {
       "currentEpoch": {
@@ -460,6 +462,8 @@
     },
     "sync": {
       "title": "Sync Error",
+      "refreshingTitle": "Refreshing claim status",
+      "refreshingDescription": "The system is syncing rewards, subsidies, and on-chain claim status. Please wait a moment if a transaction just completed.",
       "merkleFallbackError": "Failed to sync merkle claim result",
       "subsidyFallbackError": "Failed to sync subsidy claim result"
     },
@@ -488,7 +492,7 @@
     "eyebrow": "Goldmint / Founder Card",
     "title": "Goldmint Founder Card",
     "stats": {
-      "purchasedMinted": "Purchase stock",
+      "purchasedMinted": "Purchased Minted",
       "referralMinted": "Referral Minted"
     },
     "summary": {
@@ -508,10 +512,13 @@
       "approveButton": "Approve USDT",
       "purchasing": "Purchasing...",
       "buyButton": "Buy Now",
-      "success": "Purchase successful! Check your wallet.",
+      "success": "Purchase successful. Syncing card ownership and purchase records.",
+      "refreshingTitle": "Syncing on-chain cards and subsidy data",
+      "refreshingDescription": "After purchase, the app refreshes holdings, subsidy eligibility, and recent purchase records. Please wait a few seconds if the trade just confirmed.",
       "surfaceBadge": "Bullion grade",
       "availability": "Live offer",
       "remaining": "Available stock",
+      "minted": "Minted on-chain",
       "approvalHint": "Approval needed",
       "approvalHelp": "The current sale contract still uses approve + buyNFT. First purchase needs one approval transaction before payment.",
       "approvalReady": "Approval ready",
@@ -550,7 +557,18 @@
       "detailArchiveLabel": "Spec archive",
       "footerFront": "Bullion shield, crest core, and founder seal.",
       "footerBack": "Serial engraving, tier plate, and rights ledger.",
-      "footerDetail": "Material stack, supply split, and weekly claim spec."
+      "footerDetail": "Material stack, supply split, and weekly claim spec.",
+      "activityTitle": "Recent Purchase Records",
+      "activityDescription": "This section shows DApp-confirmed purchase deductions and card sync results so users can verify the 1000 USDT payment record.",
+      "activityBadge": "{count} items",
+      "activityEmpty": "No confirmed purchase records yet.",
+      "activityAmount": "Paid {amount} USDT",
+      "activityTokenId": "Synced token #{tokenId}",
+      "activityTokenPending": "Card is still syncing into system records",
+      "activityTxHash": "Tx hash: {txHash}",
+      "activityConfirmedAt": "Confirmed at: {date}",
+      "activityStatusConfirmed": "Confirmed",
+      "activityStatusPending": "Syncing"
     },
     "referral": {
       "sectionTitle": "Referral Milestone Card",

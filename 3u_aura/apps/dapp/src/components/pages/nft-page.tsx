@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
+  Clock3,
   CheckCircle2,
   Gem,
+  ReceiptText,
   ShieldAlert,
   ShoppingBag,
   Star,
@@ -17,6 +19,7 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
+import type { ClientPurchasedNftActivity } from "3u-aura-common";
 import { GoldmintEmblem } from "@/components/branding/goldmint-emblem";
 import { GoldmintShieldCard } from "@/components/branding/goldmint-shield-card";
 import { Button } from "@/components/ui/button";
@@ -30,9 +33,10 @@ import {
   promotionChainId,
   promotionContracts,
 } from "@/lib/promotion-contracts";
-import { NftEligibilityStatus } from "3u-aura-common";
 import {
   formatPercent,
+  formatDateTime,
+  formatTxHash,
   formatUsdtAtomic,
 } from "@/lib/promotion-format";
 import { usePromotionContractState } from "@/hooks/use-promotion-contract-state";
@@ -44,10 +48,12 @@ import {
   useSyncMyPurchasedNftMutation,
   useSyncMyReferralNftMutation,
 } from "@/queries/claims.query";
+import { useUserProfileQuery } from "@/queries/user.query";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 
 export function NftPage() {
+  const locale = useLocale();
   const t = useTranslations("Common");
   const chainId = useChainId();
   const { address } = useAccount();
@@ -61,6 +67,7 @@ export function NftPage() {
   const effectiveReadChainId = hasAutomationSession
     ? promotionChainId
     : chainId;
+  const profileQuery = useUserProfileQuery(isAuthenticated && hasHydrated);
   const contractState = usePromotionContractState(
     effectiveAddress as `0x${string}` | undefined,
   );
@@ -95,10 +102,10 @@ export function NftPage() {
   const allowance = contractState.allowance ?? BigInt(0);
   const nftBalance = contractState.nftBalance ?? BigInt(0);
   const usdtBalance = contractState.usdtBalance ?? BigInt(0);
-  const purchasedRemaining =
-    contractState.remainingSupply?.purchasedRemaining ?? BigInt(0);
+  const purchasedMinted =
+    contractState.mintedSupply?.purchasedMinted ?? BigInt(0);
   const referralMinted =
-    BigInt(70) - (contractState.remainingSupply?.referralRemaining ?? BigInt(70));
+    contractState.mintedSupply?.referralMinted ?? BigInt(0);
   const nftSaleAddress = promotionContracts.nftSaleAddress;
   const paymentTokenAddress = promotionContracts.paymentTokenAddress;
   const isCorrectReadChain = isPromotionChain(effectiveReadChainId);
@@ -107,10 +114,10 @@ export function NftPage() {
   const eligibilityStatusLabel = eligibility?.status
     ? t(`shared.promotion.eligibilityStatus.${eligibility.status}`)
     : t("shared.promotion.eligibilityStatus.LOCKED");
-  const canMintReferralNft =
-    eligibility?.status === NftEligibilityStatus.APPROVED ||
-    eligibility?.status === NftEligibilityStatus.EXPIRED ||
-    eligibility?.status === NftEligibilityStatus.SIGNED;
+  const claimableReferralMintCount = eligibility?.claimableMintCount ?? 0;
+  const canMintReferralNft = claimableReferralMintCount > 0;
+  const recentPurchasedNftActivity =
+    profileQuery.data?.recentPurchasedNftActivity ?? [];
   
   const checkinProgress = eligibility
     ? formatPercent(
@@ -127,15 +134,21 @@ export function NftPage() {
 
   const isApprovalSatisfied =
     allowance >= purchasePrice && purchasePrice > BigInt(0);
+  const isPurchasedSyncing =
+    syncPurchasedNftMutation.isPending ||
+    profileQuery.isFetching ||
+    contractState.isContractStateRefreshing;
   const {
     refetchAllowance,
     refetchNftBalance,
-    refetchRemainingSupply,
+    refetchMintedSupply,
     refetchUsdtBalance,
   } =
     contractState;
   const isApproveConfirmed = approveReceipt.isSuccess;
   const isBuyConfirmed = buyReceipt.isSuccess;
+  const isPurchasedSummaryLoading =
+    !hasHydrated || profileQuery.isLoading || contractState.isContractStateLoading;
   const shieldCardCopy = {
     frontRibbon: t("nft.purchased.frontRibbon"),
     frontSubtitle: t("nft.purchased.frontSubtitle"),
@@ -184,7 +197,7 @@ export function NftPage() {
         : Promise.resolve(),
       refetchAllowance(),
       refetchNftBalance(),
-      refetchRemainingSupply(),
+      refetchMintedSupply(),
       refetchUsdtBalance(),
     ]);
   }, [
@@ -192,7 +205,7 @@ export function NftPage() {
     isBuyConfirmed,
     refetchAllowance,
     refetchNftBalance,
-    refetchRemainingSupply,
+    refetchMintedSupply,
     refetchUsdtBalance,
     syncPurchasedNftMutation,
   ]);
@@ -207,13 +220,13 @@ export function NftPage() {
         ? syncReferralNftMutation.mutateAsync({ txHash: referralMintHash })
         : Promise.resolve(),
       refetchNftBalance(),
-      refetchRemainingSupply(),
+      refetchMintedSupply(),
     ]);
   }, [
     referralMintHash,
     referralMintReceipt.isSuccess,
     refetchNftBalance,
-    refetchRemainingSupply,
+    refetchMintedSupply,
     syncReferralNftMutation,
   ]);
 
@@ -269,13 +282,12 @@ export function NftPage() {
           <div className="grid grid-cols-2 gap-3">
             <StatCard
               label={t("nft.stats.purchasedMinted")}
-              value={purchasedRemaining.toString()}
+              value={purchasedMinted.toString()}
               icon={<ShoppingBag className="w-5 h-5" />}
             />
             <StatCard
               label={t("nft.stats.referralMinted")}
               value={referralMinted.toString()}
-              unit="/ 70"
               icon={<Gem className="w-5 h-5" />}
             />
           </div>
@@ -287,13 +299,17 @@ export function NftPage() {
             <GlassCard className="p-3">
               <p className="mb-1 text-xs text-[var(--shell-text-soft)]">{t("nft.summary.owned")}</p>
               <p className="text-2xl font-bold text-[var(--shell-title)] font-mono">
-                {nftBalance.toString()}
+                {isPurchasedSummaryLoading
+                  ? t("shared.status.loading")
+                  : nftBalance.toString()}
               </p>
             </GlassCard>
             <GlassCard className="p-3">
               <p className="mb-1 text-xs text-[var(--shell-text-soft)]">{t("nft.summary.claimable")}</p>
               <p className="goldmint-heading font-brand text-2xl font-semibold">
-                {canMintReferralNft ? "1" : "0"}
+                {isPurchasedSummaryLoading
+                  ? t("shared.status.loading")
+                  : claimableReferralMintCount.toString()}
               </p>
             </GlassCard>
           </div>
@@ -319,6 +335,18 @@ export function NftPage() {
           </h2>
           <div className="goldmint-bronze-panel goldmint-outline-card overflow-hidden rounded-[2.15rem] p-4 sm:p-5">
             <div className="grid gap-4">
+              {isPurchasedSyncing ? (
+                <div className="rounded-2xl border border-aura-primary/20 bg-aura-primary/8 px-4 py-3 text-xs text-[var(--shell-copy)]">
+                  <div className="flex items-center gap-2 font-medium text-aura-primary">
+                    <Clock3 className="h-4 w-4" />
+                    <span>{t("nft.purchased.refreshingTitle")}</span>
+                  </div>
+                  <p className="mt-1 leading-relaxed text-[var(--shell-text-soft)]">
+                    {t("nft.purchased.refreshingDescription")}
+                  </p>
+                </div>
+              ) : null}
+
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#d9bb7a]">
@@ -333,10 +361,10 @@ export function NftPage() {
                 </div>
                 <div className="goldmint-etched-plaque shrink-0 rounded-[1.15rem] px-3 py-2 text-right">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8a5a22]">
-                    {t("nft.purchased.remaining")}
+                    {t("nft.purchased.minted")}
                   </p>
                   <p className="mt-1 text-lg font-mono font-semibold text-[#352315]">
-                    {purchasedRemaining.toString()}
+                    {purchasedMinted.toString()}
                   </p>
                 </div>
               </div>
@@ -414,7 +442,9 @@ export function NftPage() {
                       {t("nft.purchased.yourBalance")}
                     </p>
                     <p className="mt-2 text-lg font-mono font-semibold text-[var(--shell-title)]">
-                      {formatUsdtAtomic(usdtBalance)} USDT
+                      {isPurchasedSummaryLoading
+                        ? t("shared.status.loading")
+                        : `${formatUsdtAtomic(usdtBalance)} USDT`}
                     </p>
                   </div>
                 </div>
@@ -423,10 +453,12 @@ export function NftPage() {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--shell-text-soft)]">
-                        {t("nft.purchased.remaining")}
+                        {t("nft.purchased.minted")}
                       </p>
                       <p className="mt-2 text-lg font-mono font-semibold text-[var(--shell-title)]">
-                        {purchasedRemaining.toString()}
+                        {isPurchasedSummaryLoading
+                          ? t("shared.status.loading")
+                          : purchasedMinted.toString()}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 rounded-full border border-[var(--shell-border)] bg-[var(--shell-surface-strong)] px-3 py-1.5 text-[11px] font-medium text-[var(--shell-copy)]">
@@ -495,6 +527,79 @@ export function NftPage() {
                     {t("nft.purchased.success")}
                   </div>
                 )}
+
+                <div className="mt-4 rounded-[1.6rem] border border-[var(--shell-border)] bg-[rgba(255,250,239,0.84)] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--shell-text-soft)]">
+                        {t("nft.purchased.activityTitle")}
+                      </p>
+                      <p className="mt-2 text-xs leading-relaxed text-[var(--shell-text-soft)]">
+                        {t("nft.purchased.activityDescription")}
+                      </p>
+                    </div>
+                    <div className="goldmint-pill rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--shell-badge-fg)]">
+                      {t("nft.purchased.activityBadge", {
+                        count: recentPurchasedNftActivity.length,
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    {profileQuery.isLoading ? (
+                      <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--shell-surface-strong)] px-3 py-3 text-xs text-[var(--shell-text-soft)]">
+                        {t("shared.status.loading")}
+                      </div>
+                    ) : recentPurchasedNftActivity.length === 0 ? (
+                      <div className="rounded-2xl border border-[var(--shell-border)] bg-[var(--shell-surface-strong)] px-3 py-3 text-xs text-[var(--shell-text-soft)]">
+                        {t("nft.purchased.activityEmpty")}
+                      </div>
+                    ) : (
+                      recentPurchasedNftActivity.map((activity: ClientPurchasedNftActivity) => (
+                        <div
+                          key={activity.paymentReceiptId}
+                          className="rounded-2xl border border-[var(--shell-border)] bg-[var(--shell-surface-strong)] px-3 py-3"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 text-[11px] font-semibold text-[var(--shell-title)]">
+                                <ReceiptText className="h-4 w-4 text-aura-primary" />
+                                <span>{t("nft.purchased.activityAmount", {
+                                  amount: formatUsdtAtomic(activity.amount),
+                                })}</span>
+                              </div>
+                              <p className="mt-1 text-[11px] text-[var(--shell-text-soft)]">
+                                {activity.tokenId
+                                  ? t("nft.purchased.activityTokenId", {
+                                      tokenId: activity.tokenId,
+                                    })
+                                  : t("nft.purchased.activityTokenPending")}
+                              </p>
+                            </div>
+                            <span className="rounded-full border border-[var(--shell-border)] px-2.5 py-1 text-[10px] font-semibold text-[var(--shell-text-soft)]">
+                              {t(
+                                activity.status === "CONFIRMED"
+                                  ? "nft.purchased.activityStatusConfirmed"
+                                  : "nft.purchased.activityStatusPending",
+                              )}
+                            </span>
+                          </div>
+                          <div className="mt-3 grid gap-1 text-[11px] text-[var(--shell-text-soft)]">
+                            <p>{t("nft.purchased.activityTxHash", {
+                              txHash: formatTxHash(activity.txHash),
+                            })}</p>
+                            <p>{t("nft.purchased.activityConfirmedAt", {
+                              date: formatDateTime(
+                                activity.confirmedAt ?? activity.mintedAt,
+                                locale,
+                              ),
+                            })}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

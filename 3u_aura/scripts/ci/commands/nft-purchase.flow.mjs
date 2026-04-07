@@ -38,13 +38,13 @@ async function run() {
   });
   console.log(`   NFT Price: ${priceResult}`);
 
-  // Check remaining
-  const remaining = await publicClient.readContract({
+  // Check minted supply state
+  const mintedStats = await publicClient.readContract({
     abi: nftSaleAbi,
     address: manifest.contracts.nftSaleAddress,
-    functionName: 'getRemainingNFT',
+    functionName: 'getNFTMintStats',
   });
-  console.log(`   Remaining: purchased=${remaining[0]}, referral=${remaining[1]}, total=${remaining[2]}`);
+  console.log(`   Minted stats: purchased=${mintedStats[0]}, referral=${mintedStats[1]}, total=${mintedStats[2]}`);
 
   // Mint USDT to userC
   console.log('4. Minting USDT to userC...');

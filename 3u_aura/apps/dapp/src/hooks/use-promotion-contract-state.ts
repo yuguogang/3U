@@ -12,7 +12,7 @@ const promotionRpcUrl =
   "http://127.0.0.1:8545";
 
 const PURCHASE_PRICE_SELECTOR = "0xa7c715e3";
-const GET_REMAINING_NFT_SELECTOR = "0x8f97e485";
+const GET_NFT_MINT_STATS_SELECTOR = "0xd2ee286e";
 const REFERRAL_NONCES_SELECTOR = "0x14346d07";
 const ALLOWANCE_SELECTOR = "0xdd62ed3e";
 const BALANCE_OF_SELECTOR = "0x70a08231";
@@ -48,7 +48,7 @@ function decodeUint256Tuple(rawResult: string, size: number) {
   );
 }
 
-function decodeRemainingSupply(rawResult: string) {
+function decodeMintedSupply(rawResult: string) {
   const values = decodeUint256Tuple(rawResult, 3);
   return [values[0], values[1], values[2]] as const;
 }
@@ -114,19 +114,19 @@ export function usePromotionContractState(accountAddress?: EvmAddress) {
     ],
   });
 
-  const remainingSupplyQuery = useQuery({
+  const mintedSupplyQuery = useQuery({
     enabled: Boolean(promotionContracts.nftSaleAddress),
     queryFn: async () =>
-      decodeRemainingSupply(
+      decodeMintedSupply(
         await ethCall(
           promotionContracts.nftSaleAddress ?? ZERO_ADDRESS,
-          GET_REMAINING_NFT_SELECTOR,
+          GET_NFT_MINT_STATS_SELECTOR,
         ),
       ),
     queryKey: [
       "promotion",
       "contracts",
-      "remaining-supply",
+      "minted-supply",
       promotionContracts.nftSaleAddress,
       promotionRpcUrl,
     ],
@@ -220,24 +220,38 @@ export function usePromotionContractState(accountAddress?: EvmAddress) {
     ],
   });
 
-  const remainingSupply = remainingSupplyQuery.data;
+  const mintedSupply = mintedSupplyQuery.data;
+  const isContractStateLoading =
+    purchasePriceQuery.isLoading ||
+    mintedSupplyQuery.isLoading ||
+    allowanceQuery.isLoading ||
+    usdtBalanceQuery.isLoading ||
+    nftBalanceQuery.isLoading;
+  const isContractStateRefreshing =
+    purchasePriceQuery.isFetching ||
+    mintedSupplyQuery.isFetching ||
+    allowanceQuery.isFetching ||
+    usdtBalanceQuery.isFetching ||
+    nftBalanceQuery.isFetching;
 
   return {
     allowance: allowanceQuery.data,
     hasNftSaleConfig: Boolean(promotionContracts.nftSaleAddress),
     hasPaymentTokenConfig: Boolean(promotionContracts.paymentTokenAddress),
+    isContractStateLoading,
+    isContractStateRefreshing,
     purchasePrice: purchasePriceQuery.data,
     referralNonce: referralNonceQuery.data,
     refetchAllowance: allowanceQuery.refetch,
     refetchNftBalance: nftBalanceQuery.refetch,
-    refetchRemainingSupply: remainingSupplyQuery.refetch,
+    refetchMintedSupply: mintedSupplyQuery.refetch,
     refetchUsdtBalance: usdtBalanceQuery.refetch,
     nftBalance: nftBalanceQuery.data,
-    remainingSupply: remainingSupply
+    mintedSupply: mintedSupply
       ? {
-          purchasedRemaining: remainingSupply[0],
-          referralRemaining: remainingSupply[1],
-          totalRemaining: remainingSupply[2],
+          purchasedMinted: mintedSupply[0],
+          referralMinted: mintedSupply[1],
+          totalMinted: mintedSupply[2],
         }
       : undefined,
     usdtBalance: usdtBalanceQuery.data,

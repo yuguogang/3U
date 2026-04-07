@@ -1,57 +1,30 @@
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import {
-  approveUsdt,
   claimMerkleReward,
   createTestClientForFork,
   depositMerkleRewards,
   isMerkleClaimed,
   mintUsdt,
+  parseEther,
   publishMerkleRoot,
+  setBalance,
 } from './contracts.mjs';
 import { loadWalletFixture, loadManifest } from './manifest.mjs';
 import {
   adminEpochSync,
+  executeRewardPublication,
+  executeWeeklySettlementDraft,
+  executeWeeklySettlementPublish,
   getAccessToken,
+  previewRewardPublication,
   getMyClaims,
+  revealLotteryResult,
   syncClaim,
 } from './server.mjs';
+import { addDays, seedWeeklyEpochScenario } from './weekly-fixture.mjs';
 import { cleanupHarness, prepareHarness } from './harness.mjs';
-
-const execFileAsync = promisify(execFile);
 
 const ENV = 'fork-anvil';
 const TARGET_EPOCH_NO = 1;
-
-function addDays(isoString, days) {
-  const date = new Date(isoString);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString();
-}
-
-async function runNodeScript(args) {
-  const { stdout, stderr } = await execFileAsync('node', args, {
-    cwd: process.cwd(),
-    env: process.env,
-  });
-
-  if (stderr?.trim()) {
-    console.log(stderr.trim());
-  }
-
-  return stdout.trim();
-}
-
-async function resolveWeeklyEpochId(epochNo) {
-  const stdout = await runNodeScript([
-    'scripts/uat/resolve-weekly-fork-epoch.mjs',
-    '--env',
-    ENV,
-    '--epoch-no',
-    String(epochNo),
-  ]);
-  return JSON.parse(stdout);
-}
 
 function toRewardTypeCode(claimType) {
   if (claimType === 'MERKLE_LOTTERY') {
@@ -110,119 +83,143 @@ export async function runWeeklyMerkleClaimFlow({
   const admin = loadWalletFixture('admin', ENV);
   const userA = loadWalletFixture('userA', ENV);
   const userB = loadWalletFixture('userB', ENV);
+  const userC = loadWalletFixture('userC', ENV);
+  const referrer = loadWalletFixture('referrer', ENV);
   const manifest = loadManifest(ENV);
   const testClient = createTestClientForFork(ENV);
 
-  console.log(`3. Candidate claimants: ${userA.address}, ${userB.address}`);
+  console.log(
+    `3. Candidate claimants: ${userA.address}, ${userB.address}, ${userC.address}, ${referrer.address}, ${admin.address}`,
+  );
   console.log(`   Root publisher / owner: ${admin.address}`);
   console.log(`   Target claim type: ${claimType}`);
 
   console.log('4. Logging in admin and candidate claimants...');
-  const [adminLogin, userALogin, userBLogin] = await Promise.all([
+  const [adminLogin, userALogin, userBLogin, userCLogin, referrerLogin] = await Promise.all([
     getAccessToken(admin.address, admin.privateKey, ENV),
     getAccessToken(userA.address, userA.privateKey, ENV),
     getAccessToken(userB.address, userB.privateKey, ENV),
+    getAccessToken(userC.address, userC.privateKey, ENV),
+    getAccessToken(referrer.address, referrer.privateKey, ENV),
   ]);
 
   const promotionStartAt = manifest.promotion.startAt;
   const targetStartAt = new Date(promotionStartAt).toISOString();
   const targetEndAt = addDays(targetStartAt, 7);
   const referenceAt = addDays(targetEndAt, 1);
+  const selectedParticipantCount =
+    claimType === 'MERKLE_LOTTERY' ? 5 : 0;
+  const syntheticParticipantCount =
+    claimType === 'MERKLE_LOTTERY' ? 0 : 12;
 
   console.log('5. Seeding weekly fixture data...');
-  const seededFixture = JSON.parse(
-    await runNodeScript([
-      'scripts/uat/seed-weekly-fork-fixtures.mjs',
-      '--env',
-      ENV,
-      '--observer-wallet',
-      userB.address,
-      '--reference-at',
-      referenceAt,
-      '--target-epoch-no',
-      String(TARGET_EPOCH_NO),
-      '--target-start-at',
-      targetStartAt,
-      '--target-end-at',
-      targetEndAt,
-    ]),
-  );
+  const seededFixture = await seedWeeklyEpochScenario({
+    envName: ENV,
+    dailyCheckinTimesForSelectedParticipants:
+      claimType === 'MERKLE_LOTTERY' ? 3 : 1,
+    epochNo: TARGET_EPOCH_NO,
+    observerUserId: userBLogin.userId,
+    observerWallet: userB.address,
+    referenceAt,
+    selectedParticipantCount,
+    syntheticParticipantCount,
+  });
   console.log(`   Seeded fixture: ${JSON.stringify(seededFixture)}`);
 
   console.log('6. Running admin epoch sync to materialize weekly epoch...');
   const epochSync = await adminEpochSync(adminLogin.accessToken, referenceAt, ENV);
   console.log(`   Epoch sync result: ${JSON.stringify(epochSync)}`);
 
-  console.log('7. Resolving created weekly epoch...');
-  const epoch = await resolveWeeklyEpochId(TARGET_EPOCH_NO);
-  console.log(`   Weekly epoch: ${JSON.stringify(epoch)}`);
-
-  console.log('8. Materializing weekly draft rewards and merkle claims...');
-  const materialized = JSON.parse(
-    await runNodeScript([
-      'scripts/uat/materialize-weekly-fork-draft.mjs',
-      '--env',
-      ENV,
-      '--epoch-id',
-      epoch.id,
-    ]),
+  console.log('7. Materializing weekly draft rewards and merkle claims...');
+  const materialized = await executeWeeklySettlementDraft(
+    adminLogin.accessToken,
+    TARGET_EPOCH_NO,
+    ENV,
   );
   console.log(`   Materialized draft: ${JSON.stringify(materialized)}`);
-  if (!materialized.merkle?.claimCount) {
+  if (!materialized.result?.merkle?.claimCount) {
     throw new Error('Expected materialized weekly draft to create merkle claims');
   }
 
-  console.log('9. Publishing weekly claims in DB...');
-  const published = JSON.parse(
-    await runNodeScript([
-      'scripts/uat/publish-weekly-fork-claims.mjs',
-      '--env',
-      ENV,
-      '--epoch-id',
-      epoch.id,
-      '--reward-json-uri',
-      rewardJsonUri,
-    ]),
+  console.log('8. Publishing weekly claims in DB...');
+  const published = await executeWeeklySettlementPublish(
+    adminLogin.accessToken,
+    TARGET_EPOCH_NO,
+    ENV,
   );
   console.log(`   Published claims: ${JSON.stringify(published)}`);
 
-  console.log('10. Funding merkle distributor and publishing root on-chain...');
-  await mintUsdt(admin.address, BigInt(published.totalAmount), ENV);
-  await approveUsdt(
-    admin,
-    manifest.contracts.merkleDistributorAddress,
-    BigInt(published.totalAmount),
+  console.log('9. Previewing publication before funding...');
+  const preview = await previewRewardPublication(
+    adminLogin.accessToken,
+    TARGET_EPOCH_NO,
     ENV,
   );
-  const depositTx = await depositMerkleRewards(admin, BigInt(published.totalAmount), ENV);
-  const rootTx = await publishMerkleRoot(admin, TARGET_EPOCH_NO, published.merkleRoot, ENV);
+  console.log(`   Publication preview: ${JSON.stringify(preview)}`);
+  if (!preview.result?.draftMerkleRoot) {
+    throw new Error('Expected reward publication preview to include draft merkle root');
+  }
+
+  console.log('10. Funding merkle distributor and publishing root on-chain...');
+  await mintUsdt(
+    manifest.roles.rewardFunderAddress,
+    BigInt(preview.result.totalRewardAmountAtomic),
+    ENV,
+  );
+  await setBalance(manifest.roles.rewardFunderAddress, parseEther('1'), ENV);
+  const depositTx = await depositMerkleRewards(
+    admin,
+    BigInt(preview.result.totalRewardAmountAtomic),
+    ENV,
+  );
+  const rootTx = await publishMerkleRoot(
+    admin,
+    TARGET_EPOCH_NO,
+    preview.result.draftMerkleRoot,
+    ENV,
+  );
   console.log(`   Deposit tx: ${depositTx}`);
   console.log(`   Root publish tx: ${rootTx}`);
-  const activated = JSON.parse(
-    await runNodeScript([
-      'scripts/uat/activate-weekly-fork-claims.mjs',
-      '--env',
-      ENV,
-      '--epoch-id',
-      epoch.id,
-      '--merkle-root',
-      published.merkleRoot,
-      '--reward-json-uri',
-      rewardJsonUri,
-    ]),
+  const activated = await executeRewardPublication(
+    adminLogin.accessToken,
+    TARGET_EPOCH_NO,
+    rewardJsonUri,
+    ENV,
   );
   console.log(`   Activated claims: ${JSON.stringify(activated)}`);
+
+  if (claimType === 'MERKLE_LOTTERY') {
+    console.log('10b. Revealing lottery outcomes for candidate participants...');
+    const revealResponses = await Promise.all(
+      [adminLogin, referrerLogin, userALogin, userBLogin, userCLogin].map(
+        async (login) => ({
+          userId: login.userId,
+          result: await revealLotteryResult(login.accessToken, seededFixture.epochId, ENV),
+        }),
+      ),
+    );
+    console.log(`   Reveal responses: ${JSON.stringify(revealResponses)}`);
+  }
 
   console.log('11. Resolving claimant with target merkle claim from server...');
   const claimantResolution = await resolveClaimantForType(
     {
+      admin: adminLogin,
+      referrer: referrerLogin,
       userA: userALogin,
       userB: userBLogin,
+      userC: userCLogin,
     },
     claimType,
   );
-  const claimantWallet =
-    claimantResolution.walletName === 'userA' ? userA : userB;
+  const walletFixturesByName = {
+    admin,
+    referrer,
+    userA,
+    userB,
+    userC,
+  };
+  const claimantWallet = walletFixturesByName[claimantResolution.walletName];
   const userLogin = claimantResolution.login;
   const claimsBefore = claimantResolution.claimsView;
   const merkleClaim = claimantResolution.claim;

@@ -15,7 +15,6 @@ import { MobileLayout } from "@/components/layout/mobile-layout";
 import { GlassCard } from "@/components/ui-custom/glass-card";
 import {
   TeamTreePendingSummary,
-  TeamTreePlacementLegend,
   TeamTreeView,
   PendingMemberCard,
 } from "@/components/team";
@@ -159,6 +158,8 @@ export function TeamPage() {
       shareLink,
     )}`;
   }, [shareLink]);
+  const isProfileLoading = !hasHydrated || profileQuery.isLoading;
+  const isTeamRefreshing = profileQuery.isFetching || treeSnapshotQuery.isFetching;
 
   useEffect(() => {
     if (!referralCodeFromUrl || typeof window === "undefined") {
@@ -343,49 +344,47 @@ export function TeamPage() {
               rootLabel={currentTreeLabel}
             />
 
-            <div className="grid grid-cols-2 gap-3">
-              <GlassCard className="p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-green-400" />
-                  <span className="text-xs text-[var(--shell-text-soft)]">{t("team.overview.leftLeg")}</span>
-                </div>
-                <p className="text-lg font-semibold text-[var(--shell-title)] font-mono">
-                  {profile ? formatUsdtAtomic(profile.leftTeamVolume) : "0"}
-                </p>
-                <p className="text-xs text-[var(--shell-text-soft)]">{t("team.overview.usdtVolume")}</p>
-              </GlassCard>
-              <GlassCard className="p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingDown className="w-4 h-4 text-blue-400" />
-                  <span className="text-xs text-[var(--shell-text-soft)]">{t("team.overview.rightLeg")}</span>
-                </div>
-                <p className="text-lg font-semibold text-[var(--shell-title)] font-mono">
-                  {profile ? formatUsdtAtomic(profile.rightTeamVolume) : "0"}
-                </p>
-                <p className="text-xs text-[var(--shell-text-soft)]">{t("team.overview.usdtVolume")}</p>
-              </GlassCard>
-            </div>
-
             <GlassCard variant="highlight" className="p-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-sm text-[var(--shell-text-soft)]">{t("team.overview.smallLegVolume")}</p>
                   <p className="text-2xl font-bold text-[var(--shell-title)] font-mono">
-                    {profile ? formatUsdtAtomic(profile.smallLegVolume) : "0"} <span className="text-xs text-[var(--shell-text-soft)] font-sans">{t("shared.units.usdt")}</span>
+                    {isProfileLoading
+                      ? t("shared.status.loading")
+                      : profile
+                        ? formatUsdtAtomic(profile.smallLegVolume)
+                        : "0"} <span className="text-xs text-[var(--shell-text-soft)] font-sans">{t("shared.units.usdt")}</span>
                   </p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-aura-primary/10 flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-aura-primary" />
                 </div>
               </div>
+              {isTeamRefreshing ? (
+                <div className="mb-4 rounded-2xl border border-aura-primary/20 bg-aura-primary/8 px-3 py-2 text-xs text-[var(--shell-copy)]">
+                  {t("team.summary.syncing")}
+                </div>
+              ) : null}
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--shell-border)]">
                 <div>
                   <p className="text-xs text-[var(--shell-text-soft)]">{t("team.overview.leftLeg")}</p>
-                  <p className="text-lg font-semibold text-[var(--shell-title)]">{profile ? formatUsdtAtomic(profile.leftTeamVolume) : "0"}</p>
+                  <p className="text-lg font-semibold text-[var(--shell-title)]">
+                    {isProfileLoading
+                      ? t("shared.status.loading")
+                      : profile
+                        ? formatUsdtAtomic(profile.leftTeamVolume)
+                        : "0"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-[var(--shell-text-soft)]">{t("team.overview.rightLeg")}</p>
-                  <p className="text-lg font-semibold text-[var(--shell-title)]">{profile ? formatUsdtAtomic(profile.rightTeamVolume) : "0"}</p>
+                  <p className="text-lg font-semibold text-[var(--shell-title)]">
+                    {isProfileLoading
+                      ? t("shared.status.loading")
+                      : profile
+                        ? formatUsdtAtomic(profile.rightTeamVolume)
+                        : "0"}
+                  </p>
                 </div>
               </div>
             </GlassCard>
@@ -426,8 +425,6 @@ export function TeamPage() {
             </div>
 
             <div className="space-y-3">
-              <TeamTreePlacementLegend />
-
               <GlassCard className="p-4">
               <div className="grid grid-cols-3 gap-3 border-b border-[var(--shell-border)] pb-4">
                 <div>

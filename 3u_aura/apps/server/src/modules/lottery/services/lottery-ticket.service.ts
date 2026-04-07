@@ -390,6 +390,22 @@ export class LotteryTicketService {
       };
     }
 
+    if (epoch.lotteryStatus === DbEpochStatus.CANCELLED) {
+      return {
+        canReveal: false,
+        epochId: epoch.id,
+        epochNo: epoch.epochNo,
+        epochStatus: epoch.status as EpochStatus,
+        isEligible: ticket.isEligible,
+        isParticipating: true,
+        isRevealed: true,
+        participatedAt: ticket.participatedAt ?? undefined,
+        resultStatus: 'ROLLED_OVER',
+        revealedAt: ticket.revealedAt ?? undefined,
+        ticketCount: ticket.ticketCount,
+      };
+    }
+
     if (
       !ticket.isResultRevealed &&
       this.isRevealableEpochStatus(epoch.status)
@@ -404,22 +420,6 @@ export class LotteryTicketService {
         isRevealed: false,
         participatedAt: ticket.participatedAt ?? undefined,
         resultStatus: 'PENDING',
-        ticketCount: ticket.ticketCount,
-      };
-    }
-
-    if (epoch.status === DbEpochStatus.CANCELLED) {
-      return {
-        canReveal: false,
-        epochId: epoch.id,
-        epochNo: epoch.epochNo,
-        epochStatus: epoch.status as EpochStatus,
-        isEligible: ticket.isEligible,
-        isParticipating: true,
-        isRevealed: ticket.isResultRevealed,
-        participatedAt: ticket.participatedAt ?? undefined,
-        resultStatus: 'ROLLED_OVER',
-        revealedAt: ticket.revealedAt ?? undefined,
         ticketCount: ticket.ticketCount,
       };
     }

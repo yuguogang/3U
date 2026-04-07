@@ -3,6 +3,7 @@ import type {
   PromotionClaimsView,
   PromotionClaimSyncRequest,
   PromotionClaimSyncResult,
+  PromotionPurchasedNftRefreshResult,
   PromotionPurchasedNftSyncRequest,
   PromotionPurchasedNftSyncResult,
   PromotionReferralNftSyncRequest,
@@ -27,6 +28,15 @@ export async function apiSyncMyPurchasedNft(
     "/api/v1/claims/purchased-nft/sync",
     {
       body: input,
+      method: "POST",
+    },
+  );
+}
+
+export async function apiRefreshMyPurchasedNft() {
+  return fetchClient<PromotionPurchasedNftRefreshResult>(
+    "/api/v1/claims/purchased-nft/refresh",
+    {
       method: "POST",
     },
   );

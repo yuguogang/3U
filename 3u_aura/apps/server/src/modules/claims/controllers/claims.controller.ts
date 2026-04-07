@@ -1,7 +1,7 @@
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { User } from '@/db';
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common';
 import {
   ClaimSyncRequestDto,
   PurchasedNftSyncRequestDto,
@@ -15,6 +15,8 @@ import { ReferralNftSyncService } from '../services/referral-nft-sync.service';
 @Controller('claims')
 @UseGuards(JwtAuthGuard)
 export class ClaimsController {
+  private readonly logger = new Logger(ClaimsController.name);
+
   constructor(
     private readonly claimsReadService: ClaimsReadService,
     private readonly claimSyncService: ClaimSyncService,
@@ -23,7 +25,15 @@ export class ClaimsController {
   ) {}
 
   @Get('me')
-  listMyClaims(@CurrentUser() user: User) {
+  async listMyClaims(@CurrentUser() user: User) {
+    try {
+      await this.purchasedNftSyncService.syncStateForUser(user);
+    } catch (error) {
+      this.logger.warn(
+        `Best-effort purchased NFT refresh failed for ${user.id}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+
     return this.claimsReadService.listClaimsForUser(user);
   }
 
@@ -38,6 +48,11 @@ export class ClaimsController {
     @Body() command: PurchasedNftSyncRequestDto,
   ) {
     return this.purchasedNftSyncService.syncPurchaseForUser(user, command.txHash);
+  }
+
+  @Post('purchased-nft/refresh')
+  refreshMyPurchasedNft(@CurrentUser() user: User) {
+    return this.purchasedNftSyncService.syncStateForUser(user);
   }
 
   @Post('referral-nft/sync')

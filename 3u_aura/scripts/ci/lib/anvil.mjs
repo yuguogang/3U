@@ -13,6 +13,7 @@ import {
 const execAsync = promisify(exec);
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+const NODE_BIN = JSON.stringify(process.execPath);
 
 export async function startAnvil(envName = 'fork-anvil') {
   const manifestPath = path.join(REPO_ROOT, 'config', 'promotion-envs', envName, 'manifest.json');
@@ -26,7 +27,7 @@ export async function startAnvil(envName = 'fork-anvil') {
 
   console.log('REPO_ROOT:', REPO_ROOT);
   const { stdout } = await execAsync(
-    `node scripts/uat/start-weekly-fork.mjs --env ${envName}`,
+    `${NODE_BIN} scripts/uat/start-weekly-fork.mjs --env ${envName}`,
     { cwd: REPO_ROOT },
   );
   console.log(`✓ Anvil started: ${stdout.trim()}`);
@@ -158,7 +159,7 @@ export async function ensureFreshContracts(envName = 'fork-anvil') {
 export async function stopAnvil(envName = 'fork-anvil') {
   try {
     const { stdout } = await execAsync(
-      `node scripts/uat/stop-weekly-fork.mjs --env ${envName}`,
+      `${NODE_BIN} scripts/uat/stop-weekly-fork.mjs --env ${envName}`,
       { cwd: REPO_ROOT },
     );
     console.log(`✓ Anvil stopped: ${stdout.trim()}`);
@@ -195,7 +196,7 @@ async function isAnvilReady(rpcUrl, chainId) {
 
 export async function resetDb(envName = 'fork-anvil') {
   const { stdout } = await execAsync(
-    `node scripts/uat/reset-weekly-fork-db.mjs --env ${envName}`,
+    `${NODE_BIN} scripts/uat/reset-weekly-fork-db.mjs --env ${envName}`,
     { cwd: REPO_ROOT },
   );
   console.log(`✓ DB reset: ${stdout.trim()}`);
@@ -203,7 +204,7 @@ export async function resetDb(envName = 'fork-anvil') {
 
 export async function advanceTime(seconds, envName = 'fork-anvil') {
   const { stdout } = await execAsync(
-    `node scripts/uat/advance-weekly-fork-time.mjs --env ${envName} --seconds ${seconds}`,
+    `${NODE_BIN} scripts/uat/advance-weekly-fork-time.mjs --env ${envName} --seconds ${seconds}`,
     { cwd: REPO_ROOT },
   );
   console.log(`✓ Time advanced: ${stdout.trim()}`);

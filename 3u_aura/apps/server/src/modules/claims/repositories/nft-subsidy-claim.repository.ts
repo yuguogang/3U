@@ -7,6 +7,17 @@ type DbExecutor = DbService | Prisma.TransactionClient;
 export class NftSubsidyClaimRepository {
   constructor(private readonly db: DbService) {}
 
+  async countProjectedClaimsForEpoch(
+    epochId: string,
+    executor: DbExecutor = this.db,
+  ): Promise<number> {
+    return executor.nftSubsidyClaim.count({
+      where: {
+        epochId,
+      },
+    });
+  }
+
   async listClaimsForUser(
     userId: string,
     options: {

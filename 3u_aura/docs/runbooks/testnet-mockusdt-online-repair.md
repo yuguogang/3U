@@ -185,6 +185,64 @@ docker exec 3u-aura-testnet-mockusdt-postgres \
   -c "ALTER USER postgres WITH PASSWORD 'change-me';"
 ```
 
+## Step 4.6: Repair Purchased NFT Projection Gaps Before Subsidy Publish
+
+If users report:
+
+- bought cards missing from DApp
+- some purchased NFTs showing no `30 USDT` subsidy
+- chain purchased supply higher than DB projected purchased holdings
+
+run the purchased reconcile helper before publishing subsidy or sending claim
+notifications.
+
+Single wallet repair:
+
+```bash
+cd /opt/3u-aura/current
+node scripts/uat/reconcile-weekly-fork-purchased-nft-state.mjs \
+  --env testnet-mockusdt \
+  --wallet 0x498a11A96417c56Ac74e7097FA5c916287ec3C91
+```
+
+Batch repair for users who already have NFT purchase receipts or were marked as
+having purchased NFTs:
+
+```bash
+cd /opt/3u-aura/current
+node scripts/uat/reconcile-weekly-fork-purchased-nft-state.mjs \
+  --env testnet-mockusdt \
+  --purchase-receipt-users
+```
+
+If you only want to sample a subset first:
+
+```bash
+cd /opt/3u-aura/current
+node scripts/uat/reconcile-weekly-fork-purchased-nft-state.mjs \
+  --env testnet-mockusdt \
+  --purchase-receipt-users \
+  --limit 10
+```
+
+Expected result:
+
+- JSON summary with `processedUsers`, `mutatedUsers`, `holdingsCreated`,
+  `claimsCreated`, `claimsUpdated`
+- each repaired wallet lists current `activePurchasedTokenIds`
+
+After repair, reopen:
+
+- `admin.goldmint.vip/dashboard/subsidy`
+
+and confirm:
+
+- `Chain Purchased Supply`
+- `DB Active Purchased`
+- `Projection Gap`
+
+are aligned or at least improved before continuing with subsidy publish.
+
 ## Step 5: If App Services Still Fail
 
 ### A. `status=203/EXEC`

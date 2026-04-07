@@ -50,10 +50,10 @@ contract NFTSaleTest is Test {
         assertEq(founderNFT.ownerOf(tokenId), buyer);
         assertTrue(founderNFT.isPurchasedNFT(tokenId));
 
-        (uint256 purchasedRemaining, uint256 referralRemaining, uint256 totalRemaining) = sale.getRemainingNFT();
-        assertEq(purchasedRemaining, 99);
-        assertEq(referralRemaining, 70);
-        assertEq(totalRemaining, 99);
+        (uint256 purchasedMinted, uint256 referralMinted, uint256 totalMinted) = sale.getNFTMintStats();
+        assertEq(purchasedMinted, 1);
+        assertEq(referralMinted, 0);
+        assertEq(totalMinted, 1);
     }
 
     function testBuyNFTAllowsMultiplePurchasedNFTsPerAddress() public {
@@ -107,14 +107,14 @@ contract NFTSaleTest is Test {
 
         assertEq(founderNFT.purchasedMinted(), 31);
 
-        (uint256 purchasedRemaining, uint256 referralRemaining, uint256 totalRemaining) = sale.getRemainingNFT();
-        assertEq(purchasedRemaining, 69);
-        assertEq(referralRemaining, 70);
-        assertEq(totalRemaining, 69);
+        (uint256 purchasedMinted, uint256 referralMinted, uint256 totalMinted) = sale.getNFTMintStats();
+        assertEq(purchasedMinted, 31);
+        assertEq(referralMinted, 0);
+        assertEq(totalMinted, 31);
     }
 
-    function testBuyNFTRevertsWhenTotalSupplyIsExhausted() public {
-        for (uint256 index = 0; index < founderNFT.MAX_TOTAL_SUPPLY(); index++) {
+    function testBuyNFTHasNoFormerHundredCap() public {
+        for (uint256 index = 0; index < 101; index++) {
             address currentBuyer = address(uint160(index + 0x2000));
             usdt.mint(currentBuyer, sale.PURCHASE_PRICE());
             vm.startPrank(currentBuyer);
@@ -123,13 +123,8 @@ contract NFTSaleTest is Test {
             vm.stopPrank();
         }
 
-        address overflowBuyer = makeAddr("overflowBuyer");
-        usdt.mint(overflowBuyer, sale.PURCHASE_PRICE());
-        vm.startPrank(overflowBuyer);
-        usdt.approve(address(sale), sale.PURCHASE_PRICE());
-        vm.expectRevert(FounderNFT.TotalSupplySoldOut.selector);
-        sale.buyNFT();
-        vm.stopPrank();
+        assertEq(founderNFT.purchasedMinted(), 101);
+        assertEq(founderNFT.totalSupply(), 101);
     }
 
     function testOnlyOwnerCanUpdateAdminAddresses() public {

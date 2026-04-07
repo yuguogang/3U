@@ -104,24 +104,40 @@ function pickCreateAddress(runData, { returnKey, contractName }) {
 }
 
 function runForgeScript(scriptName, env) {
-  const result = spawnSync(
-    'forge',
-    [
-      'script',
-      `script/${scriptName}.s.sol:${scriptName}`,
-      '--rpc-url',
-      env.BSC_TESTNET_RPC_URL,
-      '--broadcast',
-    ],
-    {
-      cwd: CONTRACTS_DIR,
-      env: { ...process.env, ...env },
-      stdio: 'inherit',
-    },
-  );
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const result = spawnSync(
+      'forge',
+      [
+        'script',
+        `script/${scriptName}.s.sol:${scriptName}`,
+        '--rpc-url',
+        env.BSC_TESTNET_RPC_URL,
+        '--broadcast',
+        '--slow',
+      ],
+      {
+        cwd: CONTRACTS_DIR,
+        env: { ...process.env, ...env },
+        stdio: 'inherit',
+        timeout: 60_000,
+      },
+    );
 
-  if (result.status !== 0) {
-    throw new Error(`forge script failed: ${scriptName}`);
+    if (result.status === 0) {
+      return;
+    }
+
+    const timedOut = result.error?.code === 'ETIMEDOUT';
+    if (attempt < 2) {
+      process.stderr.write(
+        `[deploy-contract-suite] forge script ${scriptName} failed on attempt ${attempt}${timedOut ? ' (timed out)' : ''}, retrying once...\n`,
+      );
+      continue;
+    }
+
+    throw new Error(
+      `forge script failed: ${scriptName}${timedOut ? ' (timed out)' : ''}`,
+    );
   }
 }
 
@@ -265,7 +281,7 @@ if (
 
 saveManifest(manifestPath, manifest);
 
-const syncResult = spawnSync('node', ['scripts/promotion-env/sync-public-envs.mjs'], {
+const syncResult = spawnSync(process.execPath, ['scripts/promotion-env/sync-public-envs.mjs'], {
   cwd: REPO_ROOT,
   env: process.env,
   stdio: 'inherit',
