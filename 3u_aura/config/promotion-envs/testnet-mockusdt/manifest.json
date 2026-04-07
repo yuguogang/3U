@@ -7,7 +7,7 @@
     "referralRpcUrl": "https://data-seed-prebsc-1-s1.binance.org:8545/"
   },
   "promotion": {
-    "startAt": "2026-03-27T00:00:00+08:00",
+    "startAt": "2026-04-01T00:00:00+08:00",
     "timezone": "Asia/Shanghai",
     "epochLengthDays": 7,
     "ticketStreakDays": 7,
